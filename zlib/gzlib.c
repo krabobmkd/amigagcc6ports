@@ -5,14 +5,21 @@
 
 #include "gzguts.h"
 
-#if defined(_WIN32) && !defined(__BORLANDC__)
-#  define LSEEK _lseeki64
+#define GZ_USE_STDIO 1
+
+#if GZ_USE_STDIO
+    #include <stdio.h>
 #else
-#if defined(_LARGEFILE64_SOURCE) && _LFS64_LARGEFILE-0
-#  define LSEEK lseek64
-#else
-#  define LSEEK lseek
-#endif
+
+    #if defined(_WIN32) && !defined(__BORLANDC__)
+    #  define LSEEK _lseeki64
+    #else
+    #if defined(_LARGEFILE64_SOURCE) && _LFS64_LARGEFILE-0
+    #  define LSEEK lseek64
+    #else
+    #  define LSEEK lseek
+    #endif
+    #endif
 #endif
 
 #if defined UNDER_CE
@@ -85,7 +92,6 @@ local void gz_reset(gz_statep state) {
 local gzFile gz_open(const void *path, int fd, const char *mode) {
     gz_statep state;
     z_size_t len;
-    int oflag;
 #ifdef O_CLOEXEC
     int cloexec = 0;
 #endif
@@ -206,6 +212,17 @@ local gzFile gz_open(const void *path, int fd, const char *mode) {
         strcpy(state->path, path);
 #endif
 
+    /* open the file with the appropriate flags (or just use fd) */
+#if GZ_USE_STDIO
+    //FILE *afd;
+    state->afd = fopen(path,((state->mode == GZ_READ )?"rb":"rw"));
+    if (state->afd == NULL) {
+        free(state->path);
+        free(state);
+        return NULL;
+    }
+#else
+    int oflag;
     /* compute the flags for open() */
     oflag =
 #ifdef O_LARGEFILE
@@ -227,25 +244,35 @@ local gzFile gz_open(const void *path, int fd, const char *mode) {
            O_TRUNC :
            O_APPEND)));
 
-    /* open the file with the appropriate flags (or just use fd) */
-    state->fd = fd > -1 ? fd : (
-#ifdef WIDECHAR
-        fd == -2 ? _wopen(path, oflag, 0666) :
+        state->fd = fd > -1 ? fd : (
+    #ifdef WIDECHAR
+            fd == -2 ? _wopen(path, oflag, 0666) :
+    #endif
+            open((const char *)path, oflag, 0666));
+        if (state->fd == -1) {
+            free(state->path);
+            free(state);
+            return NULL;
+        }
 #endif
-        open((const char *)path, oflag, 0666));
-    if (state->fd == -1) {
-        free(state->path);
-        free(state);
-        return NULL;
-    }
+
     if (state->mode == GZ_APPEND) {
-        LSEEK(state->fd, 0, SEEK_END);  /* so gzoffset() is correct */
+#if __AMIGA__
+    fseek(state->afd,0,SEEK_END);
+#else
+    LSEEK(state->fd, 0, SEEK_END);  /* so gzoffset() is correct */
+#endif
         state->mode = GZ_WRITE;         /* simplify later checks */
+
     }
 
     /* save the current position for rewinding (only if reading) */
     if (state->mode == GZ_READ) {
+#if GZ_USE_STDIO
+         state->start = ftell(state->afd); // -1 if error
+#else
         state->start = LSEEK(state->fd, 0, SEEK_CUR);
+#endif
         if (state->start == -1) state->start = 0;
     }
 
@@ -329,8 +356,13 @@ int ZEXPORT gzrewind(gzFile file) {
         return -1;
 
     /* back up and start over */
+#if GZ_USE_STDIO
+    if(fseek(state->afd,state->start, SEEK_SET) !=0)
+        return -1;
+#else
     if (LSEEK(state->fd, state->start, SEEK_SET) == -1)
         return -1;
+#endif
     gz_reset(state);
     return 0;
 }
@@ -366,9 +398,15 @@ z_off64_t ZEXPORT gzseek64(gzFile file, z_off64_t offset, int whence) {
     /* if within raw area while reading, just go there */
     if (state->mode == GZ_READ && state->how == COPY &&
             state->x.pos + offset >= 0) {
+#ifdef GZ_USE_STDIO
+        ret = fseek(state->afd, offset - (z_off64_t)state->x.have, SEEK_CUR);
+        if (ret != 0)
+            return -1;
+#else
         ret = LSEEK(state->fd, offset - (z_off64_t)state->x.have, SEEK_CUR);
         if (ret == -1)
             return -1;
+#endif
         state->x.have = 0;
         state->eof = 0;
         state->past = 0;
@@ -452,7 +490,11 @@ z_off64_t ZEXPORT gzoffset64(gzFile file) {
         return -1;
 
     /* compute and return effective offset in file */
+#ifdef GZ_USE_STDIO
+    offset = ftell(state->afd);
+#else
     offset = LSEEK(state->fd, 0, SEEK_CUR);
+#endif
     if (offset == -1)
         return -1;
     if (state->mode == GZ_READ)             /* reading */

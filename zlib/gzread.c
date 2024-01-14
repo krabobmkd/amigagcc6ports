@@ -4,7 +4,7 @@
  */
 
 #include "gzguts.h"
-
+#include <stdio.h>
 /* Use read() to load a buffer -- return -1 on error, otherwise 0.  Read from
    state->fd, and update state->eof, state->err, and state->msg as appropriate.
    This function needs to loop on read(), since read() is not guaranteed to
@@ -19,7 +19,12 @@ local int gz_load(gz_statep state, unsigned char *buf, unsigned len,
         get = len - *have;
         if (get > max)
             get = max;
+#if GZ_USE_STDIO
+        // size_t fread( void * buffer, size_t blocSize, size_t blocCount, FILE * stream );
+        ret = (int)fread((void *)(buf + *have),get,1,state->afd);
+#else
         ret = read(state->fd, buf + *have, get);
+#endif
         if (ret <= 0)
             break;
         *have += (unsigned)ret;
@@ -596,7 +601,11 @@ int ZEXPORT gzclose_r(gzFile file) {
     err = state->err == Z_BUF_ERROR ? Z_BUF_ERROR : Z_OK;
     gz_error(state, Z_OK, NULL);
     free(state->path);
+#if GZ_USE_STDIO
+    ret = fclose(state->afd);
+#else
     ret = close(state->fd);
+#endif
     free(state);
     return ret ? Z_ERRNO : err;
 }

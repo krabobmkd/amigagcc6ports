@@ -4,7 +4,9 @@
  */
 
 #include "gzguts.h"
-
+#include <stdio.h>
+// strlen
+#include <string.h>
 /* Initialize state for writing a gzip file.  Mark initialization by setting
    state->size to non-zero.  Return -1 on a memory allocation failure, or 0 on
    success. */
@@ -75,7 +77,12 @@ local int gz_comp(gz_statep state, int flush) {
     if (state->direct) {
         while (strm->avail_in) {
             put = strm->avail_in > max ? max : strm->avail_in;
+#if GZ_USE_STDIO
+            writ = (int)fwrite(strm->next_in,put , 1,state->afd);
+#else
             writ = write(state->fd, strm->next_in, put);
+
+#endif
             if (writ < 0) {
                 gz_error(state, Z_ERRNO, zstrerror());
                 return -1;
@@ -105,7 +112,11 @@ local int gz_comp(gz_statep state, int flush) {
             while (strm->next_out > state->x.next) {
                 put = strm->next_out - state->x.next > (int)max ? max :
                       (unsigned)(strm->next_out - state->x.next);
+#if GZ_USE_STDIO
+                writ = (int)fwrite(state->x.next,put , 1,state->afd);
+#else
                 writ = write(state->fd, state->x.next, put);
+#endif
                 if (writ < 0) {
                     gz_error(state, Z_ERRNO, zstrerror());
                     return -1;
@@ -624,8 +635,14 @@ int ZEXPORT gzclose_w(gzFile file) {
     }
     gz_error(state, Z_OK, NULL);
     free(state->path);
+#if GZ_USE_STDIO
+    if (fclose(state->afd) != 0)
+        ret = Z_ERRNO;
+   #else
     if (close(state->fd) == -1)
         ret = Z_ERRNO;
+#endif
+
     free(state);
     return ret;
 }

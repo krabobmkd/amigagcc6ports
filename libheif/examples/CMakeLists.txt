@@ -100,29 +100,39 @@ install(FILES heif-convert.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
 #    target_sources(heif-enc PRIVATE decoder.h decoder_jpeg.cc decoder_jpeg.h)
 #endif ()
 
+if(AMIGA)
+	add_definitions(-DHAVE_LIBPNG=1)
+	target_link_libraries(heif-convert PRIVATE png_static z)
+	target_sources(heif-convert PRIVATE encoder_png.cc encoder_png.h)
+	target_include_directories(heif-convert PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/../../libpng
+		${CMAKE_CURRENT_BINARY_DIR}}/../libpng
+	)
 
-find_package(PNG)
-if (TARGET PNG::PNG)
-    add_definitions(-DHAVE_LIBPNG=1)
+else()
+	find_package(PNG)
+	if (TARGET PNG::PNG)
+		add_definitions(-DHAVE_LIBPNG=1)
 
-    target_link_libraries(heif-convert PRIVATE PNG::PNG)
-#    target_link_libraries(heif-enc PRIVATE PNG::PNG)
+		target_link_libraries(heif-convert PRIVATE PNG::PNG)
+	#    target_link_libraries(heif-enc PRIVATE PNG::PNG)
 
-    target_sources(heif-convert PRIVATE encoder_png.cc encoder_png.h)
-#    target_sources(heif-enc PRIVATE decoder_png.cc decoder_png.h)
+		target_sources(heif-convert PRIVATE encoder_png.cc encoder_png.h)
+	#    target_sources(heif-enc PRIVATE decoder_png.cc decoder_png.h)
 
-#    add_executable(heif-thumbnailer ${getopt_sources}
-#            encoder.cc
-#            encoder.h
-#            heif_thumbnailer.cc
-#            encoder_png.cc
-#            encoder_png.h
-#            ../libheif/exif.h
-#            ../libheif/exif.cc
-#            common.cc
-#            common.h)
-#    target_link_libraries(heif-thumbnailer heif PNG::PNG)
+	#    add_executable(heif-thumbnailer ${getopt_sources}
+	#            encoder.cc
+	#            encoder.h
+	#            heif_thumbnailer.cc
+	#            encoder_png.cc
+	#            encoder_png.h
+	#            ../libheif/exif.h
+	#            ../libheif/exif.cc
+	#            common.cc
+	#            common.h)
+	#    target_link_libraries(heif-thumbnailer heif PNG::PNG)
 
-#    install(TARGETS heif-thumbnailer RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-#    install(FILES heif-thumbnailer.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
-endif ()
+	#    install(TARGETS heif-thumbnailer RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+	#    install(FILES heif-thumbnailer.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+	endif ()
+endif()

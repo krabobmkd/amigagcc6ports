@@ -32,8 +32,10 @@
 
 cmake_minimum_required(VERSION 3.1)
 cmake_policy(VERSION 3.1)
+set(CXX_STANDARD 11)
+set(C_STANDARD 11)
+project(libpng  LANGUAGES C VERSION 1.17.6)
 
-project(libpng C ASM)
 enable_testing()
 
 include(CMakeParseArguments)
@@ -66,22 +68,25 @@ set(DFA_XTRA ""
     CACHE FILEPATH "File containing extra configuration settings")
 
 # Allow the users to configure the following build options.
-option(PNG_SHARED "Build libpng as a shared lib" ON)
+#Vf-Amiga set shared OFF
+option(PNG_SHARED "Build libpng as a shared lib" OFF)
 option(PNG_STATIC "Build libpng as a static lib" ON)
 option(PNG_FRAMEWORK "Build libpng as a Mac OS X framework" OFF)
-option(PNG_EXECUTABLES "Build libpng executables" ON)
-option(PNG_TESTS "Build libpng tests" ON)
+option(PNG_EXECUTABLES "Build libpng executables" OFF)
+option(PNG_TESTS "Build libpng tests" OFF)
 option(PNG_DEBUG "Enable debug output" OFF)
-option(PNG_HARDWARE_OPTIMIZATIONS "Enable hardware optimizations" ON)
+option(PNG_HARDWARE_OPTIMIZATIONS "Enable hardware optimizations" OFF)
 
 # Allow the users to specify a location of zlib.
 # Useful if zlib is being built alongside this as a sub-project.
-option(PNG_BUILD_ZLIB "Custom zlib location, else find_package is used" OFF)
+option(PNG_BUILD_ZLIB "Custom zlib location, else find_package is used" ON)
 if(NOT PNG_BUILD_ZLIB)
   find_package(ZLIB REQUIRED)
-  include_directories(${ZLIB_INCLUDE_DIRS})
+else()	
+	set(ZLIB_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/../zlib" )
+	set(ZLIB_BUILD_DIRS "${CMAKE_CURRENT_BINARY_DIR}/../zlib")
 endif()
-
+  include_directories(${ZLIB_INCLUDE_DIRS} ${ZLIB_BUILD_DIRS})
 if(UNIX AND NOT APPLE AND NOT BEOS AND NOT HAIKU AND NOT EMSCRIPTEN)
   find_library(M_LIBRARY m)
   if(NOT M_LIBRARY)
@@ -635,55 +640,57 @@ else()
   set(PNG_STATIC_OUTPUT_NAME "libpng${PNGLIB_ABI_VERSION}_static")
 endif()
 
-if(PNG_SHARED)
-  add_library(png_shared SHARED ${libpng_sources})
-  add_dependencies(png_shared png_genfiles)
-  list(APPEND PNG_LIBRARY_TARGETS png_shared)
-  set_target_properties(png_shared PROPERTIES
-                        OUTPUT_NAME "${PNG_SHARED_OUTPUT_NAME}"
-                        DEBUG_POSTFIX "${PNG_DEBUG_POSTFIX}"
-                        VERSION "${PNGLIB_SHARED_VERSION}"
-                        SOVERSION "${PNGLIB_ABI_VERSION}")
-  if(UNIX AND AWK)
-    if(HAVE_LD_VERSION_SCRIPT)
-      set_target_properties(png_shared PROPERTIES
-                            LINK_FLAGS "-Wl,--version-script='${CMAKE_CURRENT_BINARY_DIR}/libpng.vers'")
-    elseif(HAVE_SOLARIS_LD_VERSION_SCRIPT)
-      set_target_properties(png_shared PROPERTIES
-                            LINK_FLAGS "-Wl,-M -Wl,'${CMAKE_CURRENT_BINARY_DIR}/libpng.vers'")
-    endif()
-  endif()
-  if(WIN32)
-    set_target_properties(png_shared PROPERTIES DEFINE_SYMBOL PNG_BUILD_DLL)
-  endif()
-  target_link_libraries(png_shared ${ZLIB_LIBRARIES} ${M_LIBRARY})
-endif()
+#if(PNG_SHARED)
+#  add_library(png_shared SHARED ${libpng_sources})
+#  add_dependencies(png_shared png_genfiles)
+#  list(APPEND PNG_LIBRARY_TARGETS png_shared)
+#  set_target_properties(png_shared PROPERTIES
+#                        OUTPUT_NAME "${PNG_SHARED_OUTPUT_NAME}"
+#                        DEBUG_POSTFIX "${PNG_DEBUG_POSTFIX}"
+#                        VERSION "${PNGLIB_SHARED_VERSION}"
+#                        SOVERSION "${PNGLIB_ABI_VERSION}")
+#  if(UNIX AND AWK)
+#    if(HAVE_LD_VERSION_SCRIPT)
+#      set_target_properties(png_shared PROPERTIES
+#                            LINK_FLAGS "-Wl,--version-script='${CMAKE_CURRENT_BINARY_DIR}/libpng.vers'")
+#    elseif(HAVE_SOLARIS_LD_VERSION_SCRIPT)
+#      set_target_properties(png_shared PROPERTIES
+#                            LINK_FLAGS "-Wl,-M -Wl,'${CMAKE_CURRENT_BINARY_DIR}/libpng.vers'")
+#    endif()
+#  endif()
+#  if(WIN32)
+#    set_target_properties(png_shared PROPERTIES DEFINE_SYMBOL PNG_BUILD_DLL)
+#  endif()
+#  target_link_libraries(png_shared ${ZLIB_LIBRARIES} ${M_LIBRARY})
+#endif()
 
 if(PNG_STATIC)
   add_library(png_static STATIC ${libpng_sources})
+	set_property(TARGET png_static PROPERTY C_STANDARD 11)
+  target_include_directories(png_static PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../zlib")
   add_dependencies(png_static png_genfiles)
   list(APPEND PNG_LIBRARY_TARGETS png_static)
   set_target_properties(png_static PROPERTIES
                         OUTPUT_NAME "${PNG_STATIC_OUTPUT_NAME}"
                         DEBUG_POSTFIX "${PNG_DEBUG_POSTFIX}")
-  target_link_libraries(png_static ${ZLIB_LIBRARIES} ${M_LIBRARY})
+#no.  target_link_libraries(png_static ${ZLIB_LIBRARIES} ${M_LIBRARY})
 endif()
 
-if(PNG_FRAMEWORK)
-  add_library(png_framework SHARED ${libpng_sources})
-  add_dependencies(png_framework png_genfiles)
-  list(APPEND PNG_LIBRARY_TARGETS png_framework)
-  set_target_properties(png_framework PROPERTIES
-                        FRAMEWORK TRUE
-                        FRAMEWORK_VERSION "${PNGLIB_VERSION}"
-                        MACOSX_FRAMEWORK_SHORT_VERSION_STRING "${PNGLIB_MAJOR}.${PNGLIB_MINOR}"
-                        MACOSX_FRAMEWORK_BUNDLE_VERSION "${PNGLIB_VERSION}"
-                        MACOSX_FRAMEWORK_IDENTIFIER "org.libpng.libpng"
-                        XCODE_ATTRIBUTE_INSTALL_PATH "@rpath"
-                        PUBLIC_HEADER "${libpng_public_hdrs}"
-                        OUTPUT_NAME "png")
-  target_link_libraries(png_framework ${ZLIB_LIBRARIES} ${M_LIBRARY})
-endif()
+#if(PNG_FRAMEWORK)
+#  add_library(png_framework SHARED ${libpng_sources})
+#  add_dependencies(png_framework png_genfiles)
+#  list(APPEND PNG_LIBRARY_TARGETS png_framework)
+#  set_target_properties(png_framework PROPERTIES
+#                        FRAMEWORK TRUE
+#                        FRAMEWORK_VERSION "${PNGLIB_VERSION}"
+#                        MACOSX_FRAMEWORK_SHORT_VERSION_STRING "${PNGLIB_MAJOR}.${PNGLIB_MINOR}"
+#                        MACOSX_FRAMEWORK_BUNDLE_VERSION "${PNGLIB_VERSION}"
+#                        MACOSX_FRAMEWORK_IDENTIFIER "org.libpng.libpng"
+#                        XCODE_ATTRIBUTE_INSTALL_PATH "@rpath"
+#                        PUBLIC_HEADER "${libpng_public_hdrs}"
+#                        OUTPUT_NAME "png")
+#  target_link_libraries(png_framework ${ZLIB_LIBRARIES} ${M_LIBRARY})
+#endif()
 
 if(NOT PNG_LIBRARY_TARGETS)
   message(SEND_ERROR "No library variant selected to build. "

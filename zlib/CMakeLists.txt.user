@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 7.0.2, 2024-01-14T12:20:24. -->
+<!-- Written by QtCreator 7.0.2, 2024-01-14T15:40:02. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -104,7 +104,10 @@
 -DCMAKE_C_COMPILER_TARGET:STRING=m68k-amigaos
 -DCMAKE_CXX_COMPILER_TARGET:STRING=m68k-amigaos
 -DCMAKE_TOOLCHAIN_FILE:FILEPATH=/opt/amiga/cmake/Modules/Platform/m68k-amigaos.cmake
--DCMAKE_C_COMPILER_WORKS:BOOL=ON</value>
+-DCMAKE_C_COMPILER_WORKS:BOOL=ON
+
+
+</value>
     <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">/home/krabob/Code/Amiga/build-zlib-AmigaGcc-Debug</value>
     <valuemap type="QVariantMap" key="ProjectExplorer.BuildConfiguration.BuildStepList.0">
      <valuemap type="QVariantMap" key="ProjectExplorer.BuildStepList.Step.0">
@@ -331,17 +334,14 @@
     <value type="bool" key="Analyzer.QmlProfiler.Settings.UseGlobalSettings">true</value>
     <value type="bool" key="Analyzer.Valgrind.Settings.UseGlobalSettings">true</value>
     <valuelist type="QVariantList" key="CustomOutputParsers"/>
-    <value type="int" key="PE.EnvironmentAspect.Base">1</value>
+    <value type="int" key="PE.EnvironmentAspect.Base">2</value>
     <valuelist type="QVariantList" key="PE.EnvironmentAspect.Changes"/>
-    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">example</value>
-    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">RemoteLinuxRunConfiguration:example</value>
-    <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">example</value>
-    <value type="int" key="RemoteLinux.EnvironmentAspect.Version">1</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">ProjectExplorer.CustomExecutableRunConfiguration</value>
+    <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey"></value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">true</value>
     <value type="bool" key="RunConfiguration.UseQmlDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseQmlDebuggerAuto">true</value>
-    <value type="QString" key="RunConfiguration.X11Forwarding">:0</value>
    </valuemap>
    <valuemap type="QVariantMap" key="ProjectExplorer.Target.RunConfiguration.1">
     <value type="bool" key="Analyzer.Perf.Settings.UseGlobalSettings">true</value>
@@ -350,9 +350,9 @@
     <valuelist type="QVariantList" key="CustomOutputParsers"/>
     <value type="int" key="PE.EnvironmentAspect.Base">1</value>
     <valuelist type="QVariantList" key="PE.EnvironmentAspect.Changes"/>
-    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">minigzip</value>
-    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">RemoteLinuxRunConfiguration:minigzip</value>
-    <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">minigzip</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">Custom Executable2</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">RemoteLinux.CustomRunConfig</value>
+    <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey"></value>
     <value type="int" key="RemoteLinux.EnvironmentAspect.Version">1</value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">true</value>

@@ -112,14 +112,13 @@ endmacro()
 
 #Vf-Amiga note: ON OFF on this macro call means "Ok for direct lib linking, ok for plugin dlload linking"
 
-# libde265
 if(AMIGA)
-#	add_subdirectory(../zlib zlib)
-#	set(PNG_BUILD_ZLIB ON CACHE BOOL "")
-#	set(ZLIB_INCLUDE_DIRS "../zlib")
+	# zlib must be set before libpng
+	add_subdirectory(../zlib zlib)
+	set(PNG_BUILD_ZLIB ON CACHE BOOL "")
+	set(ZLIB_INCLUDE_DIRS "../zlib")
 
-
-#	add_subdirectory(../libpng libpng)
+	add_subdirectory(../libpng libpng)
 endif()
 
 plugin_option(LIBDE265 "libde265 HEVC decoder" ON OFF)
@@ -137,6 +136,8 @@ if (WITH_LIBDE265)
 	set(HAVE_LIBDE265 ON)
 	add_definitions(-DHAVE_LIBDE265=1 )
 	include_directories(${LIBDE265_INCLUDE_DIR})
+	# .h are generated there...
+	include_directories(${CMAKE_CURRENT_BINARY_DIR}/libde265)
 endif()
 
 
@@ -328,7 +329,7 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libheif.pc
 # ---
 
 option(WITH_EXAMPLES "Build examples" ON)
-option(WITH_GDK_PIXBUF "Build gdk-pixbuf plugin" ON)
+option(WITH_GDK_PIXBUF "Build gdk-pixbuf plugin" OFF)
 
 option(WITH_REDUCED_VISIBILITY "Reduced symbol visibility in library" ON)
 
@@ -409,8 +410,9 @@ if (WITH_GDK_PIXBUF)
   add_subdirectory (gdk-pixbuf)
 endif()
 
-add_subdirectory (gnome)
-
+if(NOT AMIGA)
+	add_subdirectory (gnome)
+endif()
 
 # --- packaging (source code)
 

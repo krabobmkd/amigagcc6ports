@@ -3,6 +3,9 @@
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
+#if defined(__AMIGA__) || defined(AMIGA)
+    #define GZ_USE_STDIO 1
+#endif
 #ifdef _LARGEFILE64_SOURCE
 #  ifndef _LARGEFILE_SOURCE
 #    define _LARGEFILE_SOURCE 1
@@ -18,6 +21,7 @@
 #endif
 
 #include <stdio.h>
+
 #include "zlib.h"
 #ifdef STDC
 #  include <string.h>
@@ -28,8 +32,9 @@
 #ifndef _POSIX_SOURCE
 #  define _POSIX_SOURCE
 #endif
+#if !defined(GZ_USE_STDIO)
 #include <fcntl.h>
-
+#endif
 #ifdef _WIN32
 #  include <stddef.h>
 #endif
@@ -174,7 +179,11 @@ typedef struct {
                             /* x.pos: current position in uncompressed data */
         /* used for both reading and writing */
     int mode;               /* see gzip modes above */
+#if GZ_USE_STDIO
+    FILE *afd;
+#else
     int fd;                 /* file descriptor */
+#endif
     char *path;             /* path or fd for error messages */
     unsigned size;          /* buffer size, zero if not allocated yet */
     unsigned want;          /* requested buffer size, default is GZBUFSIZE */
