@@ -16,11 +16,12 @@ CMakelists are all tuned so it is compiled with "68060 CPU and --fast-math", and
  
  after clone:
  
+ > git clone https://github.com/krabobmkd/amigagcc6ports
  > cd amigagcc6ports
- mkdir amiga-build
- cd amiga-build
- cmake ../libheif/ -DCMAKE_TOOLCHAIN_FILE=../cmake/Modules/Platform/m68k-amigaos.cmake -DCMAKE_BUILD_TYPE=Release
- cmake --build .
+ > mkdir amiga-build
+ > cd amiga-build
+ > cmake ../libheif/ -DCMAKE_TOOLCHAIN_FILE=../cmake/Modules/Platform/m68k-amigaos.cmake -DCMAKE_BUILD_TYPE=Release
+ > cmake --build .
  
  ... this would compile Amiga executables examples/heif-convert and heif-info.
  
