@@ -101,6 +101,8 @@ install(FILES heif-convert.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
 #endif ()
 
 if(AMIGA)
+	target_sources(heif-convert PRIVATE amigatools.cc )
+
 	add_definitions(-DHAVE_LIBPNG=1)
 	target_link_libraries(heif-convert PRIVATE png_static z)
 	target_sources(heif-convert PRIVATE encoder_png.cc encoder_png.h)

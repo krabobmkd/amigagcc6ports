@@ -217,6 +217,7 @@ public:
   ~LibHeifInitializer() { heif_deinit(); }
 };
 
+extern void amiga_cpucheck();
 
 int main(int argc, char** argv)
 {
@@ -228,6 +229,11 @@ int main(int argc, char** argv)
   const char* decoder_id = nullptr;
 
   UNUSED(quality);  // The quality will only be used by encoders that support it.
+
+#if AMIGA
+  amiga_cpucheck();
+#endif
+
   //while ((opt = getopt(argc, argv, "q:s")) != -1) {
   while (true) {
     int option_index = 0;
