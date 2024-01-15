@@ -10,13 +10,13 @@ This is some ports of GPL / LGPL libs for the Amiga Gcc6.5 cross compiler from b
 
 CMakelists are all tuned so it is compiled with "68060 CPU and --fast-math", and modern "C11" needed by libheif and libde265. C11 is way more modern than usual Amiga C code. Most sources compile easily, yet tons of modifications where done everywhere, for various reasons and sometimes obvious bug correction. search comment with tag "Vf-Amiga" to trace most modifications from original source.
  
- zlib and pnglib are only used by heif-convert to export PNG. 
- bebbo-gcc 's jpeglib static install is used to export jpeg.
- 
+ zlib pnglib and libjpeg are only used by heif-convert to export PNG. 
+  
+## How to build ?
+
  On a machine  where gcc6.5 bebbo is installed (linux, mac, Windows),
  building would look like:
- 
-## How to build ?
+
 ``` 
 git clone https://github.com/krabobmkd/amigagcc6ports
 cd amigagcc6ports

@@ -19,7 +19,6 @@ target_link_libraries(heif-info heif)
 	#because of static linking
 	target_link_libraries(heif-info de265 pthread jpeg)
 
-
 install(TARGETS heif-info RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(FILES heif-info.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
 
@@ -104,11 +103,12 @@ if(AMIGA)
 	target_sources(heif-convert PRIVATE amigatools.cc )
 
 	add_definitions(-DHAVE_LIBPNG=1)
-	target_link_libraries(heif-convert PRIVATE png_static z)
+	target_link_libraries(heif-convert PRIVATE png_static z jpeg)
 	target_sources(heif-convert PRIVATE encoder_png.cc encoder_png.h)
 	target_include_directories(heif-convert PRIVATE
 		${CMAKE_CURRENT_SOURCE_DIR}/../../libpng
 		${CMAKE_CURRENT_BINARY_DIR}}/../libpng
+		${CMAKE_CURRENT_SOURCE_DIR}/../../libjpeg
 	)
 
 else()

@@ -31,7 +31,6 @@ if(AMIGA)
 else()	
 	# vf linux intel test
 	# add_definitions(-funsigned-char -ansi)
-	add_definitions(-DHAVE_JPEG_WRITE_ICC_PROFILE)
 
 endif()
 
@@ -197,6 +196,7 @@ plugin_option(JPEG_DECODER "JPEG decoder" ON OFF)
 plugin_option(JPEG_ENCODER "JPEG encoder" OFF OFF)
 if (WITH_JPEG_ENCODER OR WITH_JPEG_DECODER)
 	 #Vf-Amiga direct find
+	add_subdirectory(../libjpeg libjpeg)
     # find_package(JPEG)
 	add_definitions(-DHAVE_LIBJPEG=1)
 	add_definitions(-DHAVE_JPEG_DECODER=1 )

@@ -1,10 +1,11 @@
 #include <exec/execbase.h>
 
-#include <proto/dos.h>
+                  #include <proto/dos.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "libheif/heif_version.h"
 extern struct ExecBase *SysBase;
 
 /*
@@ -20,6 +21,7 @@ const char *getcpu(void)
   return "68000";
 }
 */
+const char *pVersion="$VER:" LIBHEIF_VERSION;
 
 int amiga_hasFPU()
 {
