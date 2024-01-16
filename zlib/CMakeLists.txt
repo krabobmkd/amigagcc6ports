@@ -7,7 +7,8 @@ project(zlib LANGUAGES C CXX VERSION 1.17.6)
 
 if(AMIGA)
 	add_definitions(-m68060 -mhard-float -ffast-math -save-temps )
-
+	add_definitions(-std=c11)
+	
 	set(BUILD_SHARED_LIBS OFF)
 	set(SKIP_INSTALL_LIBRARIES ON)
 

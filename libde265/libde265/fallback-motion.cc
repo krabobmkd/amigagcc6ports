@@ -28,8 +28,11 @@
 #endif
 
 #include <assert.h>
+
 //Vf-Amiga
+#if AMIGA
 #include <alloca.h>
+#endif
 
 void put_unweighted_pred_8_fallback(uint8_t *dst, ptrdiff_t dststride,
                                     const int16_t *src, ptrdiff_t srcstride,

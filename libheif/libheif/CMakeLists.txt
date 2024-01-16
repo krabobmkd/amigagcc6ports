@@ -154,6 +154,7 @@ if (WITH_UNCOMPRESSED_CODEC)
             uncompressed_image.cc)
 endif ()
 
+if(NOT AMIGA)
 write_basic_package_version_file(${PROJECT_NAME}-config-version.cmake COMPATIBILITY ExactVersion)
 
 install(TARGETS heif EXPORT ${PROJECT_NAME}-config
@@ -168,3 +169,4 @@ install(EXPORT ${PROJECT_NAME}-config DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake DESTINATION
         "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
+endif()

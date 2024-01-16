@@ -27,14 +27,18 @@ endif()
 
 #Vf-Amiga
 if(AMIGA)
-	add_definitions(-O2 -m68060 -mhard-float -ffast-math -save-temps)
+
+	add_definitions(-O2 -m68060 -mhard-float -ffast-math -save-temps )
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11")
+	#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c11")
+    add_definitions(-Wall)
 else()	
 	# vf linux intel test
 	# add_definitions(-funsigned-char -ansi)
 
 endif()
 
-if(NOT MSVC)
+if(NOT MSVC AND NOT AMIGA)
   add_definitions(-Wall)
   add_definitions(-Werror)
   add_definitions(-Wsign-compare)
@@ -49,6 +53,7 @@ if(NOT MSVC)
   endif ()
 endif()
 
+set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -197,6 +202,7 @@ plugin_option(JPEG_ENCODER "JPEG encoder" OFF OFF)
 if (WITH_JPEG_ENCODER OR WITH_JPEG_DECODER)
 	 #Vf-Amiga direct find
 	add_subdirectory(../libjpeg libjpeg)
+	include_directories(../libjpeg)
     # find_package(JPEG)
 	add_definitions(-DHAVE_LIBJPEG=1)
 	add_definitions(-DHAVE_JPEG_DECODER=1 )

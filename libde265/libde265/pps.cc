@@ -30,7 +30,6 @@
 #elif defined(HAVE_ALLOCA_H)
 # include <alloca.h>
 #endif
-#include <alloca.h>
 
 void pps_range_extension::reset()
 {

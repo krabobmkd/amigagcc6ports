@@ -24,10 +24,23 @@ set(LIBJPEG_SRC
 		jmemansi.c
 
 	jdct.h jerror.h jinclude.h jmemsys.h jmorecfg.h jpegint.h 
-        jpeglib.h jversion.h cdjpeg.h cderror.h transupp.h        
+        jpeglib.h jversion.h cdjpeg.h cderror.h transupp.h
+        jconfig.h
 )
 
 
 add_library(jpeg STATIC  ${LIBJPEG_SRC} )
 set_property(TARGET jpeg PROPERTY C_STANDARD 11)
+
+# generate jconfig.h
+#if(AMIGA)
+#	configure_file(	${CMAKE_CURRENT_SOURCE_DIR}/amiga_jconfig.h
+#			${CMAKE_CURRENT_BINARY_DIR}/jconfig.h @ONLY)
+#	include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR})
+#else()
+#	configure_file(	${CMAKE_CURRENT_SOURCE_DIR}/intel64_jconfig.h
+#			${CMAKE_CURRENT_BINARY_DIR}/jconfig.h @ONLY)
+#	include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR})
+#endif()
+
 
