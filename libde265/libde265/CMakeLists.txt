@@ -1,6 +1,6 @@
 include(CMakePackageConfigHelpers)
 
-set (libde265_sources 
+set (libde265_sources
   alloc_pool.cc
   bitstream.cc
   cabac.cc
@@ -123,7 +123,7 @@ add_subdirectory (encoder)
 #endif()
 
 add_library(de265 STATIC ${libde265_sources} ${ENCODER_OBJECTS} ${X86_OBJECTS})
-
+target_compile_options(de265 PRIVATE -O1)
 #VF-disabled
 #target_link_libraries(de265 PRIVATE Threads::Threads)
 target_link_libraries(de265 PRIVATE pthread)

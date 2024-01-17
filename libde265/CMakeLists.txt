@@ -29,7 +29,7 @@ if(AMIGA)
 	message(ERROR "woooo")
 	# turn SDL examples as off
 	option(ENABLE_SDL "Enable SDL" OFF)
-	add_definitions(-O2 -m68060 -mhard-float -ffast-math -save-temps)
+	add_definitions( -m68060 -mhard-float -ffast-math -save-temps)
 	add_definitions(-DHAVE_ALLOCA_H=1)
 else()
 	# vf test

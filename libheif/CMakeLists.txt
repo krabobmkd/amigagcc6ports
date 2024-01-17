@@ -28,14 +28,11 @@ endif()
 #Vf-Amiga
 if(AMIGA)
 
-	add_definitions(-O2 -m68060 -mhard-float -ffast-math -save-temps )
+	# note: -OX optimisation options are now per libs.
+	add_definitions( -m68060 -mhard-float -ffast-math -save-temps )
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11")
 	#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c11")
-    add_definitions(-Wall)
-else()	
-	# vf linux intel test
-	# add_definitions(-funsigned-char -ansi)
-
+    add_definitions(-Wall)	
 endif()
 
 if(NOT MSVC AND NOT AMIGA)

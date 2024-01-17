@@ -1,6 +1,6 @@
 #include <exec/execbase.h>
 
-                  #include <proto/dos.h>
+#include <proto/dos.h>
 
 #include <stdio.h>
 #include <stdlib.h>

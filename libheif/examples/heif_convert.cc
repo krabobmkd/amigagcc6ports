@@ -217,7 +217,9 @@ public:
   ~LibHeifInitializer() { heif_deinit(); }
 };
 
+#if AMIGA
 extern void amiga_cpucheck();
+#endif
 
 int main(int argc, char** argv)
 {

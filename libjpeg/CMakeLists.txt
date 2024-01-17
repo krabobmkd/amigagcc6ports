@@ -6,7 +6,7 @@ set(C_STANDARD 11)
 project(libjpeg LANGUAGES C CXX VERSION 1.17.6)
 
 if(AMIGA)
-	add_definitions(-m68060 -mhard-float -ffast-math -save-temps )
+	add_definitions(-O2 -m68060 -mhard-float -ffast-math -save-temps )
 	add_definitions(-DHAVE_STDLIB_H )
 
 endif()

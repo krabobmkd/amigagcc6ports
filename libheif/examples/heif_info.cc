@@ -110,8 +110,13 @@ public:
 };
 
 
+#if AMIGA
+extern void amiga_cpucheck();
+#endif
+
 int main(int argc, char** argv)
 {
+
   // This takes care of initializing libheif and also deinitializing it at the end to free all resources.
   LibHeifInitializer initializer;
 
@@ -120,6 +125,11 @@ int main(int argc, char** argv)
   bool write_raw_image = false;
   heif_item_id raw_image_id;
   std::string output_filename = "output.265";
+
+
+#if AMIGA
+    amiga_cpucheck();
+#endif
 
   while (true) {
     int option_index = 0;

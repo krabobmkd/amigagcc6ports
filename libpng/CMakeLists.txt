@@ -36,7 +36,13 @@ set(CXX_STANDARD 11)
 set(C_STANDARD 11)
 project(libpng  LANGUAGES C VERSION 1.17.6)
 
-enable_testing()
+#Vf-Amiga
+if(AMIGA)
+	# note: -OX optimisation options are now per libs.
+	add_definitions( -O2 )
+endif()
+
+#enable_testing()
 
 include(CMakeParseArguments)
 include(CheckCSourceCompiles)
