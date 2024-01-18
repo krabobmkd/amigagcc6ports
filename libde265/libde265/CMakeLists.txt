@@ -95,38 +95,44 @@ add_definitions(-DLIBDE265_EXPORTS)
 add_subdirectory (encoder)
 
 #VF-Amiga comment disable x86 special options in linde265 cmakelists
-#check_c_source_compiles(
-#  "#if !defined(__x86_64) && !defined(__i386__) \
-#  && !defined(_M_IX86) && !defined(_M_AMD64)
-#  #error not x86
-#  #endif
-#  int main(){return 0;}"
-#  HAVE_X86)
+if(NOT AMIGA)
+check_c_source_compiles(
+  "#if !defined(__x86_64) && !defined(__i386__) \
+  && !defined(_M_IX86) && !defined(_M_AMD64)
+  #error not x86
+  #endif
+  int main(){return 0;}"
+  HAVE_X86)
+endif()
 
-#if(HAVE_X86)
-#  if (MSVC)
-#    set(SUPPORTS_SSE2 1)
-#    set(SUPPORTS_SSSE3 1)
-#    set(SUPPORTS_SSE4_1 1)
-#  else (MSVC)
-#    check_c_compiler_flag(-msse2 SUPPORTS_SSE2)
-#    check_c_compiler_flag(-mssse3 SUPPORTS_SSSE3)
-#    check_c_compiler_flag(-msse4.1 SUPPORTS_SSE4_1)
-#  endif (MSVC)
+if(HAVE_X86)
+  if (MSVC)
+    set(SUPPORTS_SSE2 1)
+    set(SUPPORTS_SSSE3 1)
+    set(SUPPORTS_SSE4_1 1)
+  else (MSVC)
+    check_c_compiler_flag(-msse2 SUPPORTS_SSE2)
+    check_c_compiler_flag(-mssse3 SUPPORTS_SSSE3)
+    check_c_compiler_flag(-msse4.1 SUPPORTS_SSE4_1)
+  endif (MSVC)
 
-#  if(SUPPORTS_SSE4_1)
-#    add_definitions(-DHAVE_SSE4_1)
-#  endif()
-#  if(SUPPORTS_SSE4_1 OR (SUPPORTS_SSE2 AND SUPPORTS_SSSE3))
-#    add_subdirectory (x86)
-#  endif()
-#endif()
+  if(SUPPORTS_SSE4_1)
+    add_definitions(-DHAVE_SSE4_1)
+  endif()
+  if(SUPPORTS_SSE4_1 OR (SUPPORTS_SSE2 AND SUPPORTS_SSSE3))
+    add_subdirectory (x86)
+  endif()
+endif()
 
 add_library(de265 STATIC ${libde265_sources} ${ENCODER_OBJECTS} ${X86_OBJECTS})
 
-#VF-disabled
-#target_link_libraries(de265 PRIVATE Threads::Threads)
-target_link_libraries(de265 PRIVATE pthread)
+if(AMIGA)
+	# gcc6.5bebbo/2024 generate bugs if -O2 in this lib.
+	target_compile_options(de265 PRIVATE -O1)
+endif()
+#Note: if static lib, does nothing.
+target_link_libraries(de265 PRIVATE Threads::Threads)
+
 target_include_directories(de265 PRIVATE ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
 write_basic_package_version_file(libde265ConfigVersion.cmake COMPATIBILITY ExactVersion)

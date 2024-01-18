@@ -17,8 +17,10 @@ endif()
 set (NUMERIC_VERSION 0x01001500)
 set (PACKAGE_VERSION ${PROJECT_VERSION})
 
-#include (${CMAKE_ROOT}/Modules/CheckCCompilerFlag.cmake)
-#include (${CMAKE_ROOT}/Modules/CheckIncludeFile.cmake)
+if(NOT AMIGA)
+	include (${CMAKE_ROOT}/Modules/CheckCCompilerFlag.cmake)
+	include (${CMAKE_ROOT}/Modules/CheckIncludeFile.cmake)
+endif()
 
 include(GNUInstallDirs)
 include(CheckFunctionExists)
@@ -26,15 +28,11 @@ include(CheckFunctionExists)
 
 #Vf-Amiga
 if(AMIGA)
-	message(ERROR "woooo")
 	# turn SDL examples as off
 	option(ENABLE_SDL "Enable SDL" OFF)
-	add_definitions(-O2 -m68060 -mhard-float -ffast-math -save-temps)
+	add_definitions( -m68060 -mhard-float -ffast-math -save-temps)
 	add_definitions(-DHAVE_ALLOCA_H=1)
-else()
-	# vf test
-	#add_definitions(-funsigned-char -ansi)
-
+else()	
 	option(ENABLE_SDL "Enable SDL" ON)
 endif()
 
@@ -43,11 +41,12 @@ if (ENABLE_SDL)
 	find_package(SDL2)
 endif()
 
-#VF-Amiga remove  find_package(Threads REQUIRED)
-#find_package(Threads REQUIRED)
+find_package(Threads REQUIRED)
 
-#CHECK_INCLUDE_FILE(malloc.h HAVE_MALLOC_H)
-#CHECK_FUNCTION_EXISTS(posix_memalign HAVE_POSIX_MEMALIGN)
+if(NOT AMIGA)
+CHECK_INCLUDE_FILE(malloc.h HAVE_MALLOC_H)
+CHECK_FUNCTION_EXISTS(posix_memalign HAVE_POSIX_MEMALIGN)
+endif()
 
 if (HAVE_MALLOC_H)
   add_definitions(-DHAVE_MALLOC_H)
@@ -63,8 +62,10 @@ if(CMAKE_COMPILER_IS_GNUCXX OR ${CMAKE_CXX_COMPILER_ID} MATCHES Clang)
 endif()
 
 
-#include(CheckCXXSymbolExists)
-#check_cxx_symbol_exists(_LIBCPP_VERSION cstdlib HAVE_LIBCPP)
+if(NOT AMIGA)
+include(CheckCXXSymbolExists)
+check_cxx_symbol_exists(_LIBCPP_VERSION cstdlib HAVE_LIBCPP)
+endif()
 
 #if(HAVE_LIBCPP)
 #  set(LIBS_PRIVATE "-lc++")
@@ -72,7 +73,12 @@ endif()
   set(LIBS_PRIVATE "-lstdc++")
 #endif()
 
+if(AMIGA)
 option(BUILD_SHARED_LIBS "Build shared library" OFF)
+else()
+option(BUILD_SHARED_LIBS "Build shared library" ON)
+endif()
+
 if(NOT BUILD_SHARED_LIBS)
   add_definitions(-DLIBDE265_STATIC_BUILD)
 endif()

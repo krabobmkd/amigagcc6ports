@@ -1,3 +1,8 @@
+if(AMIGA)
+	# note: -OX optimisation options are now per libs.
+	add_definitions( -O1 -s )
+endif()
+
 add_executable (dec265 dec265.cc)
 
 target_link_libraries (dec265 PRIVATE de265)

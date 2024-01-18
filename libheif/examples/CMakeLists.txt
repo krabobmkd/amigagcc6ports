@@ -1,6 +1,13 @@
 # Needed to find libheif/heif_version.h while compiling the library
 include_directories(${libheif_BINARY_DIR} ${libheif_SOURCE_DIR})
 
+#Vf-Amiga
+if(AMIGA)
+	# note: -OX optimisation options are now per libs.
+	add_definitions( -O2 )
+endif()
+
+
 if (MSVC)
     set(getopt_sources
             ../extra/getopt.c
@@ -101,7 +108,7 @@ install(FILES heif-convert.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
 
 if(AMIGA)
 	target_sources(heif-convert PRIVATE amigatools.cc )
-
+	target_sources(heif-info PRIVATE amigatools.cc )
 	add_definitions(-DHAVE_LIBPNG=1)
 	target_link_libraries(heif-convert PRIVATE png_static z jpeg)
 	target_sources(heif-convert PRIVATE encoder_png.cc encoder_png.h)

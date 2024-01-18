@@ -1,5 +1,12 @@
 include(CMakePackageConfigHelpers)
 
+
+#Vf-Amiga
+if(AMIGA)
+	# note: -OX optimisation options are now per libs.
+	add_definitions( -O2 )
+endif()
+
 configure_file(heif_version.h.in ${CMAKE_CURRENT_BINARY_DIR}/heif_version.h)
 
 set(libheif_headers
