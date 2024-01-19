@@ -1,0 +1,1223 @@
+#GCCVERSION = 2.7.2.1
+GCCVERSION = egcs-2.91.60
+
+CC = gcc
+LD = gcc
+
+ifndef APUS
+PPCCC = ppc-amigaos-gcc
+PPCLD = ppc-amigaos-ld
+PPCAR = ppc-amigaos-ar
+else
+PPCCC = gcc
+PPCLD = ld
+PPCAR = ar
+endif
+
+ifndef OUT
+  OUT = mameppc
+endif
+
+ifndef OBJPATH
+  OBJPATH = objppc/mame
+endif
+
+ifndef TARGETCPU
+  TARGETCPU = 000
+endif
+
+ifndef GUI
+  GUI = mui
+endif
+
+# Uncomment next line to do a smaller compile including only one driver.
+# TINY_COMPILE = 1
+TINY_NAME = zerowing_driver
+TINY_OBJS = $(OBJPATH)/vidhrdw/toaplan1.o $(OBJPATH)/drivers/zerowing.o
+
+# Uncomment one of the two next lines to not compile the NeoGeo games or to
+# compile only the NeoGeo games.
+# NEOFREE = 1
+# NEOMAME = 1
+
+ifdef NEOMAME
+CPUS+=Z80
+CPUS+=M68000
+SOUNDS+=YM2610
+else
+# uncomment the following lines to include a CPU core
+CPUS+=Z80@
+#CPUS+=Z80_VM@
+CPUS+=8080@
+CPUS+=8085A@
+CPUS+=M6502@
+CPUS+=M65C02@
+CPUS+=M6510@
+CPUS+=H6280@
+CPUS+=I86@
+CPUS+=I8035@
+CPUS+=I8039@
+CPUS+=I8048@
+CPUS+=N7751@
+CPUS+=M6800@
+CPUS+=M6801@
+CPUS+=M6802@
+CPUS+=M6803@
+CPUS+=M6808@
+CPUS+=HD63701@
+CPUS+=M6805@
+CPUS+=M68705@
+CPUS+=HD63705@
+CPUS+=M6309@
+CPUS+=M6809@
+CPUS+=M68000@
+CPUS+=M68010@
+CPUS+=M68020@
+CPUS+=T11@
+CPUS+=S2650@
+CPUS+=TMS34010@
+CPUS+=TMS9900@
+CPUS+=Z8000@
+CPUS+=TMS320C10@
+CPUS+=CCPU@
+# CPUS+=PDP1@
+
+# uncomment the following lines to include a sound core
+SOUNDS+=CUSTOM@
+SOUNDS+=SAMPLES@
+SOUNDS+=DAC@
+SOUNDS+=AY8910@
+SOUNDS+=YM2203@
+SOUNDS+=YM2151@
+SOUNDS+=YM2151_ALT@
+SOUNDS+=YM2608@
+SOUNDS+=YM2610@
+SOUNDS+=YM2610B@
+SOUNDS+=YM2612@
+SOUNDS+=YM3438@
+SOUNDS+=YM2413@
+SOUNDS+=YM3812@
+SOUNDS+=YM3526@
+SOUNDS+=SN76496@
+SOUNDS+=POKEY@
+#SOUNDS+=TIA@
+SOUNDS+=NES@
+SOUNDS+=ASTROCADE@
+SOUNDS+=NAMCO@
+SOUNDS+=TMS5220@
+SOUNDS+=VLM5030@
+SOUNDS+=ADPCM@
+SOUNDS+=OKIM6295@
+SOUNDS+=MSM5205@
+SOUNDS+=UPD7759@
+SOUNDS+=HC55516@
+SOUNDS+=K007232@
+endif
+
+# List of CPU core (and, for a debug build, disassembler) object files
+CPUDEFS =
+CPUOBJS =
+DBGOBJS =
+ASMDEFS =
+
+CPU=$(strip $(findstring Z80@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_Z80=1
+CPUOBJS += $(OBJPATH)/cpu/z80/z80.o
+DBGOBJS += $(OBJPATH)/cpu/z80/z80dasm.o
+endif
+
+CPU=$(strip $(findstring Z80_VM@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_Z80_VM=1
+CPUOBJS += $(OBJPATH)/cpu/z80/z80_vm.o
+DBGOBJS += $(OBJPATH)/cpu/z80/z80dasm.o
+endif
+
+CPU=$(strip $(findstring 8080@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_8080=1
+CPUOBJS += $(OBJPATH)/cpu/i8085/i8085.o
+DBGOBJS += $(OBJPATH)/cpu/i8085/8085dasm.o
+endif
+
+CPU=$(strip $(findstring 8085A@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_8085A=1
+CPUOBJS += $(OBJPATH)/cpu/i8085/i8085.o
+DBGOBJS += $(OBJPATH)/cpu/i8085/8085dasm.o
+endif
+
+CPU=$(strip $(findstring M6502@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_M6502=1
+CPUOBJS += $(OBJPATH)/cpu/m6502/m6502.o
+DBGOBJS += $(OBJPATH)/cpu/m6502/6502dasm.o
+endif
+
+CPU=$(strip $(findstring M65C02@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_M65C02=1
+CPUOBJS += $(OBJPATH)/cpu/m6502/m6502.o
+DBGOBJS += $(OBJPATH)/cpu/m6502/6502dasm.o
+endif
+
+CPU=$(strip $(findstring M6510@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_M6510=1
+CPUOBJS += $(OBJPATH)/cpu/m6502/m6502.o
+DBGOBJS += $(OBJPATH)/cpu/m6502/6502dasm.o
+endif
+
+CPU=$(strip $(findstring H6280@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_H6280=1
+CPUOBJS += $(OBJPATH)/cpu/h6280/h6280.o
+DBGOBJS += $(OBJPATH)/cpu/h6280/6280dasm.o
+endif
+
+CPU=$(strip $(findstring I86@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_I86=1
+CPUOBJS += $(OBJPATH)/cpu/i86/i86.o
+DBGOBJS += $(OBJPATH)/cpu/i86/i86dasm.o
+endif
+
+CPU=$(strip $(findstring I8035@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_I8035=1
+CPUOBJS += $(OBJPATH)/cpu/i8039/i8039.o
+DBGOBJS += $(OBJPATH)/cpu/i8039/8039dasm.o
+endif
+
+CPU=$(strip $(findstring I8039@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_I8039=1
+CPUOBJS += $(OBJPATH)/cpu/i8039/i8039.o
+DBGOBJS += $(OBJPATH)/cpu/i8039/8039dasm.o
+endif
+
+CPU=$(strip $(findstring I8048@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_I8048=1
+CPUOBJS += $(OBJPATH)/cpu/i8039/i8039.o
+DBGOBJS += $(OBJPATH)/cpu/i8039/8039dasm.o
+endif
+
+CPU=$(strip $(findstring N7751@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_N7751=1
+CPUOBJS += $(OBJPATH)/cpu/i8039/i8039.o
+DBGOBJS += $(OBJPATH)/cpu/i8039/8039dasm.o
+endif
+
+CPU=$(strip $(findstring M6800@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_M6800=1
+CPUOBJS += $(OBJPATH)/cpu/m6800/m6800.o
+DBGOBJS += $(OBJPATH)/cpu/m6800/6800dasm.o
+endif
+
+CPU=$(strip $(findstring M6801@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_M6801=1
+CPUOBJS += $(OBJPATH)/cpu/m6800/m6800.o
+DBGOBJS += $(OBJPATH)/cpu/m6800/6800dasm.o
+endif
+
+CPU=$(strip $(findstring M6802@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_M6802=1
+CPUOBJS += $(OBJPATH)/cpu/m6800/m6800.o
+DBGOBJS += $(OBJPATH)/cpu/m6800/6800dasm.o
+endif
+
+CPU=$(strip $(findstring M6803@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_M6803=1
+CPUOBJS += $(OBJPATH)/cpu/m6800/m6800.o
+DBGOBJS += $(OBJPATH)/cpu/m6800/6800dasm.o
+endif
+
+CPU=$(strip $(findstring M6808@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_M6808=1
+CPUOBJS += $(OBJPATH)/cpu/m6800/m6800.o
+DBGOBJS += $(OBJPATH)/cpu/m6800/6800dasm.o
+endif
+
+CPU=$(strip $(findstring HD63701@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_HD63701=1
+CPUOBJS += $(OBJPATH)/cpu/m6800/m6800.o
+DBGOBJS += $(OBJPATH)/cpu/m6800/6800dasm.o
+endif
+
+CPU=$(strip $(findstring M6805@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_M6805=1
+CPUOBJS += $(OBJPATH)/cpu/m6805/m6805.o
+DBGOBJS += $(OBJPATH)/cpu/m6805/6805dasm.o
+endif
+
+CPU=$(strip $(findstring M68705@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_M68705=1
+CPUOBJS += $(OBJPATH)/cpu/m6805/m6805.o
+DBGOBJS += $(OBJPATH)/cpu/m6805/6805dasm.o
+endif
+
+CPU=$(strip $(findstring HD63705@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_HD63705=1
+CPUOBJS += $(OBJPATH)/cpu/m6805/m6805.o
+DBGOBJS += $(OBJPATH)/cpu/m6805/6805dasm.o
+endif
+
+CPU=$(strip $(findstring M6309@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_M6309=1
+CPUOBJS += $(OBJPATH)/cpu/m6809/m6809.o
+DBGOBJS += $(OBJPATH)/cpu/m6809/6809dasm.o
+endif
+
+CPU=$(strip $(findstring M6809@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_M6809=1
+CPUOBJS += $(OBJPATH)/cpu/m6809/m6809.o
+DBGOBJS += $(OBJPATH)/cpu/m6809/6809dasm.o
+endif
+
+CPU=$(strip $(findstring M68000@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_M68000=1
+CPUOBJS += $(OBJPATH)/cpu/m68000/m68kops.og $(OBJPATH)/cpu/m68000/m68kopac.og \
+           $(OBJPATH)/cpu/m68000/m68kopdm.og $(OBJPATH)/cpu/m68000/m68kopnz.og \
+           $(OBJPATH)/cpu/m68000/m68kcpu.o $(OBJPATH)/cpu/m68000/m68kmame.o
+DBGOBJS += $(OBJPATH)/cpu/m68000/d68k.o
+endif
+
+CPU=$(strip $(findstring M68010@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_M68010=1
+CPUOBJS += $(OBJPATH)/cpu/m68000/m68kops.og $(OBJPATH)/cpu/m68000/m68kopac.og \
+           $(OBJPATH)/cpu/m68000/m68kopdm.og $(OBJPATH)/cpu/m68000/m68kopnz.og \
+           $(OBJPATH)/cpu/m68000/m68kcpu.o $(OBJPATH)/cpu/m68000/m68kmame.o
+DBGOBJS += $(OBJPATH)/cpu/m68000/d68k.o
+endif
+
+CPU=$(strip $(findstring M68020@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_M68020=1
+CPUOBJS += $(OBJPATH)/cpu/m68000/m68kops.og $(OBJPATH)/cpu/m68000/m68kopac.og \
+           $(OBJPATH)/cpu/m68000/m68kopdm.og $(OBJPATH)/cpu/m68000/m68kopnz.og \
+           $(OBJPATH)/cpu/m68000/m68kcpu.o $(OBJPATH)/cpu/m68000/m68kmame.o
+DBGOBJS += $(OBJPATH)/cpu/m68000/d68k.o
+endif
+
+CPU=$(strip $(findstring T11@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_T11=1
+CPUOBJS += $(OBJPATH)/cpu/t11/t11.o
+DBGOBJS += $(OBJPATH)/cpu/t11/t11dasm.o
+endif
+
+CPU=$(strip $(findstring S2650@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_S2650=1
+CPUOBJS += $(OBJPATH)/cpu/s2650/s2650.o
+DBGOBJS += $(OBJPATH)/cpu/s2650/2650dasm.o
+endif
+
+CPU=$(strip $(findstring TMS34010@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_TMS34010=1
+CPUOBJS += $(OBJPATH)/cpu/tms34010/tms34010.o $(OBJPATH)/cpu/tms34010/34010fld.o
+DBGOBJS += $(OBJPATH)/cpu/tms34010/34010dsm.o
+endif
+
+CPU=$(strip $(findstring TMS9900@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_TMS9900=1
+CPUOBJS += $(OBJPATH)/cpu/tms9900/tms9900.o
+DBGOBJS += $(OBJPATH)/cpu/tms9900/9900dasm.o
+endif
+
+CPU=$(strip $(findstring Z8000@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_Z8000=1
+CPUOBJS += $(OBJPATH)/cpu/z8000/z8000.o
+DBGOBJS += $(OBJPATH)/cpu/z8000/8000dasm.o
+endif
+
+CPU=$(strip $(findstring TMS320C10@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_TMS320C10=1
+CPUOBJS += $(OBJPATH)/cpu/tms32010/tms32010.o
+DBGOBJS += $(OBJPATH)/cpu/tms32010/32010dsm.o
+endif
+
+CPU=$(strip $(findstring CCPU@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_CCPU=1
+CPUOBJS += $(OBJPATH)/cpu/ccpu/ccpu.o $(OBJPATH)/vidhrdw/cinemat.o
+DBGOBJS += $(OBJPATH)/cpu/ccpu/ccpudasm.o
+endif
+
+CPU=$(strip $(findstring PDP1@,$(CPUS)))
+ifneq ($(CPU),)
+CPUDEFS += -DHAS_PDP1=1
+CPUOBJS += $(OBJPATH)/cpu/pdp1/pdp1.o
+DBGOBJS += $(OBJPATH)/cpu/pdp1/pdp1dasm.o
+endif
+
+SOUND=$(strip $(findstring CUSTOM@,$(SOUNDS)))
+ifneq ($(SOUND),)
+SOUNDDEFS += -DHAS_CUSTOM=1
+endif
+
+SOUND=$(strip $(findstring SAMPLES@,$(SOUNDS)))
+ifneq ($(SOUND),)
+SOUNDDEFS += -DHAS_SAMPLES=1
+SOUNDOBJS += $(OBJPATH)/sound/samples.o
+endif
+
+SOUND=$(strip $(findstring DAC@,$(SOUNDS)))
+ifneq ($(SOUND),)
+SOUNDDEFS += -DHAS_DAC=1
+SOUNDOBJS += $(OBJPATH)/sound/dac.o
+endif
+
+SOUND=$(strip $(findstring AY8910@,$(SOUNDS)))
+ifneq ($(SOUND),)
+SOUNDDEFS += -DHAS_AY8910=1
+SOUNDOBJS += $(OBJPATH)/sound/ay8910.o
+endif
+
+SOUND=$(strip $(findstring YM2203@,$(SOUNDS)))
+ifneq ($(SOUND),)
+SOUNDDEFS += -DHAS_YM2203=1
+SOUNDOBJS += $(OBJPATH)/sound/2203intf.o $(OBJPATH)/sound/ay8910.o $(OBJPATH)/sound/fm.o
+endif
+
+SOUND=$(strip $(findstring YM2151@,$(SOUNDS)))
+ifneq ($(SOUND),)
+SOUNDDEFS += -DHAS_YM2151=1
+SOUNDOBJS += $(OBJPATH)/sound/2151intf.o $(OBJPATH)/sound/ym2151.o $(OBJPATH)/sound/fm.o
+endif
+
+SOUND=$(strip $(findstring YM2151_ALT@,$(SOUNDS)))
+ifneq ($(SOUND),)
+SOUNDDEFS += -DHAS_YM2151_ALT=1
+SOUNDOBJS += $(OBJPATH)/sound/2151intf.o $(OBJPATH)/sound/ym2151.o $(OBJPATH)/sound/fm.o
+endif
+
+SOUND=$(strip $(findstring YM2608@,$(SOUNDS)))
+ifneq ($(SOUND),)
+SOUNDDEFS += -DHAS_YM2608=1
+SOUNDOBJS += $(OBJPATH)/sound/2608intf.o $(OBJPATH)/sound/ay8910.o $(OBJPATH)/sound/fm.o
+endif
+
+SOUND=$(strip $(findstring YM2610@,$(SOUNDS)))
+ifneq ($(SOUND),)
+SOUNDDEFS += -DHAS_YM2610=1
+SOUNDOBJS += $(OBJPATH)/sound/2610intf.o $(OBJPATH)/sound/ay8910.o $(OBJPATH)/sound/fm.o
+endif
+
+SOUND=$(strip $(findstring YM2610B@,$(SOUNDS)))
+ifneq ($(SOUND),)
+SOUNDDEFS += -DHAS_YM2610B=1
+SOUNDOBJS += $(OBJPATH)/sound/2610intf.o $(OBJPATH)/sound/ay8910.o $(OBJPATH)/sound/fm.o
+endif
+
+SOUND=$(strip $(findstring YM2612@,$(SOUNDS)))
+ifneq ($(SOUND),)
+SOUNDDEFS += -DHAS_YM2612=1
+SOUNDOBJS += $(OBJPATH)/sound/2612intf.o $(OBJPATH)/sound/ay8910.o $(OBJPATH)/sound/fm.o
+endif
+
+SOUND=$(strip $(findstring YM3438@,$(SOUNDS)))
+ifneq ($(SOUND),)
+SOUNDDEFS += -DHAS_YM3438=1
+SOUNDOBJS += $(OBJPATH)/sound/2612intf.o $(OBJPATH)/sound/ay8910.o $(OBJPATH)/sound/fm.o
+endif
+
+SOUND=$(strip $(findstring YM2413@,$(SOUNDS)))
+ifneq ($(SOUND),)
+SOUNDDEFS += -DHAS_YM2413=1
+SOUNDOBJS += $(OBJPATH)/sound/3812intf.o $(OBJPATH)/sound/ym2413.o $(OBJPATH)/sound/ym3812.o
+endif
+
+SOUND=$(strip $(findstring YM3812@,$(SOUNDS)))
+ifneq ($(SOUND),)
+SOUNDDEFS += -DHAS_YM3812=1
+SOUNDOBJS += $(OBJPATH)/sound/3812intf.o $(OBJPATH)/sound/ym3812.o
+endif
+
+SOUND=$(strip $(findstring YM3526@,$(SOUNDS)))
+ifneq ($(SOUND),)
+SOUNDDEFS += -DHAS_YM3526=1
+SOUNDOBJS += $(OBJPATH)/sound/3812intf.o $(OBJPATH)/sound/ym3812.o
+endif
+
+SOUND=$(strip $(findstring SN76496@,$(SOUNDS)))
+ifneq ($(SOUND),)
+SOUNDDEFS += -DHAS_SN76496=1
+SOUNDOBJS += $(OBJPATH)/sound/sn76496.o
+endif
+
+SOUND=$(strip $(findstring POKEY@,$(SOUNDS)))
+ifneq ($(SOUND),)
+SOUNDDEFS += -DHAS_POKEY=1
+SOUNDOBJS += $(OBJPATH)/sound/pokey.o
+endif
+
+SOUND=$(strip $(findstring TIA@,$(SOUNDS)))
+ifneq ($(SOUND),)
+SOUNDDEFS += -DHAS_TIA=1
+SOUNDOBJS += $(OBJPATH)/sound/tiasound.o $(OBJPATH)/sound/tiaintf.o
+endif
+
+SOUND=$(strip $(findstring NES@,$(SOUNDS)))
+ifneq ($(SOUND),)
+SOUNDDEFS += -DHAS_NES=1
+SOUNDOBJS += $(OBJPATH)/sound/nes.o $(OBJPATH)/sound/nesintf.o
+endif
+
+SOUND=$(strip $(findstring ASTROCADE@,$(SOUNDS)))
+ifneq ($(SOUND),)
+SOUNDDEFS += -DHAS_ASTROCADE=1
+SOUNDOBJS += $(OBJPATH)/sound/astrocde.o
+endif
+
+SOUND=$(strip $(findstring NAMCO@,$(SOUNDS)))
+ifneq ($(SOUND),)
+SOUNDDEFS += -DHAS_NAMCO=1
+SOUNDOBJS += $(OBJPATH)/sound/namco.o
+endif
+
+SOUND=$(strip $(findstring TMS5220@,$(SOUNDS)))
+ifneq ($(SOUND),)
+SOUNDDEFS += -DHAS_TMS5220=1
+SOUNDOBJS += $(OBJPATH)/sound/tms5220.o $(OBJPATH)/sound/5220intf.o
+endif
+
+SOUND=$(strip $(findstring VLM5030@,$(SOUNDS)))
+ifneq ($(SOUND),)
+SOUNDDEFS += -DHAS_VLM5030=1
+SOUNDOBJS += $(OBJPATH)/sound/vlm5030.o
+endif
+
+SOUND=$(strip $(findstring ADPCM@,$(SOUNDS)))
+ifneq ($(SOUND),)
+SOUNDDEFS += -DHAS_ADPCM=1
+SOUNDOBJS += $(OBJPATH)/sound/adpcm.o
+endif
+
+SOUND=$(strip $(findstring OKIM6295@,$(SOUNDS)))
+ifneq ($(SOUND),)
+SOUNDDEFS += -DHAS_OKIM6295=1
+SOUNDOBJS += $(OBJPATH)/sound/adpcm.o
+endif
+
+SOUND=$(strip $(findstring MSM5205@,$(SOUNDS)))
+ifneq ($(SOUND),)
+SOUNDDEFS += -DHAS_MSM5205=1
+SOUNDOBJS += $(OBJPATH)/sound/adpcm.o
+endif
+
+SOUND=$(strip $(findstring UPD7759@,$(SOUNDS)))
+ifneq ($(SOUND),)
+SOUNDDEFS += -DHAS_UPD7759=1
+SOUNDOBJS += $(OBJPATH)/sound/upd7759.o
+endif
+
+SOUND=$(strip $(findstring HC55516@,$(SOUNDS)))
+ifneq ($(SOUND),)
+SOUNDDEFS += -DHAS_HC55516=1
+SOUNDOBJS += $(OBJPATH)/sound/cvsd.o
+endif
+
+SOUND=$(strip $(findstring K007232@,$(SOUNDS)))
+ifneq ($(SOUND),)
+SOUNDDEFS += -DHAS_K007232=1
+SOUNDOBJS += $(OBJPATH)/sound/k007232.o
+endif
+
+CDEFS = -UPPC -DAMIGA -DPI=3.1415 -DPOWERUP -DSIGNED_SAMPLES -DINLINE="static __inline__" \
+        $(CPUDEFS) $(SOUNDDEFS)
+ADEFS =
+
+ifndef APUS
+CFLAGS = -Iorg/mame/src/cpu/m68000 \
+         -Isrc/amiga -Iorg/mame/src -Iinclude -I/gg/include -I/include -I/mui/developer/c/include \
+         -m68$(TARGETCPU) -Wall
+
+PPCCFLAGS = -I$(OBJPATH)/cpu/m68000 -Iorg/mame/src/cpu/m68000 -Iorg/mame/src/vihrdw \
+            -I/usr/lib/gcc-lib/ppc-amigaos/$(GCCVERSION)/include -Isrc/amiga -Iorg/mame/src \
+            -Iinclude -I/gg/include -I/include -Wall -O2 -v -V$(GCCVERSION)
+else
+CFLAGS = -Iorg/mame/src/cpu/m68000 -Isrc/amiga -Iorg/mame/src -Wall
+
+PPCCFLAGS = -I$(OBJPATH)/cpu/m68000 -Iorg/mame/src/cpu/m68000 -Iorg/mame/src/vidhrdw \
+            -Isrc/amiga -Iorg/mame/src -Iinclude -I/include/amiga -Wall -O2 -v
+endif
+
+AFLAGS = ALINK INCONCE LINE -VO+ -VOW-
+
+LDFLAGS = -noixemul -Llib
+
+ifndef APUS
+PPCLDFLAGS = -r -Llib -L/usr/lib/gcc-lib/ppc-amigaos/$(GCCVERSION) \
+             --retain-symbols-file /include/powerup/gcclib/PPCKernel.ldfilter
+else
+PPCLDFLAGS = -r -Llib \
+             --retain-symbols-file /include/powerup/gcclib/PPCKernel.ldfilter
+endif
+
+ifeq ($(BETA),1)
+CDEFS   += -DBETA
+ADEFS   += -EBETA
+CFLAGS  += -O3 -g
+LDFLAGS += -g
+else
+CFLAGS	   += -O3 -s
+LDFLAGS    += -s
+PPCLDFLAGS += -s
+endif
+
+LIBS    = -lm -lamiga -lmood -lcgxhooks
+PPCLIBS = -lppcc -lmoto -lm
+
+VPATH = org/mame/src $(wildcard org/mame/src/cpu/*)
+
+OBJS = $(OBJPATH)/amiga/main.o $(OBJPATH)/amiga/audio.o \
+       $(OBJPATH)/amiga/inputs.o $(OBJPATH)/amiga/file.o $(OBJPATH)/amiga/video.o \
+       $(OBJPATH)/amiga/config.o \
+       $(OBJPATH)/amiga/gui_$(GUI).o $(OBJPATH)/amiga/c2p.o $(OBJPATH)/amiga/gfx.o
+
+PPCOBJS = $(OBJPATH)/mainppc.o $(OBJPATH)/amiga.o \
+          $(OBJPATH)/version.o $(OBJPATH)/driver.o $(OBJPATH)/mame.o $(OBJPATH)/common.o $(OBJPATH)/usrintrf.o \
+          $(OBJPATH)/cpuintrf.o $(OBJPATH)/memory.o $(OBJPATH)/timer.o $(OBJPATH)/palette.o \
+          $(OBJPATH)/inptport.o $(OBJPATH)/cheat.o $(OBJPATH)/unzip.o $(OBJPATH)/inflate.o \
+          $(OBJPATH)/audit.o $(OBJPATH)/info.o $(OBJPATH)/crc32.o $(OBJPATH)/png.o $(OBJPATH)/artwork.o \
+          $(OBJPATH)/tilemap.o $(OBJPATH)/sprite.o $(OBJPATH)/state.o $(OBJPATH)/datafile.o \
+          $(sort $(CPUOBJS)) \
+          $(OBJPATH)/sndintrf.o \
+		  $(OBJPATH)/sound/streams.o $(OBJPATH)/sound/exvolume.o \
+          $(sort $(SOUNDOBJS)) \
+		  $(OBJPATH)/sound/votrax.o \
+          $(OBJPATH)/machine/z80fmly.o $(OBJPATH)/machine/6821pia.o \
+          $(OBJPATH)/vidhrdw/generic.o $(OBJPATH)/vidhrdw/vector.o \
+          $(OBJPATH)/vidhrdw/avgdvg.o $(OBJPATH)/machine/mathbox.o \
+          $(OBJPATH)/machine/ticket.o \
+
+DRVLIBS = $(OBJPATH)/pacman.a $(OBJPATH)/galaxian.a $(OBJPATH)/scramble.a \
+          $(OBJPATH)/cclimber.a $(OBJPATH)/nichibut.a \
+          $(OBJPATH)/phoenix.a $(OBJPATH)/namco.a $(OBJPATH)/univers.a $(OBJPATH)/nintendo.a \
+          $(OBJPATH)/midw8080.a $(OBJPATH)/midwz80.a $(OBJPATH)/meadows.a $(OBJPATH)/astrocde.a \
+          $(OBJPATH)/mcr.a $(OBJPATH)/irem.a $(OBJPATH)/gottlieb.a $(OBJPATH)/oldtaito.a \
+          $(OBJPATH)/qixtaito.a $(OBJPATH)/taito.a $(OBJPATH)/taito2.a $(OBJPATH)/williams.a \
+          $(OBJPATH)/capcom.a $(OBJPATH)/capbowl.a $(OBJPATH)/gremlin.a $(OBJPATH)/vicdual.a \
+          $(OBJPATH)/segav.a $(OBJPATH)/segar.a $(OBJPATH)/zaxxon.a $(OBJPATH)/system1.a \
+          $(OBJPATH)/sega.a $(OBJPATH)/system16.a $(OBJPATH)/btime.a $(OBJPATH)/dataeast.a $(OBJPATH)/dec8.a \
+          $(OBJPATH)/dec0.a $(OBJPATH)/tehkan.a $(OBJPATH)/konami.a $(OBJPATH)/nemesis.a \
+          $(OBJPATH)/tmnt.a $(OBJPATH)/exidy.a $(OBJPATH)/atarivg.a $(OBJPATH)/centiped.a \
+          $(OBJPATH)/kangaroo.a $(OBJPATH)/missile.a $(OBJPATH)/ataribw.a $(OBJPATH)/atarimsc.a \
+          $(OBJPATH)/atarisy1.a $(OBJPATH)/atarisy2.a $(OBJPATH)/atari.a $(OBJPATH)/rockola.a \
+          $(OBJPATH)/snk.a $(OBJPATH)/technos.a \
+          $(OBJPATH)/berzerk.a $(OBJPATH)/gameplan.a $(OBJPATH)/stratvox.a $(OBJPATH)/zaccaria.a \
+          $(OBJPATH)/upl.a $(OBJPATH)/tms.a $(OBJPATH)/cinemar.a $(OBJPATH)/cinemav.a $(OBJPATH)/thepit.a \
+          $(OBJPATH)/valadon.a $(OBJPATH)/seibu.a $(OBJPATH)/jaleco.a $(OBJPATH)/visco.a \
+          $(OBJPATH)/toaplan.a $(OBJPATH)/leland.a $(OBJPATH)/tad.a $(OBJPATH)/other.a \
+
+NEOLIBS = $(OBJPATH)/neogeo.a \
+
+ifdef TINY_COMPILE
+  PPCOBJS   += $(TINY_OBJS)
+  PPCCFLAGS += -DTINY_COMPILE -DTINY_NAME=$(TINY_NAME)
+else
+  ifdef NEOFREE
+    PPCOBJS   += $(DRVLIBS)
+    PPCCFLAGS += -DNEOFREE
+  else
+    ifdef NEOMAME
+      PPCOBJS   += $(NEOLIBS)
+      PPCCFLAGS += -DNEOMAME
+    else
+      PPCOBJS   += $(DRVLIBS) $(NEOLIBS)
+      PPCCFLAGS +=
+    endif
+  endif
+endif
+
+all: $(OUT) $(OUT).elf
+
+$(OUT): $(OBJS)
+	$(LD) -o $@ $(LDFLAGS) $(OBJS) $(LIBS)
+
+# src/amiga/video.c must be compiled with -O0
+# because of a gcc bug.
+$(OBJPATH)/amiga/video.o: src/amiga/video.c
+	$(CC) $(CDEFS) $(CFLAGS) -o $@ -c $< -O0
+
+$(OBJPATH)/amiga/%.o: src/amiga/%.c
+	$(CC) $(CDEFS) $(CFLAGS) -o $@ -c $<
+
+$(OBJPATH)/amiga/%.o: src/amiga/%.s
+	genam $< to $@ $(AFLAGS)
+
+src/amiga/mame_msg.h: src/amiga/mame.cd
+	catcomp $< cfile $@
+
+$(OUT).elf: $(PPCOBJS)
+	$(PPCLD) -o $@ $(PPCLDFLAGS) $(PPCOBJS) $(PPCLIBS) 
+
+$(OBJPATH)/%.o: src/mame/%.c mame.h common.h driver.h
+	$(PPCCC) $(CDEFS) $(PPCCFLAGS) -o $@ -c $<
+
+$(OBJPATH)/%.o: org/mame/src/%.c mame.h common.h driver.h
+	$(PPCCC) $(CDEFS) $(PPCCFLAGS) -o $@ -c $<
+
+bingo:
+	$(PPCCC) $(CDEFS) $(PPCCFLAGS) -o /ram/bobo -E org/mame/src/cpu/m68000/m68kcpu.c
+
+$(OBJPATH)/%.o: src/amiga/%.c
+	$(PPCCC) $(CDEFS) $(PPCCFLAGS) -o $@ -c $<
+
+# Generate C source files for the 68000 emulator.
+$(OBJPATH)/cpu/m68000/%.c $(OBJPATH)/cpu/m68000/%.h: org/mame/src/cpu/m68000/m68kmake.c org/mame/src/cpu/m68000/m68k_in.c
+	$(CC) $(CDEFS) $(CFLAGS) -o $(OBJPATH)/cpu/m68000/m68kmake $<
+	$(OBJPATH)/cpu/m68000/m68kmake $(OBJPATH)/cpu/m68000 org/mame/src/cpu/m68000/m68k_in.c
+
+# Generated C files for the 68000 emulator.
+$(OBJPATH)/%.og: $(OBJPATH)/%.c
+	$(PPCCC) $(CDEFS) $(PPCCFLAGS) $(TINYFLAGS) -c $< -o $@
+
+$(OBJPATH)/%.a:
+	$(PPCAR) cr $@ $^
+
+$(OBJPATH)/pacman.a: \
+         $(OBJPATH)/machine/pacman.o $(OBJPATH)/drivers/pacman.o \
+         $(OBJPATH)/machine/pacplus.o \
+         $(OBJPATH)/machine/theglob.o \
+         $(OBJPATH)/machine/jrpacman.o $(OBJPATH)/drivers/jrpacman.o $(OBJPATH)/vidhrdw/jrpacman.o \
+         $(OBJPATH)/vidhrdw/pengo.o $(OBJPATH)/drivers/pengo.o \
+
+$(OBJPATH)/galaxian.a: \
+         $(OBJPATH)/vidhrdw/galaxian.o $(OBJPATH)/drivers/galaxian.o \
+         $(OBJPATH)/sndhrdw/mooncrst.o $(OBJPATH)/drivers/mooncrst.o \
+
+$(OBJPATH)/scramble.a: \
+         $(OBJPATH)/machine/scramble.o $(OBJPATH)/sndhrdw/scramble.o $(OBJPATH)/drivers/scramble.o \
+         $(OBJPATH)/vidhrdw/frogger.o $(OBJPATH)/sndhrdw/frogger.o $(OBJPATH)/drivers/frogger.o \
+         $(OBJPATH)/drivers/scobra.o \
+         $(OBJPATH)/vidhrdw/amidar.o $(OBJPATH)/drivers/amidar.o \
+         $(OBJPATH)/vidhrdw/fastfred.o $(OBJPATH)/drivers/fastfred.o \
+
+$(OBJPATH)/cclimber.a: \
+         $(OBJPATH)/vidhrdw/cclimber.o $(OBJPATH)/sndhrdw/cclimber.o $(OBJPATH)/drivers/cclimber.o \
+         $(OBJPATH)/drivers/yamato.o \
+
+$(OBJPATH)/nichibut.a: \
+         $(OBJPATH)/vidhrdw/seicross.o $(OBJPATH)/sndhrdw/wiping.o $(OBJPATH)/drivers/seicross.o \
+         $(OBJPATH)/vidhrdw/wiping.o $(OBJPATH)/drivers/wiping.o \
+         $(OBJPATH)/vidhrdw/cop01.o $(OBJPATH)/drivers/cop01.o \
+         $(OBJPATH)/vidhrdw/terracre.o $(OBJPATH)/drivers/terracre.o \
+         $(OBJPATH)/vidhrdw/galivan.o $(OBJPATH)/drivers/galivan.o \
+         $(OBJPATH)/vidhrdw/armedf.o $(OBJPATH)/drivers/armedf.o \
+
+$(OBJPATH)/phoenix.a: \
+         $(OBJPATH)/vidhrdw/phoenix.o $(OBJPATH)/sndhrdw/phoenix.o $(OBJPATH)/drivers/phoenix.o \
+         $(OBJPATH)/sndhrdw/pleiads.o \
+         $(OBJPATH)/vidhrdw/naughtyb.o $(OBJPATH)/drivers/naughtyb.o \
+
+$(OBJPATH)/namco.a: \
+         $(OBJPATH)/vidhrdw/rallyx.o $(OBJPATH)/drivers/rallyx.o \
+         $(OBJPATH)/drivers/locomotn.o \
+         $(OBJPATH)/machine/bosco.o $(OBJPATH)/sndhrdw/bosco.o $(OBJPATH)/vidhrdw/bosco.o $(OBJPATH)/drivers/bosco.o \
+         $(OBJPATH)/machine/galaga.o $(OBJPATH)/vidhrdw/galaga.o $(OBJPATH)/drivers/galaga.o \
+         $(OBJPATH)/machine/digdug.o $(OBJPATH)/vidhrdw/digdug.o $(OBJPATH)/drivers/digdug.o \
+         $(OBJPATH)/vidhrdw/xevious.o $(OBJPATH)/machine/xevious.o $(OBJPATH)/drivers/xevious.o \
+         $(OBJPATH)/machine/superpac.o $(OBJPATH)/vidhrdw/superpac.o $(OBJPATH)/drivers/superpac.o \
+         $(OBJPATH)/machine/mappy.o $(OBJPATH)/vidhrdw/mappy.o $(OBJPATH)/drivers/mappy.o \
+         $(OBJPATH)/machine/gaplus.o $(OBJPATH)/vidhrdw/gaplus.o $(OBJPATH)/drivers/gaplus.o \
+         $(OBJPATH)/vidhrdw/pacland.o $(OBJPATH)/drivers/pacland.o \
+         $(OBJPATH)/vidhrdw/rthunder.o $(OBJPATH)/drivers/rthunder.o \
+         $(OBJPATH)/machine/namcos1.o $(OBJPATH)/vidhrdw/namcos1.o $(OBJPATH)/drivers/namcos1.o \
+         $(OBJPATH)/machine/namcos2.o $(OBJPATH)/vidhrdw/namcos2.o $(OBJPATH)/drivers/namcos2.o \
+
+$(OBJPATH)/univers.a: \
+         $(OBJPATH)/vidhrdw/cosmic.o $(OBJPATH)/drivers/cosmic.o \
+         $(OBJPATH)/vidhrdw/cheekyms.o $(OBJPATH)/drivers/cheekyms.o \
+         $(OBJPATH)/vidhrdw/ladybug.o $(OBJPATH)/drivers/ladybug.o \
+         $(OBJPATH)/vidhrdw/mrdo.o $(OBJPATH)/drivers/mrdo.o \
+         $(OBJPATH)/machine/docastle.o $(OBJPATH)/vidhrdw/docastle.o $(OBJPATH)/drivers/docastle.o \
+
+$(OBJPATH)/nintendo.a: \
+         $(OBJPATH)/vidhrdw/dkong.o $(OBJPATH)/sndhrdw/dkong.o $(OBJPATH)/drivers/dkong.o \
+         $(OBJPATH)/vidhrdw/mario.o $(OBJPATH)/sndhrdw/mario.o $(OBJPATH)/drivers/mario.o \
+         $(OBJPATH)/vidhrdw/popeye.o $(OBJPATH)/drivers/popeye.o \
+         $(OBJPATH)/vidhrdw/punchout.o $(OBJPATH)/sndhrdw/punchout.o $(OBJPATH)/drivers/punchout.o \
+
+$(OBJPATH)/midw8080.a: \
+         $(OBJPATH)/machine/8080bw.o $(OBJPATH)/vidhrdw/8080bw.o $(OBJPATH)/sndhrdw/8080bw.o $(OBJPATH)/drivers/8080bw.o \
+         $(OBJPATH)/vidhrdw/m79amb.o $(OBJPATH)/drivers/m79amb.o \
+
+$(OBJPATH)/midwz80.a: \
+         $(OBJPATH)/vidhrdw/z80bw.o $(OBJPATH)/sndhrdw/z80bw.o $(OBJPATH)/drivers/z80bw.o \
+
+$(OBJPATH)/meadows.a: \
+         $(OBJPATH)/drivers/lazercmd.o $(OBJPATH)/vidhrdw/lazercmd.o \
+         $(OBJPATH)/drivers/meadows.o $(OBJPATH)/sndhrdw/meadows.o $(OBJPATH)/vidhrdw/meadows.o \
+         $(OBJPATH)/drivers/medlanes.o $(OBJPATH)/vidhrdw/medlanes.o \
+
+$(OBJPATH)/astrocde.a: \
+         $(OBJPATH)/machine/wow.o $(OBJPATH)/vidhrdw/wow.o $(OBJPATH)/sndhrdw/wow.o $(OBJPATH)/drivers/wow.o \
+         $(OBJPATH)/sndhrdw/gorf.o \
+
+$(OBJPATH)/mcr.a: \
+         $(OBJPATH)/machine/mcr.o \
+         $(OBJPATH)/vidhrdw/mcr1.o $(OBJPATH)/vidhrdw/mcr2.o $(OBJPATH)/vidhrdw/mcr3.o \
+         $(OBJPATH)/drivers/mcr1.o $(OBJPATH)/drivers/mcr2.o $(OBJPATH)/drivers/mcr3.o \
+         $(OBJPATH)/machine/mcr68.o $(OBJPATH)/vidhrdw/mcr68.o $(OBJPATH)/drivers/mcr68.o \
+
+$(OBJPATH)/irem.a: \
+         $(OBJPATH)/vidhrdw/skychut.o $(OBJPATH)/drivers/skychut.o \
+         $(OBJPATH)/sndhrdw/irem.o \
+         $(OBJPATH)/vidhrdw/mpatrol.o $(OBJPATH)/drivers/mpatrol.o \
+         $(OBJPATH)/vidhrdw/troangel.o $(OBJPATH)/drivers/troangel.o \
+         $(OBJPATH)/vidhrdw/yard.o $(OBJPATH)/drivers/yard.o \
+         $(OBJPATH)/vidhrdw/travrusa.o $(OBJPATH)/drivers/travrusa.o \
+         $(OBJPATH)/vidhrdw/m62.o $(OBJPATH)/drivers/m62.o \
+         $(OBJPATH)/vidhrdw/vigilant.o $(OBJPATH)/drivers/vigilant.o \
+
+$(OBJPATH)/gottlieb.a: \
+         $(OBJPATH)/vidhrdw/gottlieb.o $(OBJPATH)/sndhrdw/gottlieb.o $(OBJPATH)/drivers/gottlieb.o \
+
+$(OBJPATH)/oldtaito.a: \
+         $(OBJPATH)/vidhrdw/crbaloon.o $(OBJPATH)/drivers/crbaloon.o \
+
+$(OBJPATH)/qixtaito.a: \
+         $(OBJPATH)/machine/qix.o $(OBJPATH)/vidhrdw/qix.o $(OBJPATH)/drivers/qix.o \
+
+$(OBJPATH)/taito.a: \
+         $(OBJPATH)/machine/taito.o $(OBJPATH)/vidhrdw/taito.o $(OBJPATH)/drivers/taito.o \
+
+$(OBJPATH)/taito2.a: \
+         $(OBJPATH)/vidhrdw/bking2.o $(OBJPATH)/drivers/bking2.o \
+         $(OBJPATH)/vidhrdw/gsword.o $(OBJPATH)/drivers/gsword.o \
+         $(OBJPATH)/vidhrdw/gladiatr.o $(OBJPATH)/drivers/gladiatr.o \
+         $(OBJPATH)/machine/bublbobl.o $(OBJPATH)/vidhrdw/bublbobl.o $(OBJPATH)/drivers/bublbobl.o \
+         $(OBJPATH)/drivers/mexico86.o \
+         $(OBJPATH)/vidhrdw/rastan.o $(OBJPATH)/sndhrdw/rastan.o $(OBJPATH)/drivers/rastan.o \
+         $(OBJPATH)/machine/rainbow.o $(OBJPATH)/drivers/rainbow.o \
+         $(OBJPATH)/machine/arkanoid.o $(OBJPATH)/vidhrdw/arkanoid.o $(OBJPATH)/drivers/arkanoid.o \
+         $(OBJPATH)/vidhrdw/superqix.o $(OBJPATH)/drivers/superqix.o \
+         $(OBJPATH)/machine/twincobr.o $(OBJPATH)/vidhrdw/twincobr.o $(OBJPATH)/drivers/twincobr.o \
+         $(OBJPATH)/machine/tnzs.o $(OBJPATH)/vidhrdw/tnzs.o $(OBJPATH)/drivers/tnzs.o \
+         $(OBJPATH)/machine/slapfght.o $(OBJPATH)/vidhrdw/slapfght.o $(OBJPATH)/drivers/slapfght.o \
+         $(OBJPATH)/vidhrdw/superman.o $(OBJPATH)/drivers/superman.o $(OBJPATH)/machine/cchip.o \
+         $(OBJPATH)/drivers/lkage.o \
+         $(OBJPATH)/vidhrdw/taitof2.o $(OBJPATH)/drivers/taitof2.o \
+         $(OBJPATH)/vidhrdw/ssi.o $(OBJPATH)/drivers/ssi.o \
+
+$(OBJPATH)/williams.a: \
+         $(OBJPATH)/machine/williams.o $(OBJPATH)/vidhrdw/williams.o $(OBJPATH)/drivers/williams.o \
+
+$(OBJPATH)/capcom.a: \
+         $(OBJPATH)/vidhrdw/vulgus.o $(OBJPATH)/drivers/vulgus.o \
+         $(OBJPATH)/vidhrdw/sonson.o $(OBJPATH)/drivers/sonson.o \
+         $(OBJPATH)/vidhrdw/higemaru.o $(OBJPATH)/drivers/higemaru.o \
+         $(OBJPATH)/vidhrdw/1942.o $(OBJPATH)/drivers/1942.o \
+         $(OBJPATH)/vidhrdw/exedexes.o $(OBJPATH)/drivers/exedexes.o \
+         $(OBJPATH)/vidhrdw/commando.o $(OBJPATH)/drivers/commando.o \
+         $(OBJPATH)/vidhrdw/gng.o $(OBJPATH)/drivers/gng.o \
+         $(OBJPATH)/vidhrdw/gunsmoke.o $(OBJPATH)/drivers/gunsmoke.o \
+         $(OBJPATH)/vidhrdw/srumbler.o $(OBJPATH)/drivers/srumbler.o \
+         $(OBJPATH)/machine/lwings.o $(OBJPATH)/vidhrdw/lwings.o $(OBJPATH)/drivers/lwings.o \
+         $(OBJPATH)/vidhrdw/sidearms.o $(OBJPATH)/drivers/sidearms.o \
+         $(OBJPATH)/vidhrdw/bionicc.o $(OBJPATH)/drivers/bionicc.o \
+         $(OBJPATH)/vidhrdw/1943.o $(OBJPATH)/drivers/1943.o \
+         $(OBJPATH)/vidhrdw/blktiger.o $(OBJPATH)/drivers/blktiger.o \
+         $(OBJPATH)/vidhrdw/tigeroad.o $(OBJPATH)/drivers/tigeroad.o \
+         $(OBJPATH)/vidhrdw/lastduel.o $(OBJPATH)/drivers/lastduel.o \
+         $(OBJPATH)/vidhrdw/sf1.o $(OBJPATH)/drivers/sf1.o \
+         $(OBJPATH)/machine/kabuki.o \
+         $(OBJPATH)/vidhrdw/pang.o $(OBJPATH)/drivers/pang.o \
+         $(OBJPATH)/vidhrdw/cps1.o $(OBJPATH)/drivers/cps1.o \
+
+$(OBJPATH)/capbowl.a: \
+         $(OBJPATH)/machine/capbowl.o $(OBJPATH)/vidhrdw/capbowl.o $(OBJPATH)/vidhrdw/tms34061.o $(OBJPATH)/drivers/capbowl.o \
+
+$(OBJPATH)/gremlin.a: \
+         $(OBJPATH)/vidhrdw/blockade.o $(OBJPATH)/drivers/blockade.o \
+
+$(OBJPATH)/vicdual.a: \
+         $(OBJPATH)/vidhrdw/vicdual.o $(OBJPATH)/sndhrdw/vicdual.o $(OBJPATH)/drivers/vicdual.o \
+
+$(OBJPATH)/segav.a: \
+         $(OBJPATH)/vidhrdw/sega.o $(OBJPATH)/sndhrdw/sega.o $(OBJPATH)/machine/sega.o $(OBJPATH)/drivers/sega.o \
+
+$(OBJPATH)/segar.a: \
+         $(OBJPATH)/vidhrdw/segar.o $(OBJPATH)/sndhrdw/segar.o $(OBJPATH)/machine/segar.o $(OBJPATH)/drivers/segar.o \
+         $(OBJPATH)/sndhrdw/monsterb.o \
+
+$(OBJPATH)/zaxxon.a: \
+         $(OBJPATH)/vidhrdw/zaxxon.o $(OBJPATH)/sndhrdw/zaxxon.o $(OBJPATH)/drivers/zaxxon.o \
+         $(OBJPATH)/sndhrdw/congo.o $(OBJPATH)/drivers/congo.o \
+
+$(OBJPATH)/system1.a: \
+         $(OBJPATH)/machine/segacrpt.o \
+         $(OBJPATH)/vidhrdw/system1.o $(OBJPATH)/drivers/system1.o \
+
+$(OBJPATH)/sega.a: \
+         $(OBJPATH)/machine/turbo.o $(OBJPATH)/vidhrdw/turbo.o $(OBJPATH)/drivers/turbo.o \
+         $(OBJPATH)/drivers/kopunch.o \
+         $(OBJPATH)/vidhrdw/suprloco.o $(OBJPATH)/drivers/suprloco.o \
+         $(OBJPATH)/vidhrdw/champbas.o $(OBJPATH)/drivers/champbas.o \
+         $(OBJPATH)/vidhrdw/bankp.o $(OBJPATH)/drivers/bankp.o \
+
+$(OBJPATH)/system16.a: \
+         $(OBJPATH)/vidhrdw/system16.o $(OBJPATH)/drivers/system16.o \
+
+$(OBJPATH)/btime.a: \
+         $(OBJPATH)/vidhrdw/btime.o $(OBJPATH)/drivers/btime.o \
+         $(OBJPATH)/vidhrdw/tagteam.o $(OBJPATH)/drivers/tagteam.o \
+
+$(OBJPATH)/dataeast.a: \
+         $(OBJPATH)/vidhrdw/astrof.o $(OBJPATH)/sndhrdw/astrof.o $(OBJPATH)/drivers/astrof.o \
+         $(OBJPATH)/vidhrdw/kchamp.o $(OBJPATH)/drivers/kchamp.o \
+         $(OBJPATH)/vidhrdw/firetrap.o $(OBJPATH)/drivers/firetrap.o \
+         $(OBJPATH)/vidhrdw/brkthru.o $(OBJPATH)/drivers/brkthru.o \
+         $(OBJPATH)/vidhrdw/shootout.o $(OBJPATH)/drivers/shootout.o \
+         $(OBJPATH)/vidhrdw/sidepckt.o $(OBJPATH)/drivers/sidepckt.o \
+         $(OBJPATH)/vidhrdw/exprraid.o $(OBJPATH)/drivers/exprraid.o \
+         $(OBJPATH)/vidhrdw/pcktgal.o $(OBJPATH)/drivers/pcktgal.o \
+         $(OBJPATH)/vidhrdw/actfancr.o $(OBJPATH)/drivers/actfancr.o \
+
+$(OBJPATH)/dec8.a: \
+         $(OBJPATH)/vidhrdw/dec8.o $(OBJPATH)/drivers/dec8.o \
+
+$(OBJPATH)/dec0.a: \
+         $(OBJPATH)/vidhrdw/karnov.o $(OBJPATH)/drivers/karnov.o \
+         $(OBJPATH)/machine/dec0.o $(OBJPATH)/vidhrdw/dec0.o $(OBJPATH)/drivers/dec0.o \
+         $(OBJPATH)/vidhrdw/darkseal.o $(OBJPATH)/drivers/darkseal.o \
+         $(OBJPATH)/vidhrdw/cninja.o $(OBJPATH)/drivers/cninja.o \
+         $(OBJPATH)/vidhrdw/supbtime.o $(OBJPATH)/drivers/supbtime.o \
+         $(OBJPATH)/vidhrdw/tumblep.o $(OBJPATH)/drivers/tumblep.o \
+
+$(OBJPATH)/tehkan.a: \
+         $(OBJPATH)/sndhrdw/senjyo.o $(OBJPATH)/vidhrdw/senjyo.o $(OBJPATH)/drivers/senjyo.o \
+         $(OBJPATH)/vidhrdw/bombjack.o $(OBJPATH)/drivers/bombjack.o \
+         $(OBJPATH)/vidhrdw/pbaction.o $(OBJPATH)/drivers/pbaction.o \
+         $(OBJPATH)/vidhrdw/pontoon.o $(OBJPATH)/drivers/pontoon.o \
+         $(OBJPATH)/vidhrdw/tehkanwc.o $(OBJPATH)/drivers/tehkanwc.o \
+         $(OBJPATH)/vidhrdw/solomon.o $(OBJPATH)/drivers/solomon.o \
+         $(OBJPATH)/vidhrdw/tecmo.o $(OBJPATH)/drivers/tecmo.o \
+         $(OBJPATH)/vidhrdw/gaiden.o $(OBJPATH)/drivers/gaiden.o \
+         $(OBJPATH)/vidhrdw/wc90.o $(OBJPATH)/drivers/wc90.o \
+         $(OBJPATH)/vidhrdw/wc90b.o $(OBJPATH)/drivers/wc90b.o \
+
+$(OBJPATH)/konami.a: \
+         $(OBJPATH)/sndhrdw/timeplt.o \
+         $(OBJPATH)/vidhrdw/tutankhm.o $(OBJPATH)/drivers/tutankhm.o \
+         $(OBJPATH)/drivers/junofrst.o \
+         $(OBJPATH)/vidhrdw/pooyan.o $(OBJPATH)/drivers/pooyan.o \
+         $(OBJPATH)/vidhrdw/timeplt.o $(OBJPATH)/drivers/timeplt.o \
+         $(OBJPATH)/vidhrdw/megazone.o $(OBJPATH)/drivers/megazone.o \
+         $(OBJPATH)/vidhrdw/rocnrope.o $(OBJPATH)/drivers/rocnrope.o \
+         $(OBJPATH)/sndhrdw/gyruss.o $(OBJPATH)/vidhrdw/gyruss.o $(OBJPATH)/drivers/gyruss.o \
+         $(OBJPATH)/machine/konami.o $(OBJPATH)/vidhrdw/trackfld.o $(OBJPATH)/sndhrdw/trackfld.o $(OBJPATH)/drivers/trackfld.o \
+         $(OBJPATH)/vidhrdw/circusc.o $(OBJPATH)/drivers/circusc.o \
+         $(OBJPATH)/machine/tp84.o $(OBJPATH)/vidhrdw/tp84.o $(OBJPATH)/drivers/tp84.o \
+         $(OBJPATH)/vidhrdw/hyperspt.o $(OBJPATH)/drivers/hyperspt.o \
+         $(OBJPATH)/vidhrdw/sbasketb.o $(OBJPATH)/drivers/sbasketb.o \
+         $(OBJPATH)/vidhrdw/mikie.o $(OBJPATH)/drivers/mikie.o \
+         $(OBJPATH)/vidhrdw/yiear.o $(OBJPATH)/drivers/yiear.o \
+         $(OBJPATH)/vidhrdw/shaolins.o $(OBJPATH)/drivers/shaolins.o \
+         $(OBJPATH)/vidhrdw/pingpong.o $(OBJPATH)/drivers/pingpong.o \
+         $(OBJPATH)/vidhrdw/gberet.o $(OBJPATH)/drivers/gberet.o \
+         $(OBJPATH)/vidhrdw/jailbrek.o $(OBJPATH)/drivers/jailbrek.o \
+         $(OBJPATH)/vidhrdw/ironhors.o $(OBJPATH)/drivers/ironhors.o \
+         $(OBJPATH)/machine/jackal.o $(OBJPATH)/vidhrdw/jackal.o $(OBJPATH)/drivers/jackal.o \
+         $(OBJPATH)/machine/ddrible.o $(OBJPATH)/vidhrdw/ddrible.o $(OBJPATH)/drivers/ddrible.o \
+         $(OBJPATH)/vidhrdw/contra.o $(OBJPATH)/drivers/contra.o \
+         $(OBJPATH)/vidhrdw/mainevt.o $(OBJPATH)/drivers/mainevt.o \
+         $(OBJPATH)/machine/combatsc.o $(OBJPATH)/vidhrdw/combatsc.o $(OBJPATH)/drivers/combatsc.o \
+
+$(OBJPATH)/nemesis.a: \
+         $(OBJPATH)/vidhrdw/nemesis.o $(OBJPATH)/drivers/nemesis.o \
+
+$(OBJPATH)/tmnt.a: \
+         $(OBJPATH)/vidhrdw/tmnt.o $(OBJPATH)/drivers/tmnt.o \
+
+$(OBJPATH)/exidy.a: \
+         $(OBJPATH)/machine/exidy.o $(OBJPATH)/vidhrdw/exidy.o $(OBJPATH)/sndhrdw/exidy.o $(OBJPATH)/drivers/exidy.o \
+         $(OBJPATH)/sndhrdw/targ.o \
+         $(OBJPATH)/vidhrdw/circus.o $(OBJPATH)/drivers/circus.o \
+         $(OBJPATH)/machine/starfire.o $(OBJPATH)/vidhrdw/starfire.o $(OBJPATH)/drivers/starfire.o \
+         $(OBJPATH)/sndhrdw/exidy440.o $(OBJPATH)/vidhrdw/exidy440.o $(OBJPATH)/drivers/exidy440.o \
+
+$(OBJPATH)/atarivg.a: \
+         $(OBJPATH)/machine/atari_vg.o \
+         $(OBJPATH)/machine/asteroid.o $(OBJPATH)/sndhrdw/asteroid.o \
+		 $(OBJPATH)/vidhrdw/llander.o $(OBJPATH)/drivers/asteroid.o \
+         $(OBJPATH)/drivers/bwidow.o \
+         $(OBJPATH)/sndhrdw/bzone.o  $(OBJPATH)/drivers/bzone.o \
+         $(OBJPATH)/sndhrdw/redbaron.o \
+         $(OBJPATH)/drivers/tempest.o \
+         $(OBJPATH)/machine/starwars.o $(OBJPATH)/machine/swmathbx.o $(OBJPATH)/drivers/starwars.o $(OBJPATH)/sndhrdw/starwars.o \
+         $(OBJPATH)/machine/mhavoc.o $(OBJPATH)/drivers/mhavoc.o \
+         $(OBJPATH)/machine/quantum.o $(OBJPATH)/drivers/quantum.o \
+
+$(OBJPATH)/centiped.a: \
+         $(OBJPATH)/machine/centiped.o $(OBJPATH)/vidhrdw/centiped.o $(OBJPATH)/drivers/centiped.o \
+         $(OBJPATH)/machine/milliped.o $(OBJPATH)/vidhrdw/milliped.o $(OBJPATH)/drivers/milliped.o \
+         $(OBJPATH)/vidhrdw/qwakprot.o $(OBJPATH)/drivers/qwakprot.o \
+         $(OBJPATH)/vidhrdw/warlord.o $(OBJPATH)/drivers/warlord.o \
+
+$(OBJPATH)/kangaroo.a: \
+         $(OBJPATH)/machine/kangaroo.o $(OBJPATH)/vidhrdw/kangaroo.o $(OBJPATH)/drivers/kangaroo.o \
+         $(OBJPATH)/machine/arabian.o $(OBJPATH)/vidhrdw/arabian.o $(OBJPATH)/drivers/arabian.o \
+
+$(OBJPATH)/missile.a: \
+         $(OBJPATH)/machine/missile.o $(OBJPATH)/vidhrdw/missile.o $(OBJPATH)/drivers/missile.o \
+
+$(OBJPATH)/ataribw.a: \
+         $(OBJPATH)/machine/atarifb.o $(OBJPATH)/vidhrdw/atarifb.o $(OBJPATH)/drivers/atarifb.o \
+         $(OBJPATH)/machine/sprint2.o $(OBJPATH)/vidhrdw/sprint2.o $(OBJPATH)/drivers/sprint2.o \
+         $(OBJPATH)/machine/sbrkout.o $(OBJPATH)/vidhrdw/sbrkout.o $(OBJPATH)/drivers/sbrkout.o \
+         $(OBJPATH)/machine/dominos.o $(OBJPATH)/vidhrdw/dominos.o $(OBJPATH)/drivers/dominos.o \
+         $(OBJPATH)/vidhrdw/nitedrvr.o $(OBJPATH)/machine/nitedrvr.o $(OBJPATH)/drivers/nitedrvr.o \
+         $(OBJPATH)/vidhrdw/bsktball.o $(OBJPATH)/machine/bsktball.o $(OBJPATH)/drivers/bsktball.o \
+         $(OBJPATH)/vidhrdw/copsnrob.o $(OBJPATH)/machine/copsnrob.o $(OBJPATH)/drivers/copsnrob.o \
+         $(OBJPATH)/machine/avalnche.o $(OBJPATH)/vidhrdw/avalnche.o $(OBJPATH)/drivers/avalnche.o \
+         $(OBJPATH)/machine/subs.o $(OBJPATH)/vidhrdw/subs.o $(OBJPATH)/drivers/subs.o \
+         $(OBJPATH)/machine/atarifb.o $(OBJPATH)/vidhrdw/atarifb.o $(OBJPATH)/drivers/atarifb.o \
+         $(OBJPATH)/vidhrdw/canyon.o $(OBJPATH)/drivers/canyon.o \
+         $(OBJPATH)/vidhrdw/skydiver.o $(OBJPATH)/drivers/skydiver.o \
+
+$(OBJPATH)/atarimsc.a: \
+         $(OBJPATH)/vidhrdw/polepos.o $(OBJPATH)/drivers/polepos.o $(OBJPATH)/machine/polepos.o \
+         $(OBJPATH)/machine/foodf.o $(OBJPATH)/vidhrdw/foodf.o $(OBJPATH)/drivers/foodf.o \
+         $(OBJPATH)/vidhrdw/liberatr.o $(OBJPATH)/machine/liberatr.o $(OBJPATH)/drivers/liberatr.o \
+         $(OBJPATH)/vidhrdw/ccastles.o $(OBJPATH)/drivers/ccastles.o \
+         $(OBJPATH)/machine/cloak.o $(OBJPATH)/vidhrdw/cloak.o $(OBJPATH)/drivers/cloak.o \
+         $(OBJPATH)/vidhrdw/cloud9.o $(OBJPATH)/drivers/cloud9.o \
+         $(OBJPATH)/machine/jedi.o $(OBJPATH)/vidhrdw/jedi.o $(OBJPATH)/sndhrdw/jedi.o $(OBJPATH)/drivers/jedi.o \
+
+$(OBJPATH)/atarisy1.a: \
+         $(OBJPATH)/machine/atarisy1.o $(OBJPATH)/vidhrdw/atarisy1.o $(OBJPATH)/drivers/atarisy1.o \
+
+$(OBJPATH)/atarisy2.a: \
+         $(OBJPATH)/machine/atarisy2.o $(OBJPATH)/vidhrdw/atarisy2.o $(OBJPATH)/drivers/atarisy2.o \
+
+$(OBJPATH)/atari.a: \
+         $(OBJPATH)/machine/atarigen.o $(OBJPATH)/sndhrdw/ataraud2.o \
+         $(OBJPATH)/machine/slapstic.o \
+         $(OBJPATH)/machine/gauntlet.o $(OBJPATH)/vidhrdw/gauntlet.o $(OBJPATH)/drivers/gauntlet.o \
+         $(OBJPATH)/vidhrdw/atetris.o $(OBJPATH)/drivers/atetris.o \
+         $(OBJPATH)/vidhrdw/toobin.o $(OBJPATH)/drivers/toobin.o \
+         $(OBJPATH)/vidhrdw/vindictr.o $(OBJPATH)/drivers/vindictr.o \
+         $(OBJPATH)/vidhrdw/klax.o $(OBJPATH)/drivers/klax.o \
+         $(OBJPATH)/vidhrdw/blstroid.o $(OBJPATH)/drivers/blstroid.o \
+         $(OBJPATH)/vidhrdw/eprom.o $(OBJPATH)/drivers/eprom.o \
+         $(OBJPATH)/vidhrdw/xybots.o $(OBJPATH)/drivers/xybots.o \
+
+$(OBJPATH)/rockola.a: \
+         $(OBJPATH)/vidhrdw/rockola.o $(OBJPATH)/sndhrdw/rockola.o $(OBJPATH)/drivers/rockola.o \
+         $(OBJPATH)/vidhrdw/warpwarp.o $(OBJPATH)/drivers/warpwarp.o \
+
+$(OBJPATH)/snk.a: \
+         $(OBJPATH)/vidhrdw/snk.o $(OBJPATH)/drivers/snk.o \
+         $(OBJPATH)/vidhrdw/pow.o $(OBJPATH)/drivers/pow.o \
+         $(OBJPATH)/vidhrdw/prehisle.o $(OBJPATH)/drivers/prehisle.o \
+
+$(OBJPATH)/technos.a: \
+         $(OBJPATH)/vidhrdw/mystston.o $(OBJPATH)/drivers/mystston.o \
+         $(OBJPATH)/vidhrdw/matmania.o $(OBJPATH)/drivers/matmania.o \
+         $(OBJPATH)/vidhrdw/renegade.o $(OBJPATH)/drivers/renegade.o \
+         $(OBJPATH)/vidhrdw/xain.o $(OBJPATH)/drivers/xain.o \
+         $(OBJPATH)/vidhrdw/battlane.o $(OBJPATH)/drivers/battlane.o \
+         $(OBJPATH)/vidhrdw/ddragon.o $(OBJPATH)/drivers/ddragon.o \
+         $(OBJPATH)/vidhrdw/blockout.o $(OBJPATH)/drivers/blockout.o \
+
+$(OBJPATH)/berzerk.a: \
+         $(OBJPATH)/machine/berzerk.o $(OBJPATH)/vidhrdw/berzerk.o $(OBJPATH)/sndhrdw/berzerk.o $(OBJPATH)/drivers/berzerk.o \
+
+$(OBJPATH)/gameplan.a: \
+         $(OBJPATH)/vidhrdw/gameplan.o $(OBJPATH)/drivers/gameplan.o \
+
+$(OBJPATH)/stratvox.a: \
+         $(OBJPATH)/vidhrdw/route16.o $(OBJPATH)/drivers/route16.o \
+
+$(OBJPATH)/zaccaria.a: \
+         $(OBJPATH)/vidhrdw/zaccaria.o $(OBJPATH)/drivers/zaccaria.o \
+
+$(OBJPATH)/upl.a: \
+         $(OBJPATH)/vidhrdw/nova2001.o $(OBJPATH)/drivers/nova2001.o \
+         $(OBJPATH)/vidhrdw/pkunwar.o $(OBJPATH)/drivers/pkunwar.o \
+         $(OBJPATH)/vidhrdw/ninjakd2.o $(OBJPATH)/drivers/ninjakd2.o \
+         $(OBJPATH)/vidhrdw/mnight.o $(OBJPATH)/drivers/mnight.o \
+
+$(OBJPATH)/tms.a: \
+         $(OBJPATH)/machine/exterm.o $(OBJPATH)/vidhrdw/exterm.o $(OBJPATH)/drivers/exterm.o \
+         $(OBJPATH)/machine/smashtv.o $(OBJPATH)/vidhrdw/smashtv.o $(OBJPATH)/sndhrdw/smashtv.o $(OBJPATH)/drivers/smashtv.o \
+
+$(OBJPATH)/cinemar.a: \
+         $(OBJPATH)/vidhrdw/jack.o $(OBJPATH)/drivers/jack.o \
+
+$(OBJPATH)/cinemav.a: \
+         $(OBJPATH)/drivers/cinemat.o \
+
+$(OBJPATH)/thepit.a: \
+         $(OBJPATH)/vidhrdw/thepit.o $(OBJPATH)/drivers/thepit.o \
+
+$(OBJPATH)/valadon.a: \
+         $(OBJPATH)/machine/bagman.o $(OBJPATH)/vidhrdw/bagman.o $(OBJPATH)/drivers/bagman.o \
+
+$(OBJPATH)/seibu.a: \
+         $(OBJPATH)/vidhrdw/wiz.o $(OBJPATH)/drivers/wiz.o \
+
+$(OBJPATH)/jaleco.a: \
+         $(OBJPATH)/vidhrdw/exerion.o $(OBJPATH)/drivers/exerion.o \
+         $(OBJPATH)/vidhrdw/aeroboto.o $(OBJPATH)/drivers/aeroboto.o \
+         $(OBJPATH)/vidhrdw/citycon.o $(OBJPATH)/drivers/citycon.o \
+         $(OBJPATH)/vidhrdw/psychic5.o $(OBJPATH)/drivers/psychic5.o \
+         $(OBJPATH)/vidhrdw/megasys1.o $(OBJPATH)/drivers/megasys1.o \
+
+$(OBJPATH)/visco.a: \
+         $(OBJPATH)/vidhrdw/aerofgt.o $(OBJPATH)/drivers/aerofgt.o \
+
+$(OBJPATH)/toaplan.a: \
+         $(OBJPATH)/vidhrdw/toaplan1.o $(OBJPATH)/drivers/zerowing.o \
+         $(OBJPATH)/vidhrdw/snowbros.o $(OBJPATH)/drivers/snowbros.o \
+
+$(OBJPATH)/leland.a: \
+         $(OBJPATH)/vidhrdw/leland.o $(OBJPATH)/drivers/leland.o \
+
+$(OBJPATH)/tad.a: \
+         $(OBJPATH)/vidhrdw/cabal.o $(OBJPATH)/drivers/cabal.o \
+         $(OBJPATH)/vidhrdw/toki.o $(OBJPATH)/drivers/toki.o \
+
+$(OBJPATH)/cinemat.a: \
+         $(OBJPATH)/vidhrdw/cinemat.o $(OBJPATH)/drivers/cinemat.o \
+
+$(OBJPATH)/neogeo.a: \
+         $(OBJPATH)/machine/neogeo.o $(OBJPATH)/machine/pd4990a.o $(OBJPATH)/vidhrdw/neogeo.o $(OBJPATH)/drivers/neogeo.o \
+
+$(OBJPATH)/other.a: \
+         $(OBJPATH)/vidhrdw/spacefb.o $(OBJPATH)/sndhrdw/spacefb.o $(OBJPATH)/drivers/spacefb.o \
+         $(OBJPATH)/vidhrdw/blueprnt.o $(OBJPATH)/drivers/blueprnt.o \
+         $(OBJPATH)/drivers/omegrace.o \
+         $(OBJPATH)/machine/espial.o $(OBJPATH)/vidhrdw/espial.o $(OBJPATH)/drivers/espial.o \
+         $(OBJPATH)/machine/vastar.o $(OBJPATH)/vidhrdw/vastar.o $(OBJPATH)/drivers/vastar.o \
+         $(OBJPATH)/vidhrdw/tankbatt.o $(OBJPATH)/drivers/tankbatt.o \
+         $(OBJPATH)/vidhrdw/dday.o $(OBJPATH)/sndhrdw/dday.o $(OBJPATH)/drivers/dday.o \
+         $(OBJPATH)/vidhrdw/gundealr.o $(OBJPATH)/drivers/gundealr.o \
+         $(OBJPATH)/machine/leprechn.o $(OBJPATH)/vidhrdw/leprechn.o $(OBJPATH)/drivers/leprechn.o \
+         $(OBJPATH)/vidhrdw/hexa.o $(OBJPATH)/drivers/hexa.o \
+         $(OBJPATH)/vidhrdw/redalert.o $(OBJPATH)/sndhrdw/redalert.o $(OBJPATH)/drivers/redalert.o \
+         $(OBJPATH)/machine/irobot.o $(OBJPATH)/vidhrdw/irobot.o $(OBJPATH)/drivers/irobot.o \
+         $(OBJPATH)/machine/spiders.o $(OBJPATH)/vidhrdw/crtc6845.o $(OBJPATH)/vidhrdw/spiders.o $(OBJPATH)/drivers/spiders.o \
+         $(OBJPATH)/machine/stactics.o $(OBJPATH)/vidhrdw/stactics.o $(OBJPATH)/drivers/stactics.o \
+         $(OBJPATH)/vidhrdw/goldstar.o $(OBJPATH)/drivers/goldstar.o \
+         $(OBJPATH)/vidhrdw/sharkatt.o $(OBJPATH)/drivers/sharkatt.o \
+         $(OBJPATH)/vidhrdw/kingobox.o $(OBJPATH)/drivers/kingobox.o \
+         $(OBJPATH)/vidhrdw/zerozone.o $(OBJPATH)/drivers/zerozone.o \
+         $(OBJPATH)/machine/exctsccr.o $(OBJPATH)/vidhrdw/exctsccr.o $(OBJPATH)/drivers/exctsccr.o \
+         $(OBJPATH)/vidhrdw/speedbal.o $(OBJPATH)/drivers/speedbal.o \
+         $(OBJPATH)/vidhrdw/sauro.o $(OBJPATH)/drivers/sauro.o \
+         $(OBJPATH)/vidhrdw/galpanic.o $(OBJPATH)/drivers/galpanic.o \
+         $(OBJPATH)/vidhrdw/airbustr.o $(OBJPATH)/drivers/airbustr.o \
+         $(OBJPATH)/vidhrdw/ambush.o $(OBJPATH)/drivers/ambush.o \
+         $(OBJPATH)/vidhrdw/starcrus.o $(OBJPATH)/drivers/starcrus.o \
+         $(OBJPATH)/vidhrdw/sichuan2.o $(OBJPATH)/sndhrdw/sichuan2.o $(OBJPATH)/drivers/sichuan2.o \
+         $(OBJPATH)/vidhrdw/goindol.o $(OBJPATH)/drivers/goindol.o \
+
+$(OBJPATH)/amiga.o:				src/amiga/main.h src/amiga/config.h src/amiga/file.h src/amiga/audio.h \
+								src/amiga/inputs.h
+$(OBJPATH)/mainppc.o:			src/amiga/main.h src/amiga/config.h src/amiga/file.h src/amiga/audio.h \
+								src/amiga/mame_ver.h
+$(OBJPATH)/amiga/main.o:		src/amiga/main.h src/amiga/audio.h src/amiga/video.h src/amiga/inputs.h \
+								src/amiga/config.h src/amiga/gui.h src/amiga/file.h src/amiga/mame_ver.h \
+								src/amiga/mame_msg.h
+$(OBJPATH)/amiga/gui_$(GUI).o:	src/amiga/main.h src/amiga/gui.h src/amiga/config.h src/amiga/mame_ver.h \
+								src/amiga/mame_msg.h
+$(OBJPATH)/amiga/config.o:		src/amiga/main.h src/amiga/config.h src/amiga/mame_ver.h
+$(OBJPATH)/amiga/file.o:		src/amiga/main.h src/amiga/file.h src/amiga/config.h
+$(OBJPATH)/amiga/audio.o:		src/amiga/audio.h
+$(OBJPATH)/amiga/video.o:		src/amiga/audio.h
+$(OBJPATH)/amiga/inputs.o:		src/amiga/inputs.h
+
+$(OBJPATH)/cpu/z80/z80.o:           z80.c z80.h z80daa.h
+$(OBJPATH)/cpu/i8085/i8085.o:       i8085.c i8085.h i8085cpu.h i8085daa.h
+$(OBJPATH)/cpu/m6502/m6502.o:       m6502.c m6502.h m6502ops.h tbl6502.c tbl65c02.c tbl6510.c
+$(OBJPATH)/cpu/m6502/h6280.o:       h6280.c h6280.h h6280ops.h tblh6280.c
+$(OBJPATH)/cpu/i86/i86.o:           i86.c i86.h i86intrf.h ea.h host.h instr.h modrm.h
+$(OBJPATH)/cpu/m6800/m6800.o:       m6800.c m6800.h 6800ops.c
+$(OBJPATH)/cpu/m6805/m6805.o:       m6805.c m6805.h 6805ops.c
+$(OBJPATH)/cpu/m6809/m6809.o:       m6809.c m6809.h 6809ops.c 6809tbl.c
+$(OBJPATH)/cpu/tms34010/tms34010.o: tms34010.c tms34010.h 34010ops.c 34010tbl.c
+$(OBJPATH)/cpu/tms9900/tms9900.o:   tms9900.h
+$(OBJPATH)/cpu/z8000/z8000.o:       z8000.c z8000.h z8000cpu.h z8000dab.h z8000ops.c z8000tbl.c
+$(OBJPATH)/cpu/tms32010/tms32010.o: tms32010.c tms32010.h
+$(OBJPATH)/cpu/ccpu/ccpu.o:         ccpu.h ccpudasm.c
+$(OBJPATH)/cpu/m68000/m68kcpu.o:    $(OBJPATH)/cpu/m68000/m68kops.c m68kmake.c m68k_in.c
+
+makedir:
+	mkdir -p $(OBJPATH)
+	mkdir -p $(OBJPATH)/cpu
+	mkdir -p $(OBJPATH)/cpu/z80
+	mkdir -p $(OBJPATH)/cpu/m6502
+	mkdir -p $(OBJPATH)/cpu/h6280
+	mkdir -p $(OBJPATH)/cpu/i86
+	mkdir -p $(OBJPATH)/cpu/i8039
+	mkdir -p $(OBJPATH)/cpu/i8085
+	mkdir -p $(OBJPATH)/cpu/m6809
+	mkdir -p $(OBJPATH)/cpu/m6800
+	mkdir -p $(OBJPATH)/cpu/m6805
+	mkdir -p $(OBJPATH)/cpu/m68000
+	mkdir -p $(OBJPATH)/cpu/s2650
+	mkdir -p $(OBJPATH)/cpu/t11
+	mkdir -p $(OBJPATH)/cpu/tms34010
+	mkdir -p $(OBJPATH)/cpu/tms9900
+	mkdir -p $(OBJPATH)/cpu/z8000
+	mkdir -p $(OBJPATH)/cpu/tms32010
+	mkdir -p $(OBJPATH)/cpu/ccpu
+	mkdir -p $(OBJPATH)/sound
+	mkdir -p $(OBJPATH)/drivers
+	mkdir -p $(OBJPATH)/machine
+	mkdir -p $(OBJPATH)/vidhrdw
+	mkdir -p $(OBJPATH)/sndhrdw
+	mkdir -p $(OBJPATH)/amiga
+
+clean:
+	-rm $(OBJPATH)/*.o
+	-rm $(OBJPATH)/*.a
+	-rm $(OBJPATH)/cpu/z80/*.o
+	-rm $(OBJPATH)/cpu/m6502/*.o
+	-rm $(OBJPATH)/cpu/h6280/*.o
+	-rm $(OBJPATH)/cpu/i86/*.o
+	-rm $(OBJPATH)/cpu/i8039/*.o
+	-rm $(OBJPATH)/cpu/i8085/*.o
+	-rm $(OBJPATH)/cpu/m6809/*.o
+	-rm $(OBJPATH)/cpu/m6800/*.o
+	-rm $(OBJPATH)/cpu/m6805/*.o
+	-rm $(OBJPATH)/cpu/m68000/*.o
+	-rm $(OBJPATH)/cpu/s2650/*.o
+	-rm $(OBJPATH)/cpu/t11/*.o
+	-rm $(OBJPATH)/cpu/tms34010/*.o
+	-rm $(OBJPATH)/cpu/tms9900/*.o
+	-rm $(OBJPATH)/cpu/z8000/*.o
+	-rm $(OBJPATH)/cpu/tms32010/*.o
+	-rm $(OBJPATH)/cpu/ccpu/*.o
+	-rm $(OBJPATH)/sound/*.o
+	-rm $(OBJPATH)/drivers/*.o
+	-rm $(OBJPATH)/machine/*.o
+	-rm $(OBJPATH)/vidhrdw/*.o
+	-rm $(OBJPATH)/sndhrdw/*.o
+	-rm $(OBJPATH)/amiga/*.o
+	-rm $(OUT)
+	-rm $(OUT).elf

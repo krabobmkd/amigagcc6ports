@@ -1,0 +1,70 @@
+MAMEREL = release/mame060.lha release/mameppc.lha
+
+MAMEARC = $(wildcard org/mame/*.txt) history.amiga doc/mame.guide
+
+MESSREL = messppc.lha
+
+MESSARC = org/mess/readme.1st org/mess/readme.txt
+
+ppc:
+	make -f makefile.mameppc TARGETCPU=040 OBJPATH=objppc/mame CUSTOMDRAWGFX=0 CUSTOMMEM=0 BETA=1
+
+debug:
+	make -f makefile.mame BETA=1 CUSTOMDRAWGFX=0 CUSTOMMEM=0
+
+messp:
+	make -f makefile.messppc BETA=1
+
+mamerel: $(MAMEREL)
+
+messrel: $(MESSREL)
+
+release/mame%.lha: mame% $(MAMEARC)
+	-rm release/Mame/mame/*
+	cp $< $(MAMEARC) release/Mame/mame
+	-if [ -f $<.elf ]; then cp $<.elf release/Mame/mame; fi
+	-rm $@
+	lha -r a $@ release/ MAME MAME.info
+
+release/mess%.lha: mess% mess%.elf
+	-rm release/MESS/*
+	cp $< $(MESSARC) release/MESS
+	-if [ -f $<.elf ]; then cp $<.elf release/MESS; fi
+	-rm $@
+	lha -r a $@ release/ MESS
+
+history.amiga:	src/amiga/mame_ver.h
+	rcs2hst $< $@
+
+doc/%.guide: doc/%.texi
+	makeinfo --amiga-39 $< -o $@
+
+all:
+	make -f makefile.mameppc TARGETCPU=040 OBJPATH=objppc/mame CUSTOMDRAWGFX=0 CUSTOMMEM=0
+	make -f makefile.mame OUT=mame060 TARGETCPU=060 OBJPATH=obj060/mame CUSTOMDRAWGFX=0 CUSTOMMEM=0
+
+clean:
+	make -f makefile.mameppc clean
+	make -f makefile.mame clean OBJPATH=obj060/mame
+
+makedir:
+	make -f makefile.mameppc makedir
+	make -f makefile.mame makedir OBJPATH=obj060/mame
+
+mamesrc:	
+	-if [ -f release/mamesrc.lha ]; then rm release/mamesrc.lha; fi
+	lha -r a release/mamesrc.lha makefile.amiga makefile.mame makefile.mameppc src/amiga/mame.cd \
+		`find src/amiga -iname "*.[chs]"` `find src/mame -iname "*.[chs]"` \
+		`find include -iname "*.h"` lib/*.a	`list "fixsrc/~(*.o|*.bak)" lformat="fixsrc/%n"`
+
+messsrc:	
+	-if [ -f release/messsrc.lha ]; then rm release/messsrc.lha; fi
+	lha -r a release/messsrc.lha makefile.amiga makefile.messppc src/amiga/mess.cd \
+		`find src/amiga -iname "*.[chs]"` `find src/mess -iname "*.[chs]"` \
+		`find include -iname "*.h"` lib/*.a	`list "fixsrc/~(*.o|*.bak)" lformat="%n"`
+
+mamefix:
+	fixsrc/fixsrc org/mame
+
+messfix:
+	fixsrc/fixsrc org/mess
