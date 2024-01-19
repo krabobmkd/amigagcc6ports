@@ -27,7 +27,7 @@ set(CMAKE_SYSTEM_NAME m68k-amigaos)
 set(CMAKE_SYSTEM_VERSION 1)
 
 # to test if(AMIGA) in CMakeLists.txt:
-set(AMIGA 1)
+set(AMIGA ON)
 
 set(CMAKE_C_COMPILER_FORCED ON)
 set(CMAKE_CXX_COMPILER_FORCED ON)
@@ -44,7 +44,7 @@ set(CMAKE_SYSTEM_PROCESSOR m68k)
 # Tell CMake how it should instruct the compiler to generate multiple versions of an outputted .so library: e.g. "libfoo.so, libfoo.so.1, libfoo.so.1.4" etc.
 # This feature is activated if a shared library project has the property SOVERSION defined.
 set(CMAKE_SHARED_LIBRARY_SONAME_C_FLAG "-Wl,-soname,")
-
+set(CMAKE_POSITION_INDEPENDENT_CODE OFF CACHE BOOL "no fpic")
 # In CMake, CMAKE_HOST_WIN32 is set when we are cross-compiling from Win32 to Emscripten: http://www.cmake.org/cmake/help/v2.8.12/cmake.html#variable:CMAKE_HOST_WIN32
 # The variable WIN32 is set only when the target arch that will run the code will be WIN32, so unset WIN32 when cross-compiling.
 set(WIN32)
@@ -56,12 +56,16 @@ set(APPLE)
 set(UNIX 1)
 
 # Do a no-op access on the CMAKE_TOOLCHAIN_FILE variable so that CMake will not issue a warning on it being unused.
-if (CMAKE_TOOLCHAIN_FILE)
-endif()
+#if (CMAKE_TOOLCHAIN_FILE)
+#endif()
 
 # In order for check_function_exists() detection to work, we must signal it to pass an additional flag, which causes the compilation
 # to abort if linking results in any undefined symbols. The CMake detection mechanism depends on the undefined symbol error to be raised.
 set(CMAKE_REQUIRED_FLAGS "-s ERROR_ON_UNDEFINED_SYMBOLS=1")
+
+if ("${M68KAMIGA_ROOT_PATH}" STREQUAL "" AND "${CMAKE_HOST_SYSTEM_NAME}" STREQUAL "Windows")
+    set(M68KAMIGA_ROOT_PATH "C:/cygwin64/opt/amiga")
+endif()
 
 # Locate where the Emscripten compiler resides in relative to this toolchain file.
 if ("${M68KAMIGA_ROOT_PATH}" STREQUAL "")
@@ -69,9 +73,9 @@ if ("${M68KAMIGA_ROOT_PATH}" STREQUAL "")
 endif()
 
 # If not found by above search, locate using the EMSCRIPTEN environment variable.
-if ("${M68KAMIGA_ROOT_PATH}" STREQUAL "")
-        set(M68KAMIGA_ROOT_PATH "$ENV{M68KAMIGA_ROOT}")
-endif()
+#if ("${M68KAMIGA_ROOT_PATH}" STREQUAL "")
+#        set(M68KAMIGA_ROOT_PATH "$ENV{M68KAMIGA_ROOT}")
+#endif()
 
 # Abort if not found. 
 if ("${M68KAMIGA_ROOT_PATH}" STREQUAL "")
@@ -89,26 +93,37 @@ message(STATUS "m68k-amiga root: ${M68KAMIGA_ROOT_PATH}")
 #	set(CMAKE_MODULE_PATH "")
 #endif()
 #set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${M68KAMIGA_ROOT_PATH}/cmake/Modules")
+message(STATUS "  ********** CMAKE_TOOLCHAIN_FILE:${CMAKE_TOOLCHAIN_FILE}:")
+get_filename_component(TOOLCHAIN_PATH "${CMAKE_TOOLCHAIN_FILE}" DIRECTORY)
 
-set(CMAKE_MODULE_PATH "${M68KAMIGA_ROOT_PATH}/cmake/Modules")
+set(CMAKE_MODULE_PATH "${TOOLCHAIN_PATH}")
 
+message(STATUS "  ********** CMAKE_MODULE_PATH:${CMAKE_MODULE_PATH}")
 # VF: TODO
 set(CMAKE_FIND_ROOT_PATH "${M68KAMIGA_ROOT_PATH}/m68k-amigaos")
 
+
+message(STATUS "CMAKE_HOST_SYSTEM:${CMAKE_HOST_SYSTEM}")
+message(STATUS "CYGWIN:${CYGWIN}")
+if(CMAKE_HOST_WIN32 OR CMAKE_HOST_SYSTEM MATCHES "CYGWIN*")
+    set(EXE_SUFFIX ".exe")
+else()
+    set(EXE_SUFFIX "")
+endif()
 
 # Specify the compilers to use for C and C++
 
 set(M68KAMIGAGCC_BIN "${M68KAMIGA_ROOT_PATH}/bin")
 
-set(CMAKE_AR                    "${M68KAMIGAGCC_BIN}/m68k-amigaos-ar")
-set(CMAKE_ASM_COMPILER          "${M68KAMIGAGCC_BIN}/m68k-amigaos-as")
-set(CMAKE_C_COMPILER            "${M68KAMIGAGCC_BIN}/m68k-amigaos-gcc")
-set(CMAKE_CXX_COMPILER          "${M68KAMIGAGCC_BIN}/m68k-amigaos-g++")
-set(CMAKE_LINKER                "${M68KAMIGAGCC_BIN}/m68k-amigaos-ld")
-set(CMAKE_OBJCOPY               "${M68KAMIGAGCC_BIN}/m68k-amigaos-objcopy")
-set(CMAKE_RANLIB                "${M68KAMIGAGCC_BIN}/m68k-amigaos-ranlib")
-set(CMAKE_SIZE                  "${M68KAMIGAGCC_BIN}/m68k-amigaos-size")
-set(CMAKE_STRIP                 "${M68KAMIGAGCC_BIN}/m68k-amigaos-strip")
+set(CMAKE_AR                    "${M68KAMIGAGCC_BIN}/m68k-amigaos-ar${EXE_SUFFIX}")
+set(CMAKE_ASM_COMPILER          "${M68KAMIGAGCC_BIN}/m68k-amigaos-as${EXE_SUFFIX}")
+set(CMAKE_C_COMPILER            "${M68KAMIGAGCC_BIN}/m68k-amigaos-gcc${EXE_SUFFIX}")
+set(CMAKE_CXX_COMPILER          "${M68KAMIGAGCC_BIN}/m68k-amigaos-g++${EXE_SUFFIX}")
+set(CMAKE_LINKER                "${M68KAMIGAGCC_BIN}/m68k-amigaos-ld${EXE_SUFFIX}")
+set(CMAKE_OBJCOPY               "${M68KAMIGAGCC_BIN}/m68k-amigaos-objcopy${EXE_SUFFIX}")
+set(CMAKE_RANLIB                "${M68KAMIGAGCC_BIN}/m68k-amigaos-ranlib${EXE_SUFFIX}")
+set(CMAKE_SIZE                  "${M68KAMIGAGCC_BIN}/m68k-amigaos-size${EXE_SUFFIX}")
+set(CMAKE_STRIP                 "${M68KAMIGAGCC_BIN}/m68k-amigaos-strip${EXE_SUFFIX}")
 
 
 
