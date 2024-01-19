@@ -2,7 +2,7 @@
 
 ## What is that ?
 
-This is some ports of GPL / LGPL libs for the Amiga Gcc6.5 cross compiler from bebbo, using cmake and last version of libs as of January 2023.
+This is some ports of GPL / LGPL libs for the Amiga Gcc6.5 cross compiler from bebbo, using cmake and last version of libs as of January 2024.
 
  Ths was made primarily to port "heif-convert" tool from libheif, to transform .heic images from Smartphones, into jpg or png on Amiga classic / 68k .. yet a 68040/68060 CPU with FPU is needed... Pistorm, Vampire and UAE in mind. 
  
