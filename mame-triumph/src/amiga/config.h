@@ -13,7 +13,7 @@
  *
  *************************************************************************/
 
-#include "inputs.h"
+#include "amiga_inputs.h"
 
 int  AllocConfig(int argc, char **argv);
 void FreeConfig(void);

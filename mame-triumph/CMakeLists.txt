@@ -23,20 +23,21 @@ add_subdirectory(src/mame037b MameLib)
 
 set(AMIGA_SRC
 	src/amiga/amiga037b.c
+	src/amiga/amiga037b_joysticks.c
 	src/amiga/main.c
 #re	src/amiga/gui_mui.c
 	src/amiga/config.c
 	src/amiga/file.c
 	src/amiga/audio.c
 	src/amiga/video.c
-	src/amiga/inputs.c
+	src/amiga/amiga_inputs.c
 
 	src/amiga/main.h
 	src/amiga/config.h
 	src/amiga/file.h
 	src/amiga/audio.h
 	src/amiga/video.h
-	src/amiga/inputs.h
+	src/amiga/amiga_inputs.h
 	src/amiga/gui.h
 	src/amiga/mame_ver.h
 	src/amiga/mame_msg.h

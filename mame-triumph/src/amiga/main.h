@@ -23,7 +23,7 @@
 
 #include "config.h"
 #include "video.h"
-#include "inputs.h"
+#include "amiga_inputs.h"
 
 #define AUDIO_CHANNELS      16
 #define AUDIO_BUFFER_LENGTH 2048

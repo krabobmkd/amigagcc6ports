@@ -43,7 +43,7 @@
 #include <macros.h>
 
 #define INPUTS_PRIVATE
-#include "inputs.h"
+#include "amiga_inputs.h"
 
 extern struct Library *SysBase;
 extern struct Library *DOSBase;

@@ -1,5 +1,5 @@
-#ifndef INPUTS_H
-#define INPUTS_H
+#ifndef AMIGA_INPUTS_H
+#define AMIGA_INPUTS_H
 /**************************************************************************
  *
  * Copyright (C) 1999 Mats Eirik Hansen (mats.hansen@triumph.no)

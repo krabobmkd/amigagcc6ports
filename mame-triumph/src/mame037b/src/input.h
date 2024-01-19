@@ -16,8 +16,8 @@ struct JoystickInfo
 	unsigned code; /* OS dependant code */
 	InputCode standardcode;	/* CODE_xxx equivalent from list below, or CODE_OTHER if n/a */
 };
-
-enum
+//krb modif
+enum eKeyCode
 {
 	/* key */
 	KEYCODE_A, KEYCODE_B, KEYCODE_C, KEYCODE_D, KEYCODE_E, KEYCODE_F,

@@ -49,7 +49,7 @@
 #include "version.h"
 #include "audio.h"
 #include "video.h"
-#include "inputs.h"
+#include "amiga_inputs.h"
 #include "config.h"
 #include "gui.h"
 
@@ -140,6 +140,7 @@ static struct NewMenu NewMenu[] =
 
 static struct Menu *Menu;
 
+/*0.35 keycode system is obsolete
 struct IKeyMap KeyMap[] =
 {
   { OSD_KEY_ESC,        IKEY_ESC       },  { OSD_KEY_1,      '1'         },
@@ -187,13 +188,14 @@ struct IKeyMap KeyMap[] =
   { OSD_KEY_F7,         IKEY_F7        },  { OSD_MAX_KEY,    IKEY_NONE     },
   { 0,                  0              }
 };
+*/
 
 int main(int argc, char **argv)
 {
   struct Task *task;
   
   task  = FindTask(NULL);
-
+/* krb: looks messy to me, original stack should be restored and alloc freed , in an atexit().
   if((task->tc_SPReg - task->tc_SPLower) < (MIN_STACK - 1024))
   {
     StackSwapStruct.stk_Lower = AllocVec(MIN_STACK, MEMF_PUBLIC);
@@ -209,9 +211,11 @@ int main(int argc, char **argv)
 
       StackSwap(&StackSwapStruct);
     }
+    //krb: where is FreeVec(StackSwapStruct.stk_Lower) ???
   }
   else
-    Main(argc, argv);
+  */
+   Main(argc, argv);
 
   return(0);
 }
@@ -698,6 +702,8 @@ void Main(int argc, char **argv)
 
 LONG VideoOpen(LONG width, LONG height, LONG left, LONG top, LONG right, LONG bottom, LONG dirty)
 {
+
+// #define	GAME_REQUIRES_16BIT			0x0100	/* cannot fit in 256 colors */
   static ULONG pixel_formats[] =
   {
     PIXFMT_RGB16,

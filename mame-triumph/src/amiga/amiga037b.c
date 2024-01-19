@@ -27,6 +27,8 @@
 #include "config.h"
 #include "file.h"
 #include "audio.h"
+// from mame since 0.37:
+#include "input.h"
 
 #define INTELULONG(i) (((i)<<24)|((i)>>24)|(((i)<<8)&0x00ff0000)|(((i)>>8)&0x0000ff00))
 
@@ -41,7 +43,7 @@ extern LONG FPS;
 #define VSetLimitSpeed(video,limitspeed)
 #endif
 
-struct osd_bitmap *BitMap;
+struct osd_bitmap *BitMap=NULL;
 LONG ClearBitMap;
 
 static LONG  UserInterface;
@@ -67,9 +69,9 @@ static int on_screen_display_timer;
 
 char *DirtyLines[6];
 
-int frameskip;
+int frameskip = 0;
 int autoframeskip = 0;
-int throttle;
+int throttle = 0;
 int video_sync  = 0;
 unsigned char No_FM   = 1;
 
@@ -83,6 +85,10 @@ extern int translucency;
 int load_zipped_file(const char *zipfile, const char *filename, unsigned char **buf, int *length);
 unsigned int crc32(unsigned int crc, const unsigned char *buf, unsigned int len);
 
+#ifndef ORIENTATION_DEFAULT
+#define ORIENTATION_DEFAULT 0
+#endif
+
 void StartGame(void)
 {
 #ifdef MESS
@@ -91,36 +97,71 @@ void StartGame(void)
 
   throttle = 1;
 
-  options.errorlog = NULL;
+    // consider evrything null by default.
+    memset(&options, 0,sizeof(struct GameOptions));
 
-/*  if(Options[OPT_RECORD])
+  // options.record=NULL;
+  // options.playback=NULL;
+  // options.language_file=NULL; /* LBO 042400 */
+
+// all are "int"
+//   options.mame_debug=0;
+   options.cheat=1;
+   options.gui_host=0; //? not done.
+
+   options.samplerate=(Config[CFG_SOUND] == CFGS_NO)?0:22050;
+    Machine->sample_rate = options.samplerate;
+
+   options.use_samples=1; //TODO ?
+   options.use_emulated_ym3812=0;
+
+   options.color_depth=0;	/* 8 or 16, any other value means auto */
+   options.vector_width=0;	/* requested width for vector games=0; 0 means default (640) */
+   options.vector_height=0;	/* requested height for vector games=0; 0 means default (480) */
+   options.norotate=0; //OK
+
+   options.ror        = (Config[CFG_ROTATION] == CFGR_RIGHT);
+   options.rol        = (Config[CFG_ROTATION] == CFGR_RIGHT);
+   options.flipx      = Config[CFG_FLIPX];
+   options.flipy      = Config[CFG_FLIPY];
+
+
+   options.beam=0;
+   options.flicker=0;
+   options.translucency=0;
+   options.antialias=0;
+   options.use_artwork=0;
+
+ // options.errorlog = NULL;
+
+// O -> originaly commented.
+// DONE -> ported up.
+
+/*O  if(Options[OPT_RECORD])
     options.record = osd_fopen( drivers[Options[OPT_GAME]]->name, (const char *) Options[OPT_RECORD],
                   OSD_FILETYPE_INPUTLOG, 1);
   else*/
-    options.record = NULL;
+   // options.record = NULL;
 
-/*  if(Options[OPT_PLAYBACK])
+/*O  if(Options[OPT_PLAYBACK])
     options.playback = osd_fopen( drivers[Options[OPT_GAME]]->name, (const char *) Options[OPT_PLAYBACK],
                     OSD_FILETYPE_INPUTLOG, 0);
   else*/
-    options.playback = NULL;
-
+   // options.playback = NULL;
+/*DONE
   if(Config[CFG_SOUND] == CFGS_NO)
     options.samplerate  = 0;
   else
     options.samplerate  = 22000;
 
   Machine->sample_rate = options.samplerate;
+*/
+//old  options.samplebits = 8;
+//done  options.mame_debug = 0;
+//done  options.cheat      = 1;
+//done  options.norotate   = 0;
 
-  options.samplebits = 8;
-  options.mame_debug = 0;
-  options.cheat      = 1;
-  options.norotate   = 0;
-  options.ror        = (Config[CFG_ROTATION] == CFGR_RIGHT);
-  options.rol        = (Config[CFG_ROTATION] == CFGR_RIGHT);
-  options.flipx      = Config[CFG_FLIPX];
-  options.flipy      = Config[CFG_FLIPY];
-
+ //ok
   frameskip = Config[CFG_FRAMESKIP];
 
   antialias    = Config[CFG_ANTIALIASING];
@@ -330,7 +371,21 @@ static inline short makecol(int r, int g, int b)
   }
 }
 
-void osd_allocate_colors(unsigned int total_colors,const unsigned char *palette,unsigned short *pens)
+
+/*
+  osd_allocate_colors() is called after osd_create_display(), to create and initialize
+  the palette.
+  palette is an array of 'totalcolors' R,G,B triplets. The function returns
+  in *pens the pen values corresponding to the requested colors.
+  When modifiable is not 0, the palette will be modified later via calls to
+  osd_modify_pen(). Otherwise, the code can assume that the palette will not change,
+  and activate special optimizations (e.g. direct copy for a 16-bit display).
+  The function must also initialize Machine->uifont->colortable[] to get proper
+  white-on-black and black-on-white text.
+  Return 0 for success.
+*/
+int osd_allocate_colors(unsigned int total_colors,const unsigned char *palette,unsigned short *pens,int modifiable)
+//olde void osd_allocate_colors(unsigned int total_colors,const unsigned char *palette,unsigned short *pens)
 {
   TRACE_ENTER("osd_allocate_colors");
 
@@ -427,8 +482,26 @@ void osd_allocate_colors(unsigned int total_colors,const unsigned char *palette,
 
   TRACE_LEAVE("osd_allocate_colors");
 }
-
-struct osd_bitmap *osd_create_display(int width, int height, int attributes)
+//krbtest
+//struct osd_bitmap *_globalBitmap = NULL;
+/* 0.37:
+  Create a display screen, or window, of the given dimensions (or larger). It is
+  acceptable to create a smaller display if necessary, in that case the user must
+  have a way to move the visibility window around.
+  Attributes are the ones defined in driver.h, they can be used to perform
+  optimizations, e.g. dirty rectangle handling if the game supports it, or faster
+  blitting routines with fixed palette if the game doesn't change the palette at
+  run time. The VIDEO_PIXEL_ASPECT_RATIO flags should be honored to produce a
+  display of correct proportions.
+  Orientation is the screen orientation (as defined in driver.h) which will be done
+  by the core. This can be used to select thinner screen modes for vertical games
+  (ORIENTATION_SWAP_XY set), or even to ask the user to rotate the monitor if it's
+  a pivot model. Note that the OS dependant code must NOT perform any rotation,
+  this is done entirely in the core.
+  Returns 0 on success.
+*/
+int osd_create_display(int width,int height,int depth,int fps,int attributes,int orientation)
+//old struct osd_bitmap *osd_create_display(int width, int height, int attributes)
 {
   unsigned char *line;
   
@@ -443,17 +516,17 @@ struct osd_bitmap *osd_create_display(int width, int height, int attributes)
     width  = height;
     height = t;
     
-    left   = Machine->drv->visible_area.min_y;
-    top    = Machine->drv->visible_area.min_x;
-    right  = Machine->drv->visible_area.max_y;
-    bottom = Machine->drv->visible_area.max_x;
+    left   = Machine->drv->default_visible_area.min_y;
+    top    = Machine->drv->default_visible_area.min_x;
+    right  = Machine->drv->default_visible_area.max_y;
+    bottom = Machine->drv->default_visible_area.max_x;
   }
   else
   {
-    left   = Machine->drv->visible_area.min_x;
-    top    = Machine->drv->visible_area.min_y;
-    right  = Machine->drv->visible_area.max_x;
-    bottom = Machine->drv->visible_area.max_y;
+    left   = Machine->drv->default_visible_area.min_x;
+    top    = Machine->drv->default_visible_area.min_y;
+    right  = Machine->drv->default_visible_area.max_x;
+    bottom = Machine->drv->default_visible_area.max_y;
   }
 
   if(attributes & VIDEO_TYPE_VECTOR)
@@ -595,8 +668,9 @@ struct osd_bitmap *osd_create_display(int width, int height, int attributes)
       }
 
       TRACE_LEAVE("osd_create_display");
-
-      return(BitMap);
+      //return(BitMap);
+      //krbnote: it's in global var BitMap. -> TODO rename.
+      return 0; // Returns 0 on success.
     }
 
     VideoClose();
@@ -604,7 +678,7 @@ struct osd_bitmap *osd_create_display(int width, int height, int attributes)
 
   TRACE_LEAVE("osd_create_display");
 
-  return(NULL);
+  return(1); // Returns 0 on success.
 }
 
 void osd_close_display(void)
@@ -631,8 +705,8 @@ void osd_close_display(void)
 
   VideoClose();
 }
-
-void osd_update_video_and_audio(void)
+void osd_update_video_and_audio(struct osd_bitmap *bitmap)
+//old void osd_update_video_and_audio(void)
 {
   unsigned char *line;
   int       trueorientation;
@@ -678,7 +752,7 @@ void osd_update_video_and_audio(void)
 #endif
     ASetChannelFrame(ChannelArray[CurrentArray]);
   }
-
+/*re
   if(osd_key_pressed_memory(OSD_KEY_THROTTLE))
     throttle ^= 1;
 
@@ -695,7 +769,7 @@ void osd_update_video_and_audio(void)
     if(!ShowFPS)
       need_to_clear_bitmap = 1;
   }
-
+*/
   if(showfpstemp)
   {
     showfpstemp--;
@@ -713,6 +787,10 @@ void osd_update_video_and_audio(void)
     sprintf(buf," %3d%%(%3d/%d fps)",100*fps/Machine->drv->frames_per_second,fps,Machine->drv->frames_per_second);
     l = strlen(buf);
 
+//krb, verify
+#ifndef DT_COLOR_WHITE
+#define DT_COLOR_WHITE 0
+#endif
     for (i = 0;i < l;i++)
     {
       drawgfx(Machine->scrbitmap,Machine->uifont,buf[i], DT_COLOR_WHITE, 0, 0,
@@ -745,10 +823,10 @@ void osd_update_video_and_audio(void)
     {
       if(DirectArray->Pixels)
       {
-        h   = BitMap->height;
+        h   = /*BitMap*/bitmap->height;
         bpr   = DirectArray->BytesPerRow;
         line  = DirectArray->Pixels + 8 + (8 * bpr);
-        lines = BitMap->line;
+        lines = /*BitMap*/bitmap->line;
   
         for(i = 0; i < h; i++)
         {
@@ -765,9 +843,9 @@ void osd_update_video_and_audio(void)
       {
         if(DirtyLines[0])
         {
-          lines = BitMap->line;
-          h   = BitMap->height;
-          w   = BitMap->width >> 2;
+          lines = bitmap->line;
+          h   = bitmap->height;
+          w   = bitmap->width >> 2;
           pix   = (ULONG *) DirectArray->Pixels;
           bpr   = DirectArray->BytesPerRow >> 2;
           mod   = bpr - w;
@@ -858,14 +936,14 @@ void osd_update_video_and_audio(void)
         }
         else
         {
-          lines = BitMap->line;
-          h   = BitMap->height;
-          w   = BitMap->width >> 2;
+          lines = bitmap->line;
+          h   = bitmap->height;
+          w   = bitmap->width >> 2;
           pix   = (ULONG *) DirectArray->Pixels;
           bpr   = DirectArray->BytesPerRow >> 2;
           mod   = bpr - w;
           src   = (ULONG *) lines[0];
-          srcmod  = (((ULONG) BitMap->_private) >> 2) - w;
+          srcmod  = (((ULONG) bitmap->_private) >> 2) - w;
 
           for(i = 0; i < h; i++)
           {
@@ -885,7 +963,7 @@ void osd_update_video_and_audio(void)
 
     if(DirtyLines[0])
     {
-      h = BitMap->height;
+      h = bitmap->height;
       dst = PixelArray[CurrentArray]->DirtyLines + 8;
       new = DirtyLines[0];
       old = DirtyLines[1];
@@ -945,7 +1023,7 @@ void osd_update_video_and_audio(void)
   frameskip = VGetFrameSkip(Video);
 
   if(need_to_clear_bitmap)
-    osd_clearbitmap(BitMap);
+    osd_clearbitmap(bitmap);
 
   input_update_counter = 0;
   InputUpdate(FALSE);
@@ -1338,9 +1416,9 @@ static int map_key(int key)
 {
   switch(key)
   {
+/*re
     case OSD_KEY_CANCEL:
       return(OSD_KEY_ESC);
-
     case OSD_KEY_RESET_MACHINE:
       return(OSD_KEY_F3);
 
@@ -1383,7 +1461,7 @@ static int map_key(int key)
 
     case OSD_KEY_UI_DOWN:
       return(OSD_KEY_DOWN);
-
+*/
     default:
       return(key);
   }
@@ -1393,15 +1471,15 @@ int osd_key_invalid(int keycode)
 {
     switch(keycode)
     {
-        case OSD_KEY_ESC:
-        case OSD_KEY_F3:
-        case OSD_KEY_F4:
-    case OSD_KEY_F7:
-        case OSD_KEY_F8:
-        case OSD_KEY_F10:
-        case OSD_KEY_TAB:
-        case OSD_KEY_TILDE:
-        case OSD_KEY_P:
+        case KEYCODE_ESC:
+        case KEYCODE_F3:
+        case KEYCODE_F4:
+        case KEYCODE_F7:
+        case KEYCODE_F8:
+        case KEYCODE_F10:
+        case KEYCODE_TAB:
+        case KEYCODE_TILDE:
+        case KEYCODE_P:
       return(1);
 
     default:
@@ -1411,6 +1489,7 @@ int osd_key_invalid(int keycode)
 
 const char *osd_key_name(int keycode)
 {
+/*re
 	static const char *keynames[] =
 	{
 		"ESC", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "MINUS", "EQUAL", "BKSPACE",
@@ -1434,6 +1513,7 @@ const char *osd_key_name(int keycode)
 	if(keycode && keycode <= OSD_MAX_KEY)
     return(keynames[keycode-1]);
 	else
+	*/
     return("None");
 }
 
@@ -1441,10 +1521,10 @@ int osd_key_pressed(int key)
 {
   if(!Keys)
     return(0);
-
+/*todo
 #ifndef POWERUP
-  /* To prevent the m68k version from being stuck in a waiting for
-   * key loop. */
+  // To prevent the m68k version from being stuck in a waiting for
+  // key loop.
 
   input_update_counter++;
   
@@ -1462,15 +1542,16 @@ int osd_key_pressed(int key)
 
   if((key < OSD_MAX_KEY) && Keys[key])
     return(1);
-  
+  */
   return(0);
 }
 
 int osd_key_pressed_memory(int key)
 {
+/*todo
 #ifndef POWERUP
-  /* To prevent the m68k version from being stuck in a waiting for
-   * key loop. */
+  // To prevent the m68k version from being stuck in a waiting for
+  // key loop.
 
   input_update_counter++;
   
@@ -1495,7 +1576,7 @@ int osd_key_pressed_memory(int key)
       return(1);
     }
   }
-  
+  */
   return(0);
 }
 
@@ -1503,10 +1584,10 @@ int osd_key_pressed_memory_repeat(int key, int speed)
 {
   static int counter;
   static int keydelay;
-
+/*re
 #ifndef POWERUP
-  /* To prevent the m68k version from being stuck in a waiting for
-   * key loop. */
+  // To prevent the m68k version from being stuck in a waiting for
+  // key loop.
 
   input_update_counter++;
   
@@ -1543,7 +1624,7 @@ int osd_key_pressed_memory_repeat(int key, int speed)
       return(1);
     }   
   }
-  
+  */
   return(0);
 
 }
@@ -1551,10 +1632,10 @@ int osd_key_pressed_memory_repeat(int key, int speed)
 int osd_read_key_immediate(void)
 {
   int key;
-
+/*re
 #ifndef POWERUP
-  /* To prevent the m68k version from being stuck in a waiting for
-   * key loop. */
+  / To prevent the m68k version from being stuck in a waiting for
+  // key loop.
 
   input_update_counter++;
   
@@ -1573,7 +1654,7 @@ int osd_read_key_immediate(void)
 
     return(key);
   }
-
+*/
   return(OSD_KEY_NONE);
 }
 
@@ -1586,9 +1667,10 @@ int osd_read_keyrepeat(void)
 
   return(key);
 }
-
+/*old
 const char *osd_joy_name(int joycode)
 {
+
 	static const char *joynames[] = {
 		"Left", "Right", "Up", "Down", "Button A",
 		"Button B", "Button C", "Button D", "Button E", "Button F",
@@ -1735,22 +1817,7 @@ int osd_joy_pressed(int joycode)
 
   return(0);
 }
-
-void osd_trak_read(int player, int *deltax, int *deltay)
-{
-  if((player == 0) && (Port2->Type == IPT_MOUSE))
-  {
-    *deltax           = Port2->Move.Mouse.MouseX;
-    Port2->Move.Mouse.MouseX  = 0;
-    *deltay           = Port2->Move.Mouse.MouseY;
-    Port2->Move.Mouse.MouseY  = 0;
-  }
-  else
-  {
-    *deltax = 0;
-    *deltay = 0;
-  }
-}
+*/
 
 void osd_analogjoy_read(int player, int *analog_x, int *analog_y)
 {
@@ -1988,11 +2055,19 @@ struct GameSamples *readsamples(const char **samplenames,const char *basename)
                 if(samples->sample[i]);
                 {
                   samples->sample[i]->length    = -sound->Sound;
-                  samples->sample[i]->volume    = sound->Volume;
+           //krb: no volume       samples->sample[i]->Volume    = sound->Volume;
                   samples->sample[i]->smpfreq   = sound->Frequency;
                   samples->sample[i]->resolution  = 8;
                 }
-
+/*
+struct GameSample
+{
+	int length;
+	int smpfreq;
+	int resolution;
+	signed char data[1];	// extendable
+};
+*/
               }
 
               osd_fclose(file);
@@ -2263,9 +2338,9 @@ int osd_get_brightness(void)
 void osd_profiler(int type)
 {
 }
-
-void osd_save_snapshot(void)
+void osd_save_snapshot(struct osd_bitmap *bitmap)
 {
+
 }
 
 int osd_joystick_needs_calibration (void)
