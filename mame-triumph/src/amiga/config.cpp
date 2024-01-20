@@ -11,15 +11,24 @@
  *
  *************************************************************************/
 
-#include <stdio.h>
-#include <strings.h>
 
-#include <inline/dos.h>
+
+extern "C" {
+#include <exec/types.h>
+#include <clib/dos_protos.h>
+//just for INVALID_ID
+#include <graphics/modeid.h>
+}
 
 #include <moo/db.h>
 
 #include "main.h"
 #include "version.h"
+#include <stdio.h>
+#include <strings.h>
+#include <string.h>
+
+
 
 LONG Config[CFG_ITEMS];
 
@@ -138,7 +147,7 @@ int AllocConfig(int argc, char **argv)
         DBJoy2AutoFireRate = dbintNew("Joy2AutoFireRate", NumConfigs, 0, 0, 5, 0),
         DBRomPath          = dbstringNew("RomPath", NumConfigs, 0, ""),
         DBSamplePath       = dbstringNew("SamplePath", NumConfigs, 0, ""),
-#ifdef POWERUP        
+#ifdef POWERUP
         DBAsyncPPC         = dbboolNew("AsyncPPC", NumConfigs, 0, 1),
 #endif
       DBEND);
@@ -227,15 +236,15 @@ void FreeConfig(void)
 
 void LoadConfig(int argc, char **argv)
 {
-  uint i;
+  uint32_t i;
 
-  if(DBArg) 
+  if(DBArg)
   {
-    SectionNames = malloc((NumConfigs + 1) * sizeof(char *));
+    SectionNames = (char **)malloc((NumConfigs + 1) * sizeof(char *));
 
     if(SectionNames)
     {
-#ifdef MESS   
+#ifdef MESS
       for(i = 0; i < NumConfigs; i++)
         SectionNames[i] = (char *) Drivers[i]->description;
     
@@ -293,7 +302,7 @@ void LoadConfig(int argc, char **argv)
               DBJoy2AutoFireRate,
               DBRomPath,
               DBSamplePath,
-#ifdef POWERUP              
+#ifdef POWERUP
               DBAsyncPPC,
 #endif
             DBEND),

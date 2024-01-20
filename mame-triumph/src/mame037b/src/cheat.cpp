@@ -1136,7 +1136,7 @@ INT32 AddEditCheatMenu (struct osd_bitmap *bitmap, INT32 selected)
 
 	ui_displaymenu(bitmap,menu_item,0,0,sel,0);
 
-	if (code_pressed_memory_repeat (KEYCODE_INSERT, 8))
+	if (code_pressed_memory_repeat (KeyCode_INSERT, 8))
 	{
 		/* add a new cheat at the current position (or the end) */
 		if (sel < total - 1)
@@ -1145,7 +1145,7 @@ INT32 AddEditCheatMenu (struct osd_bitmap *bitmap, INT32 selected)
 			cheat_insert_new (LoadedCheatTotal);
 	}
 
-	if (code_pressed_memory_repeat (KEYCODE_DEL, 8))
+	if (code_pressed_memory_repeat (KeyCode_DEL, 8))
 	{
 		if (LoadedCheatTotal)
 		{
@@ -1289,7 +1289,7 @@ static INT32 EditCheatMenu (struct osd_bitmap *bitmap, INT32 selected, UINT8 che
 
 	ui_displaymenu(bitmap,menu_item,menu_subitem,flag,sel,arrowize);
 
-	if (code_pressed_memory_repeat (KEYCODE_INSERT, 8))
+	if (code_pressed_memory_repeat (KeyCode_INSERT, 8))
 	{
 		if ((sel >= 2) && (sel <= ((CheatTable[cheat_num].num_sub + 1) * 4) + 1))
 		{
@@ -1304,7 +1304,7 @@ static INT32 EditCheatMenu (struct osd_bitmap *bitmap, INT32 selected, UINT8 che
 		subcheat_insert_new (cheat_num, subcheat_num);
 	}
 
-	if (code_pressed_memory_repeat (KEYCODE_DEL, 8))
+	if (code_pressed_memory_repeat (KeyCode_DEL, 8))
 	{
 		if ((sel >= 2) && (sel <= ((CheatTable[cheat_num].num_sub + 1) * 4) + 1))
 		{
@@ -2926,7 +2926,7 @@ void DoCheat(struct osd_bitmap *bitmap)
 	if (input_ui_pressed(IPT_UI_TOGGLE_CHEAT))
 	{
 		/* Hold down shift to toggle the watchpoints */
-		if (code_pressed(KEYCODE_LSHIFT) || code_pressed(KEYCODE_RSHIFT))
+		if (code_pressed(KeyCode_LSHIFT) || code_pressed(KeyCode_RSHIFT))
 		{
 			is_watch_visible ^= 1;
 			usrintf_showmessage("%s %s", ui_getstring (UI_watchpoints), (is_watch_visible ? ui_getstring (UI_on) : ui_getstring (UI_off)));
@@ -2939,8 +2939,8 @@ void DoCheat(struct osd_bitmap *bitmap)
 	}
 
 #if 0
-  /* KEYCODE_END loads the "Continue Search" sub-menu of the cheat engine */
-  if ( keyboard_pressed_memory( KEYCODE_END ) )
+  /* KeyCode_END loads the "Continue Search" sub-menu of the cheat engine */
+  if ( keyboard_pressed_memory( KeyCode_END ) )
   {
 	osd_sound_enable(0);
 	osd_pause(1);

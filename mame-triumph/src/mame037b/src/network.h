@@ -32,10 +32,10 @@
 
 #define NUM_UI_KEYS  4
 /* UI Keys to synchronize:
-    0 = KEYCODE_FAST_EXIT
-	1 = KEYCODE_RESET_MACHINE
-	2 = KEYCODE_PAUSE
-	3 = KEYCODE_UNPAUSE
+    0 = KeyCode_FAST_EXIT
+	1 = KeyCode_RESET_MACHINE
+	2 = KeyCode_PAUSE
+	3 = KeyCode_UNPAUSE
 */
 
 

@@ -13,8 +13,11 @@
  *
  *************************************************************************/
 
-#include <macros.h>
-
+//#include <macros.h>
+extern "C" {
+#include <exec/types.h>
+#include <utility/tagitem.h>
+}
 #define IKEY_RAW    0x1000
 #define IKEY_RAWMASK  0x7f
 #define IKEY_NONE   0x2000

@@ -13,11 +13,18 @@
  *
  *************************************************************************/
 
+#include <string>
+
+#ifndef BPTR
+//from dos/dos.h
+typedef long  BPTR;
+#endif
+
 struct File
 {
   BPTR          File;
-  LONG          Type;
-  UBYTE         Name[256];
+  int          Type;
+  std::string Name;
   unsigned char *Data;
   int           Length;
   int           Offset;
@@ -33,6 +40,7 @@ struct File *OpenFile(const char *dir_name, const char *file_name, int mode);
 struct File *OpenFileType(const char *dir_name, const char *file_name, int mode, int filetype);
 void        CloseFile(struct File *file);
 
+extern "C" {
 #ifdef POWERUP
 #ifdef __PPC__
 #include <powerup/gcclib/powerup_protos.h>
@@ -42,6 +50,7 @@ void        CloseFile(struct File *file);
 #define WriteFile(a,b,c)  PPCWrite(a,b,c)
 #define SeekFile(a,b,c)   PPCSeek(a,b,c)
 #else
+#include <exec/types.h>
 #include <inline/dos.h>
 
 #define ReadFile(a,b,c)   Read(a,b,c)
@@ -50,3 +59,4 @@ void        CloseFile(struct File *file);
 #endif
 
 #endif
+}

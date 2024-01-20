@@ -14,7 +14,6 @@ project(AmigaTriumphMame LANGUAGES C CXX VERSION 1.0)
 if(AMIGA)
 
 	add_definitions(-O2 -m68060 -mhard-float -ffast-math -save-temps )
-	add_definitions(-std=c11)
 	
 endif()
 
@@ -22,22 +21,24 @@ add_subdirectory(src/mame037b MameLib)
 
 
 set(AMIGA_SRC
-	src/amiga/amiga037b.c
-	src/amiga/amiga037b_joysticks.c
-	src/amiga/main.c
-#re	src/amiga/gui_mui.c
-	src/amiga/config.c
-	src/amiga/file.c
-	src/amiga/audio.c
-	src/amiga/video.c
-	src/amiga/amiga_inputs.c
-
+	src/amiga/amiga037b.cpp
+	src/amiga/amiga037b_keyboard.cpp
+	src/amiga/amiga037b_joysticks.cpp
+	src/amiga/main.cpp
+#re	src/amiga/gui_mui.cpp
+	src/amiga/config.cpp
+	src/amiga/file.cpp
+	src/amiga/audio.cpp
+	src/amiga/video.cpp
+	src/amiga/amiga_inputs.cpp
+	src/amiga/amiga_locale.cpp
 	src/amiga/main.h
 	src/amiga/config.h
 	src/amiga/file.h
 	src/amiga/audio.h
 	src/amiga/video.h
 	src/amiga/amiga_inputs.h
+	src/amiga/amiga_locale.h
 	src/amiga/gui.h
 	src/amiga/mame_ver.h
 	src/amiga/mame_msg.h

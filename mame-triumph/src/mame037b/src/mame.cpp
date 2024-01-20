@@ -40,7 +40,7 @@ void overlay_remap(void);
 void overlay_draw(struct osd_bitmap *dest,struct osd_bitmap *source);
 
 int run_game(int game)
-{
+{    
 	int err;
 
 	/* copy some settings into easier-to-handle variables */

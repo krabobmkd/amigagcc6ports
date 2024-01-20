@@ -13,8 +13,14 @@
  *
  *************************************************************************/
 
+extern "C" {
 #include <exec/types.h>
-
+#include <utility/hooks.h>
+#include <utility/tagitem.h>
+#include <graphics/gfx.h>
+#include <graphics/rastport.h>
+#include <exec/ports.h>
+#include <devices/timer.h>
 #ifdef POWERUP
 #ifdef __PPC
 #include <powerup/gcclib/powerup_protos.h>
@@ -24,8 +30,8 @@
 extern struct Library *PPCLibBase;
 #endif
 #endif
-
-#include <macros.h>
+}
+//? #include <macros.h>
 
 #define VA_UseScreen     (TAG_USER)
 #define VA_UseScreenReq  (TAG_USER+1)

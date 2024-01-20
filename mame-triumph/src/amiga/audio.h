@@ -13,7 +13,14 @@
  *
  *************************************************************************/
 
+extern "C" {
 #include <devices/ahi.h>
+}
+#ifndef BPTR
+//from dos/dos.h
+typedef long  BPTR;
+#endif
+
 
 struct MameSample
 {

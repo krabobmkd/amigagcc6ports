@@ -11,6 +11,25 @@
  *
  *************************************************************************/
 
+/*
+ krb note:
+ mame's input.h and amiga intuition.h collides because of KEYCODE_XXX defines.
+ let's make a point not including both in the same files.
+*/
+
+//#define CATCOMP_BLOCK
+//#include "mame_msg.h" -> called by main.h
+
+#define CATCOMP_NUMBERS
+#include "messages.h"
+
+#include "main.h"
+
+
+
+
+extern "C" {
+// all C amiga stuffs should be included from C++ in extern "C" paragraph
 #include <stdio.h>
 #include <strings.h>
 
@@ -34,6 +53,7 @@
 #include <inline/locale.h>
 #include <inline/timer.h>
 
+
 #ifdef POWERUP
 #include <powerup/ppclib/interface.h>
 #include <powerup/ppclib/message.h>
@@ -41,15 +61,16 @@
 #include <powerup/ppclib/memory.h>
 #include <inline/ppc.h>
 #endif
+// end extern "C"
+#include <macros.h>
+}
 
-#define CATCOMP_BLOCK
-#define CATCOMP_CODE
 
-#include "main.h"
 #include "version.h"
 #include "audio.h"
 #include "video.h"
 #include "amiga_inputs.h"
+#include "amiga_locale.h"
 #include "config.h"
 #include "gui.h"
 
@@ -65,6 +86,7 @@
 #define ITEM_QUIT   5
 #define NUM_ITEMS   6
 
+extern "C" {
 void     Main(int argc, char **argv);
 void ASM RefreshHandler(struct Hook *hook REG(a0));
 void ASM MenuHandler(struct Hook *hook REG(a0), APTR null REG(a2), ULONG *itemnum REG(a1));
@@ -73,6 +95,7 @@ void     SaveILBM(void);
 void     ErrorRequest(LONG msg_id, ...);
 
 void     StartGame(void);  /* In amiga/amiga.c. */
+}
 
 #ifdef POWERUP
 struct GameDriver **Drivers;
@@ -117,8 +140,6 @@ ULONG         DirectBytesPerRow;
 
 struct timerequest    *TimerIO;
 struct MsgPort      TimerMP;
-
-struct LocaleInfo   LocaleInfo;
 
 static struct Hook    RefreshHook;
 static struct Hook    MenuHook;
@@ -281,15 +302,15 @@ void Main(int argc, char **argv)
               TimerMP.mp_Flags      = PA_IGNORE;
               NewList(&TimerMP.mp_MsgList);
               
-              TimerIO = CreateIORequest(&TimerMP, sizeof(struct timerequest));
+              TimerIO = (struct timerequest*)CreateIORequest(&TimerMP, sizeof(struct timerequest));
               if(TimerIO)
               {
                 if(!OpenDevice("timer.device", UNIT_MICROHZ, (struct IORequest *) TimerIO, 0))
                   TimerBase = (struct Library *) TimerIO->tr_node.io_Device;
               }
 
-              LocaleInfo.li_LocaleBase = NULL;    /* Locale support is not
-                                  ** implemented yet. */
+             //moved  LocaleInfo.li_LocaleBase = NULL;
+              /* Locale support is not  ** implemented yet. */
 
 #ifdef POWERUP
               if(TimerBase)
@@ -757,12 +778,19 @@ LONG VideoOpen(LONG width, LONG height, LONG left, LONG top, LONG right, LONG bo
                      VA_Title,         APPNAME,
                      VA_Menu,          Menu,
                      VA_FPS,           Drivers[Config[CFG_DRIVER]]->drv->frames_per_second,
-                     VA_MaxColors,     (Drivers[Config[CFG_DRIVER]]->drv->total_colors < 256)
+                     VA_MaxColors,     // we only manage 8b or 16b
+                                        // yet VIDEO_NEEDS_6BITS_PER_GUN would mean better in 24b
+                                        (Drivers[Config[CFG_DRIVER]]->drv->total_colors <= 256)
+                                        ?(Drivers[Config[CFG_DRIVER]]->drv->total_colors):(1<<16)
+
+                                        /*(Drivers[Config[CFG_DRIVER]]->drv->total_colors <= 256)
                                        ? Drivers[Config[CFG_DRIVER]]->drv->total_colors
-                                       : ((Drivers[Config[CFG_DRIVER]]->drv->video_attributes & VIDEO_SUPPORTS_16BIT)
+                                       : ((Drivers[Config[CFG_DRIVER]]->drv->video_attributes & VIDEO_NEEDS_6BITS_PER_GUN)
                                          && Config[CFG_ALLOW16BIT])
-                                         ? (1<<16)
-                                         : 256,
+                                         ? (1<<24)
+                                         : (1<<16)
+
+                                        */,
                      VA_AutoFrameSkip, Config[CFG_AUTOFRAMESKIP],
                      VA_MaxFrameSkip,  4,
                      TAG_END);
@@ -792,8 +820,9 @@ LONG VideoOpen(LONG width, LONG height, LONG left, LONG top, LONG right, LONG bo
 
     if(!DirectArray)
     {
-      if((Drivers[Config[CFG_DRIVER]]->drv->video_attributes & VIDEO_SUPPORTS_16BIT)
-         && Config[CFG_ALLOW16BIT])
+      /*old0.35: if((Drivers[Config[CFG_DRIVER]]->drv->video_attributes & VIDEO_SUPPORTS_16BIT)
+         && Config[CFG_ALLOW16BIT])*/
+      if(Drivers[Config[CFG_DRIVER]]->drv->total_colors >256)
       {
         PixelArray[0] = VAllocPixelArray(Video, width+16, height+16, dirty, pixel_formats);
       }
@@ -844,7 +873,7 @@ LONG VideoOpen(LONG width, LONG height, LONG left, LONG top, LONG right, LONG bo
                            IA_Port2,          (Config[CFG_JOY1TYPE] == CFGJ1_MOUSE1)
                                               ? IPT_NONE
                                               : Config[CFG_JOY1TYPE],
-                           IA_KeyMap,         (ULONG) KeyMap,
+                      //TODO: to be replaced     IA_KeyMap,         (ULONG) KeyMap,
                            IA_P1AutoFireRate, (Config[CFG_JOY1TYPE] == CFGJ1_MOUSE1)
                                               ? Config[CFG_JOY1AUTOFIRERATE]
                                               : Config[CFG_JOY2AUTOFIRERATE],
@@ -948,7 +977,7 @@ void InputUpdate(LONG wait)
       MenuSelect[ITEM_NEW] = 0;
 
       NewGame              = 1;
-      Keys[OSD_KEY_ESC]    = 1;
+   //re   Keys[OSD_KEY_ESC]    = 1;
     }
 
     if(MenuSelect[ITEM_SAVE_ILBM])
@@ -976,7 +1005,7 @@ void InputUpdate(LONG wait)
       MenuSelect[ITEM_QUIT] = 0;
 
       NewGame           = 0;
-      Keys[OSD_KEY_ESC] = 1;
+    //old  Keys[OSD_KEY_ESC] = 1;
     }
   }
 }
@@ -996,14 +1025,10 @@ void ASM IDCMPHandler(struct Hook *hook REG(a0), APTR null REG(a2), ULONG *imcla
   if(*imclass == IDCMP_CLOSEWINDOW)
   {
     NewGame           = 1;
-    Keys[OSD_KEY_ESC] = 1;
+  //old  Keys[OSD_KEY_ESC] = 1;
   }
 }
 
-STRPTR GetMessage(LONG id)
-{
-  return(GetString(&LocaleInfo, id));
-}
 
 /*
 uclock_t uclock(void)
@@ -1034,7 +1059,7 @@ void SaveILBM(void)
   BPTR old_dir;
 
   if(!FileRequester)
-    FileRequester = AllocAslRequest(ASL_FileRequest, NULL);
+    FileRequester = (struct FileRequester  *)AllocAslRequest(ASL_FileRequest, NULL);
   
   if(FileRequester)
   {
@@ -1062,13 +1087,14 @@ void SaveILBM(void)
 
 void ErrorRequest(LONG msg_id, ...)
 {
+  // intuition requester
   struct EasyStruct es;
   
   es.es_StructSize   = sizeof(struct EasyStruct);
   es.es_Flags        = 0;
-  es.es_Title        = APPNAME;
-  es.es_TextFormat   = GetMessage(msg_id);
-  es.es_GadgetFormat = GetMessage(MSG_OK);
+  es.es_Title        = const_cast<UBYTE*>((UBYTE*)APPNAME);
+  es.es_TextFormat   = (UBYTE*)GetMessage(msg_id);
+  es.es_GadgetFormat = (UBYTE*)GetMessage(MSG_OK);
   
   EasyRequestArgs(NULL, &es, NULL, &((&msg_id)[1]));
 }

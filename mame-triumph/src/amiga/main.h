@@ -1,5 +1,12 @@
 #ifndef MAIN_H
 #define MAIN_H
+
+#ifndef __stdargs
+// shut up clangd on qtcreator....
+#define __stdargs
+#endif
+
+
 /**************************************************************************
  *
  * Copyright (C) 1999 Mats Eirik Hansen (mats.hansen@triumph.no)
@@ -15,9 +22,11 @@
 
 #define TRACE 0
 
-#include <dos/dos.h>
-#include <intuition/intuitionbase.h>
+// included by everyone, urge to have less dependencies.
 
+#include <exec/types.h>
+//#include <dos/dos.h>
+//#include <intuition/intuitionbase.h>
 #include "driver.h"
 #include "osdepend.h"
 
@@ -35,6 +44,11 @@
 #define TRACE_ENTER(f)
 #define TRACE_LEAVE(f)
 #endif
+
+struct Library;
+struct ExecBase;
+struct DosLibrary;
+struct IntuitionBase;
 
 extern struct ExecBase      *SysBase;
 extern struct DosLibrary    *DOSBase;
@@ -65,9 +79,6 @@ extern struct IPort         *Port2;
 LONG  VideoOpen(LONG width, LONG height, LONG left, LONG top, LONG right, LONG bottom, LONG dirty);
 void  VideoClose(void);
 void  InputUpdate(LONG wait);
-
-#define CATCOMP_NUMBERS
-#include "messages.h"
 
 #ifdef POWERUP
 extern struct GameDriver **Drivers;

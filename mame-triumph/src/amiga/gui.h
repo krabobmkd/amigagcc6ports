@@ -15,6 +15,6 @@
 
 void AllocGUI(void);
 void FreeGUI(void);
-LONG MainGUI(void);
+int  MainGUI(void);
 void AboutGUI(void);
 #endif

@@ -19,16 +19,16 @@ typedef struct
 	clone_f		Clone;
 	dispose_f	Dispose;
 	size_t		Size;
-	uint		Flags;
+	uint32_t	Flags;
 	int			RefCount;
 } obj_t;
 
 #define OBJF_ALLOCATED	1
 #define OBJF_DISPOSED	2
 
-obj_t	*objClone(obj_t *this, int clone_state);
-void	objDispose(obj_t *this);
-int		objInit(obj_t *this);
+obj_t	*objClone(obj_t *tthis, int clone_state);
+void	objDispose(obj_t *tthis);
+int		objInit(obj_t *tthis);
 obj_t	*objNew(size_t size);
 
 #define Dispose(obj)	(((obj_t *)(obj))->Dispose(obj))
@@ -54,9 +54,9 @@ typedef struct
 {
 	obj_t	Obj;
 	char	*Buf;
-	uint	Length;
-	uint	MaxLength;
-	uint	MinLength;
+	uint32_t	Length;
+	uint32_t	MaxLength;
+	uint32_t	MinLength;
 } string_t;
 
 #define STRE_OK		0
@@ -64,9 +64,9 @@ typedef struct
 
 /* string API: */
 
-string_t	*stringNew(char *str, uint min_len);
+string_t	*stringNew(char *str, uint32_t min_len);
 char		*stringGet(string_t *string);
-int			stringAdd(string_t *string, uint tail, char *strs,...);
+int			stringAdd(string_t *string, uint32_t tail, char *strs,...);
 void		stringClear(string_t *string);
 int			stringSet(string_t *string, char *str);
 #define		stringAddHead(string,str)	stringAdd(string,0,str,(char *)NULL)

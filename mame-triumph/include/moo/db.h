@@ -2,11 +2,14 @@
 #define DB_H
 
 #include <moo/moo.h>
+#if __cplusplus
+extern "C" {
+#endif
 
-typedef uint	(*dbbuf_read_f)(void *dbbuf, void *buf, uint len);
+typedef uint32_t	(*dbbuf_read_f)(void *dbbuf, void *buf, uint32_t len);
 typedef int		(*dbbuf_readstring_f)(void *dbbuf, char **strp);
 typedef void	(*dbbuf_unreadstring_f)(void *dbbuf);
-typedef uint	(*dbbuf_write_f)(void *dbbuf, void *buf, uint len);
+typedef uint32_t	(*dbbuf_write_f)(void *dbbuf, void *buf, uint32_t len);
 typedef int		(*dbbuf_writestring_f)(void *dbbuf, char *str);
 
 typedef struct
@@ -18,21 +21,21 @@ typedef struct
 	dbbuf_write_f			Write;
 	dbbuf_writestring_f		WriteString;
 	char					*CurrentString;
-	uint					Flags;
+	uint32_t					Flags;
 	string_t				*String;
 	char					Buf[512];
 	char					*BufPtr;
-	uint					BufLength;
-	uint					WriteCount;
+	uint32_t					BufLength;
+	uint32_t					WriteCount;
 } dbbuf_t;
 
 #define DBBUFF_STRINGUNREAD	1
 
-int		dbbufReadString(dbbuf_t *this, char **strp);
-void	dbbufUnReadString(dbbuf_t *this);
-int		dbbufWriteString(dbbuf_t *this, char *str);
-void	dbbufDispose(dbbuf_t *this);
-int		dbbufInit(dbbuf_t *this, char *str);
+int		dbbufReadString(dbbuf_t *tthis, char **strp);
+void	dbbufUnReadString(dbbuf_t *tthis);
+int		dbbufWriteString(dbbuf_t *tthis, char *str);
+void	dbbufDispose(dbbuf_t *tthis);
+int		dbbufInit(dbbuf_t *tthis, char *str);
 dbbuf_t	*dbbufNew(char *str);
 
 /* dbbufReadString() return codes. */
@@ -44,17 +47,17 @@ dbbuf_t	*dbbufNew(char *str);
 typedef struct dbitems
 {
 	struct dbitems	*Next;
-	uint			NumItems;
+	uint32_t			NumItems;
 	char			Items[0];
 } dbitems_t;
 
-typedef int		(*dbobj_accept_f)(void *this, char *name);
-typedef int		(*dbobj_read_f)(void *this, int type, int index, dbbuf_t *dbbuf);
-typedef int		(*dbobj_write_f)(void *this, int type, int index, dbbuf_t *dbbuf);
-typedef void	(*dbobj_setitemsdef_f)(void *this, void *items, uint num_items);
-typedef int		(*dbobj_isdefault_f)(void *this, int index);
-typedef void	(*dbobj_reset_f)(void *this);
-typedef void	(*dbobj_foreachitem_f)(void *this, void *item);
+typedef int		(*dbobj_accept_f)(void *tthis, char *name);
+typedef int		(*dbobj_read_f)(void *tthis, int type, int index, dbbuf_t *dbbuf);
+typedef int		(*dbobj_write_f)(void *tthis, int type, int index, dbbuf_t *dbbuf);
+typedef void	(*dbobj_setitemsdef_f)(void *tthis, void *items, uint32_t num_items);
+typedef int		(*dbobj_isdefault_f)(void *tthis, int index);
+typedef void	(*dbobj_reset_f)(void *tthis);
+typedef void	(*dbobj_foreachitem_f)(void *tthis, void *item);
 
 typedef struct
 {
@@ -66,10 +69,10 @@ typedef struct
 	dbobj_isdefault_f	IsDefault;
 	char 				*Name;
 	int					Changed;
-	uint				ItemSize;
-	uint				MinItems;
-	uint				NumItems;
-	uint				CurrentItem;
+	uint32_t				ItemSize;
+	uint32_t				MinItems;
+	uint32_t				NumItems;
+	uint32_t				CurrentItem;
 	void				*CurrentItemAddr;
 	dbitems_t			DBItems;
 } dbobj_t;
@@ -82,14 +85,14 @@ typedef struct
 #define DBOBJWT_HELP	2
 #define DBOBJWT_NAME	3
 
-int		dbobjAccept(dbobj_t *this, char *name);
-void	dbobjForEachItem(dbobj_t *this, dbobj_foreachitem_f func);
-void	*dbobjGetItemAddr(dbobj_t *this, uint index);
-void	*dbobjGetItems(dbobj_t *this);
-void	dbobjInitItems(dbobj_t *this);
-void	dbobjDispose(dbobj_t *this);
-int		dbobjInit(dbobj_t *this, char *name, uint num_items, uint min_items, uint item_size);
-void	*dbobjNew(char *name, uint num_items, uint min_items, uint item_size);
+int		dbobjAccept(dbobj_t *tthis, char *name);
+void	dbobjForEachItem(dbobj_t *tthis, dbobj_foreachitem_f func);
+void	*dbobjGetItemAddr(dbobj_t *tthis, uint32_t index);
+void	*dbobjGetItems(dbobj_t *tthis);
+void	dbobjInitItems(dbobj_t *tthis);
+void	dbobjDispose(dbobj_t *tthis);
+int		dbobjInit(dbobj_t *tthis, char *name, uint32_t num_items, uint32_t min_items, uint32_t item_size);
+void	*dbobjNew(char *name, uint32_t num_items, uint32_t min_items, uint32_t item_size);
 
 #define DBAccept(obj, name)					(((dbobj_t *)(obj))->Accept(obj,name))
 #define DBRead(obj, type, index, dbbuf)		(((dbobj_t *)(obj))->Read(obj,type,index,dbbuf))
@@ -100,7 +103,7 @@ void	*dbobjNew(char *name, uint num_items, uint min_items, uint item_size);
 typedef struct
 {
 	dbobj_t	*DBObj;
-	uint	Index;
+	uint32_t	Index;
 } dbobjref_t;
 
 typedef struct
@@ -108,18 +111,18 @@ typedef struct
 	dbbuf_t		DBBuf;
 	char		*Name;
 	FILE		*File;
-	uint		NumDBObjs;
+	uint32_t		NumDBObjs;
 	dbobjref_t	*DBObjRefs;
 } dbfile_t;
 
 /* dbfile API: */
 
 dbfile_t	*dbfileNew(char *name, void *dbobjs,...);
-int			dbfileInit(dbfile_t *this, char *name, void *dbobjs,...);
-void		dbfileDispose(dbfile_t *this);
-int			dbfileLoad(dbfile_t *this, char *name);
-int			dbfileSaveAs(dbfile_t *this, char *name);
-int			dbfileSave(dbfile_t *this);
+int			dbfileInit(dbfile_t *tthis, char *name, void *dbobjs,...);
+void		dbfileDispose(dbfile_t *tthis);
+int			dbfileLoad(dbfile_t *tthis, char *name);
+int			dbfileSaveAs(dbfile_t *tthis, char *name);
+int			dbfileSave(dbfile_t *tthis);
 
 typedef struct
 {
@@ -129,22 +132,22 @@ typedef struct
 	int			ArgI;
 	char		*Src;
 	int			WriteCount;
-	uint		NumDBObjs;
+	uint32_t		NumDBObjs;
 	dbobjref_t	*DBObjRefs;
 } dbarg_t;
 
 /* dbarg API: */
 
 dbarg_t	*dbargNew(void *dbobjs,...);
-int		dbargInit(dbarg_t *this, void *dbobjs,...);
-void	dbargDispose(dbarg_t *this);
-int		dbargParse(dbarg_t *this, int argc, char **argv, uint index);
-void	dbargPrintHelp(dbarg_t *this);
+int		dbargInit(dbarg_t *tthis, void *dbobjs,...);
+void	dbargDispose(dbarg_t *tthis);
+int		dbargParse(dbarg_t *tthis, int argc, char **argv, uint32_t index);
+void	dbargPrintHelp(dbarg_t *tthis);
 
 typedef struct
 {
 	dbobj_t	DBObj;
-	uint	NumDBObjs;
+	uint32_t	NumDBObjs;
 } dbsection_t;
 
 /* dbsection API: */
@@ -155,8 +158,8 @@ typedef struct
 {
 	dbobj_t	DBObj;
 	char	**Names;
-	uint	CurrentIndex;
-	uint	NumDBObjs;
+	uint32_t	CurrentIndex;
+	uint32_t	NumDBObjs;
 } dbsections_t;
 
 /* dbsections API: */
@@ -171,23 +174,23 @@ typedef struct
 	int			Min;
 } dbint_t;
 
-dbint_t	*dbintNew(char *name, uint num_items, uint min_items, int def, int max, int min);
-int		dbintSet(dbint_t *dbint, uint index, int val);
-int		*dbintGetAddr(dbint_t *dbint, uint index);
-int		dbintGet(dbint_t *dbint, uint index);
+dbint_t	*dbintNew(char *name, uint32_t num_items, uint32_t min_items, int def, int max, int min);
+int		dbintSet(dbint_t *dbint, uint32_t index, int val);
+int		*dbintGetAddr(dbint_t *dbint, uint32_t index);
+int		dbintGet(dbint_t *dbint, uint32_t index);
 
 typedef struct
 {
 	dbobj_t		DBObj;
-	uint		Def;
-	uint		Max;
-	uint		Min;
+	uint32_t		Def;
+	uint32_t		Max;
+	uint32_t		Min;
 } dbuint_t;
 
-dbuint_t	*dbuintNew(char *name, uint num_items, uint min_items, uint def, uint max, uint min);
-int			dbuintSet(dbuint_t *dbint, uint index, uint val);
-uint		*dbuintGetAddr(dbuint_t *dbint, uint index);
-uint		dbuintGet(dbuint_t *dbint, uint index);
+dbuint_t	*dbuintNew(char *name, uint32_t num_items, uint32_t min_items, uint32_t def, uint32_t max, uint32_t min);
+int			dbuintSet(dbuint_t *dbint, uint32_t index, uint32_t val);
+uint32_t		*dbuintGetAddr(dbuint_t *dbint, uint32_t index);
+uint32_t		dbuintGet(dbuint_t *dbint, uint32_t index);
 
 typedef struct
 {
@@ -204,16 +207,16 @@ typedef struct
 
 /* dbenum API: */
 
-dbenum_t	*dbenumNew(char *name, uint num_items, uint min_items, char def, dbenumdef_t *dbenum_defs);
-int			dbenumSet(dbenum_t *dbenum, uint index, char val);
-char		*dbenumGetAddr(dbenum_t *dbenum, uint index);
-char		dbenumGet(dbenum_t *dbenum, uint index);
+dbenum_t	*dbenumNew(char *name, uint32_t num_items, uint32_t min_items, char def, dbenumdef_t *dbenum_defs);
+int			dbenumSet(dbenum_t *dbenum, uint32_t index, char val);
+char		*dbenumGetAddr(dbenum_t *dbenum, uint32_t index);
+char		dbenumGet(dbenum_t *dbenum, uint32_t index);
 
 typedef dbenum_t dbbool_t;
 
 /* dbbool API: */
 
-dbbool_t	*dbboolNew(char *name, uint num_items, uint min_items, char def);
+dbbool_t	*dbboolNew(char *name, uint32_t num_items, uint32_t min_items, char def);
 #define		dbboolSet(dbbool,index,val)	dbenumSet(dbbool,index,val)
 #define		dbboolGetAddr(dbbool,index)	dbenumGetAddr(dbbool,index)
 #define		dbboolGet(dbbool,index)		dbenumGet(dbbool,index)
@@ -224,11 +227,11 @@ typedef struct
 	char		*Def;
 } dbstring_t;
 
-dbstring_t	*dbstringNew(char *name, uint num_items, uint min_items, char *def);
-int			dbstringSet(dbstring_t *this, uint index, char *str);
-string_t	**dbstringGetAddr(dbstring_t *this, uint index);
-string_t	*dbstringGetString(dbstring_t *this, uint index);
-char		*dbstringGet(dbstring_t *this, uint index);
+dbstring_t	*dbstringNew(char *name, uint32_t num_items, uint32_t min_items, char *def);
+int			dbstringSet(dbstring_t *tthis, uint32_t index, char *str);
+string_t	**dbstringGetAddr(dbstring_t *tthis, uint32_t index);
+string_t	*dbstringGetString(dbstring_t *tthis, uint32_t index);
+char		*dbstringGet(dbstring_t *tthis, uint32_t index);
 
 #define DBEND	((void *)(~0))
 
@@ -244,4 +247,9 @@ char		*dbstringGet(dbstring_t *this, uint index);
 #define DBFE_OK			0
 #define DBFE_OPENFAILED	1
 
+#if __cplusplus
+}
 #endif
+
+#endif
+

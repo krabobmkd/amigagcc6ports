@@ -184,7 +184,10 @@ struct Inputs *AllocInputs(Tag tags,...)
             inputs->RawKeys[keymap[i].Key & (~IKEY_RAW)] = keymap[i].Code;
           else if(keymap[i].Key != IKEY_NONE)
           {
-            if(MapANSI(((UBYTE *) &keymap[i].Key) + 3, 1, buf, 1, NULL) == 1)
+
+// LONG  __stdargs MapANSI( CONST_STRPTR string, LONG count, STRPTR buffer, LONG length, CONST struct KeyMap *keyMap );
+
+            if(MapANSI(((const char *) &keymap[i].Key) + 3, 1,(STRPTR)buf, 1, NULL) == 1)
             {
               if(!buf[1])
                 inputs->RawKeys[buf[0] & IKEY_RAWMASK] = keymap[i].Code;
@@ -423,7 +426,7 @@ void IAllocPort(struct Inputs *inputs, LONG portnum)
 
       if(port->MsgPort)
       {
-        port->TimerRequest  = CreateIORequest(port->MsgPort, sizeof(struct timerequest));
+        port->TimerRequest  = (struct timerequest *)CreateIORequest(port->MsgPort, sizeof(struct timerequest));
 
         if(port->TimerRequest)
           OpenDevice("timer.device", UNIT_VBLANK, (struct IORequest *) port->TimerRequest, 0);

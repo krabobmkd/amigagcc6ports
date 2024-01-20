@@ -10,8 +10,9 @@
  *
  *
  *************************************************************************/
-
+extern "C" {
 #include <clib/alib_protos.h>
+#include <clib/intuition_protos.h>
 
 #include <exec/execbase.h>
 #include <exec/memory.h>
@@ -28,6 +29,8 @@
 #include <powerup/ppclib/memory.h>
 #include <inline/ppc.h>
 #endif
+}
+#include <stdlib.h>
 
 #include "audio.h"
 
@@ -133,7 +136,7 @@ struct Audio *AllocAudio(Tag tags,...)
   else
     size += 9 * sizeof(struct IOAudio);
 
-  audio = AllocVec(size, MEMF_CLEAR|MEMF_PUBLIC);
+  audio = (struct Audio *)AllocVec(size, MEMF_CLEAR|MEMF_PUBLIC);
   
   if(audio)
   {
@@ -218,7 +221,7 @@ struct Audio *AllocAudio(Tag tags,...)
             audio->AudioRequests[i].ioa_Request.io_Message.mn_Length  = sizeof(struct IOAudio);
           }
           
-          audio->Buffers = AllocVec(8 * audio->BufferSize, MEMF_PUBLIC|MEMF_CHIP);
+          audio->Buffers = (BYTE *)AllocVec(8 * audio->BufferSize, MEMF_PUBLIC|MEMF_CHIP);
           
           if(audio->Buffers)
           {
@@ -621,7 +624,7 @@ void ASetChannelFrame(struct AChannelArray *ca)
                     while(--k)
                       sound = (struct ASound *) sound->Node.mln_Succ;
                   
-                    sample  = sound->AHISampleInfo.ahisi_Address;
+                    sample  = (BYTE*)sound->AHISampleInfo.ahisi_Address;
                     length  = sound->AHISampleInfo.ahisi_Length;
                   }
                   else
@@ -673,7 +676,7 @@ void ASetChannelFrame(struct AChannelArray *ca)
                   audio->AudioRequests[2*j+o].ioa_Request.io_Unit   = (struct Unit *) (1<<j);
                   audio->AudioRequests[2*j+o].ioa_Request.io_Command  = CMD_WRITE;
                   audio->AudioRequests[2*j+o].ioa_Request.io_Flags  = ADIOF_PERVOL;
-                  audio->AudioRequests[2*j+o].ioa_Data        = sample;
+                  audio->AudioRequests[2*j+o].ioa_Data        = (UBYTE*)sample;
                   audio->AudioRequests[2*j+o].ioa_Length        = length;
                   audio->AudioRequests[2*j+o].ioa_Period        = MAKE_PERIOD(freq);
                   audio->AudioRequests[2*j+o].ioa_Volume        = (64 * vol * c[i].Volume) / 10000;
@@ -810,7 +813,7 @@ struct ASound *ALoadSound(struct Audio *audio, UBYTE *sample, LONG res, LONG len
 
   if(audio->UseAHI)
   {
-    sound = memAlloc(sizeof(struct ASound) + length);
+    sound = (struct ASound *)memAlloc(sizeof(struct ASound) + length);
         
     if(sound)
     {
@@ -845,19 +848,18 @@ struct ASound *ALoadSound(struct Audio *audio, UBYTE *sample, LONG res, LONG len
   {
     if(res != 8)
       return(NULL);
-
-    step = AResample(&freq, MAX_PAULA_FREQUENCY, &length, MAX_PAULA_LENGTH);
+    step = (LONG)AResample((ULONG *)&freq, MAX_PAULA_FREQUENCY,(ULONG *) &length, MAX_PAULA_LENGTH);
     
     if(AvailMem(MEMF_CHIP|MEMF_PUBLIC) >= (audio->MinFreeChip + length))
-      buffer = AllocVec(length, MEMF_CHIP|MEMF_PUBLIC);
+      buffer = (UBYTE *)AllocVec(length, MEMF_CHIP|MEMF_PUBLIC);
     else
       buffer = NULL;
 
     if(buffer)
-      sound = memAlloc(sizeof(struct ASound));
+      sound = (struct ASound*)memAlloc(sizeof(struct ASound));
     else
     {
-      sound = memAlloc(sizeof(struct ASound) + length);
+      sound = (struct ASound*)memAlloc(sizeof(struct ASound) + length);
       
       if(sound)
         buffer = (UBYTE *) &sound[1];
@@ -913,7 +915,7 @@ struct ASound *AReadSound(struct Audio *audio, BPTR file)
       
       if(audio->UseAHI)
       {
-        sound = memAlloc(sizeof(struct ASound) + length);
+        sound = (struct ASound *)memAlloc(sizeof(struct ASound) + length);
         
         if(sound)
         {
@@ -952,18 +954,18 @@ struct ASound *AReadSound(struct Audio *audio, BPTR file)
         if(mame_sample.Resolution != 8)
           return(NULL);
 
-        step = AResample(&frequency, MAX_PAULA_FREQUENCY, &length, MAX_PAULA_LENGTH);
+        step = AResample((ULONG*) &frequency, MAX_PAULA_FREQUENCY,(ULONG*) &length, MAX_PAULA_LENGTH);
     
         if(AvailMem(MEMF_CHIP|MEMF_PUBLIC) >= (audio->MinFreeChip + length))
-          buffer = AllocVec(length, MEMF_CHIP|MEMF_PUBLIC);
+          buffer = (UBYTE*)AllocVec(length, MEMF_CHIP|MEMF_PUBLIC);
         else
           buffer = NULL;
 
         if(buffer)
-          sound = memAlloc(sizeof(struct ASound));
+          sound = (struct ASound *)memAlloc(sizeof(struct ASound));
         else
         {
-          sound = memAlloc(sizeof(struct ASound) + length);
+          sound = (struct ASound *)memAlloc(sizeof(struct ASound) + length);
       
           if(sound)
             buffer = (UBYTE *) &sound[1];
@@ -981,7 +983,7 @@ struct ASound *AReadSound(struct Audio *audio, BPTR file)
             Read(file, buffer, length);
           else
           {
-            sample = AllocVec(INTELULONG(mame_sample.Length), MEMF_PUBLIC);
+            sample = (UBYTE*)AllocVec(INTELULONG(mame_sample.Length), MEMF_PUBLIC);
             
             if(sample)
             {

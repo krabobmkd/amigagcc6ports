@@ -10,14 +10,19 @@
  *
  *
  *************************************************************************/
+#ifndef __stdargs
+// shut up clangd.
+#define __stdargs
+#endif
+#include <string>
 
-#include <stdio.h>
-
-#include <exec/types.h>
+extern "C" {
 #include <exec/memory.h>
 #include <dos/dos.h>
 #include <dos/dosextens.h>
 #include <cybergraphx/cybergraphics.h>
+}
+#include <stdio.h>
 
 #include "mame.h"
 #include "driver.h"
@@ -30,7 +35,7 @@
 // from mame since 0.37:
 #include "input.h"
 
-#define INTELULONG(i) (((i)<<24)|((i)>>24)|(((i)<<8)&0x00ff0000)|(((i)>>8)&0x0000ff00))
+#define INTELuint32_t(i) (((i)<<24)|((i)>>24)|(((i)<<8)&0x00ff0000)|(((i)>>8)&0x0000ff00))
 
 #ifdef POWERUP
 extern LONG FrameSkip;
@@ -52,7 +57,7 @@ extern FILE *errorlog;
 extern void *record;
 extern void *playback;
 
-static UBYTE Palette[256][3];
+static uint8_t Palette[256][3];
 
 static int MasterVolume;
 static int Attenuation;
@@ -60,14 +65,15 @@ static int Attenuation;
 static int FrameCounter;
 static const int NoFrameSkipCount = 10;
 
-static char ROMZipName[256];
-static char SampleZipName[256];
+//static char ROMZipName[256];
+//static char SampleZipName[256];
+std::string ROMZipName,SampleZipName;
 
 static int  ShowFPS;
 
 static int on_screen_display_timer;
 
-char *DirtyLines[6];
+uint8_t *DirtyLines[6];
 
 int frameskip = 0;
 int autoframeskip = 0;
@@ -200,8 +206,8 @@ void StartGame(void)
 
   /* Clear the zip filename caches. */
 
-  ROMZipName[0]    = 0;
-  SampleZipName[0] = 0;
+  ROMZipName.clear();
+  SampleZipName.clear();
   ShowFPS          = 0;
 
   FrameCounter = 0;
@@ -481,6 +487,7 @@ int osd_allocate_colors(unsigned int total_colors,const unsigned char *palette,u
   }
 
   TRACE_LEAVE("osd_allocate_colors");
+  return 0;
 }
 //krbtest
 //struct osd_bitmap *_globalBitmap = NULL;
@@ -500,6 +507,7 @@ int osd_allocate_colors(unsigned int total_colors,const unsigned char *palette,u
   this is done entirely in the core.
   Returns 0 on success.
 */
+
 int osd_create_display(int width,int height,int depth,int fps,int attributes,int orientation)
 //old struct osd_bitmap *osd_create_display(int width, int height, int attributes)
 {
@@ -574,7 +582,7 @@ int osd_create_display(int width,int height,int depth,int fps,int attributes,int
       
       if((Config[CFG_DIRECTMODE] == CFGDM_COPY) && Config[CFG_DIRTYLINES] && !Config[CFG_BUFFERING])
       {
-        DirtyLines[0] = calloc(2 * (1 + Config[CFG_BUFFERING]) * height, 1);
+        DirtyLines[0] = (uint8_t *)calloc(2 * (1 + Config[CFG_BUFFERING]) * height, 1);
       
         if(DirtyLines[0])
         {
@@ -587,7 +595,7 @@ int osd_create_display(int width,int height,int depth,int fps,int attributes,int
     {
       if(PixelArray[0]->DirtyLines)
       {
-        DirtyLines[0] = calloc(2 * (1 + Config[CFG_BUFFERING]) * height, 1);
+        DirtyLines[0] = (uint8_t *)calloc(2 * (1 + Config[CFG_BUFFERING]) * height, 1);
       
         if(DirtyLines[0])
         {
@@ -712,15 +720,15 @@ void osd_update_video_and_audio(struct osd_bitmap *bitmap)
   int       trueorientation;
   int       fps;
   LONG      i, j, w, h, l;
-  ULONG     bpr;
-  ULONG     mod;
-  ULONG     srcmod;
-  ULONG     *src;
-  ULONG     *pix;
-  UBYTE     **lines;
-  UBYTE     *dst;
-  UBYTE     *new, *new2, *new3;
-  UBYTE     *old, *old2, *old3;
+  uint32_t     bpr;
+  uint32_t     mod;
+  uint32_t     srcmod;
+  uint32_t     *src;
+  uint32_t     *pix;
+  uint8_t     **lines;
+  uint8_t     *dst;
+  uint8_t     *newb, *new2, *new3;
+  uint8_t     *old, *old2, *old3;
   char      buf[30];
 
   static int showfpstemp;
@@ -784,7 +792,8 @@ void osd_update_video_and_audio(struct osd_bitmap *bitmap)
     Machine->orientation = ORIENTATION_DEFAULT;
 
     fps = VGetFPS(Video);
-    sprintf(buf," %3d%%(%3d/%d fps)",100*fps/Machine->drv->frames_per_second,fps,Machine->drv->frames_per_second);
+    sprintf(buf," %3d%%(%3d/%d fps)",(int)(100*fps/Machine->drv->frames_per_second),fps,
+            (int)(Machine->drv->frames_per_second));
     l = strlen(buf);
 
 //krb, verify
@@ -846,23 +855,23 @@ void osd_update_video_and_audio(struct osd_bitmap *bitmap)
           lines = bitmap->line;
           h   = bitmap->height;
           w   = bitmap->width >> 2;
-          pix   = (ULONG *) DirectArray->Pixels;
+          pix   = (uint32_t *) DirectArray->Pixels;
           bpr   = DirectArray->BytesPerRow >> 2;
           mod   = bpr - w;
-          new   = DirtyLines[0];
+          newb   = DirtyLines[0];
           old   = DirtyLines[1];
 
           switch(Config[CFG_BUFFERING])
           {
             case CFGB_SINGLE:           
               DirtyLines[0] = old;
-              DirtyLines[1] = new;
+              DirtyLines[1] = newb;
 
               for(i = 0; i < h; i++)
               {
-                if((*new++ | *old++))
+                if((*newb++ | *old++))
                 {
-                  src = (ULONG *) lines[i];
+                  src = (uint32_t *) lines[i];
               
                   for(j = 0; j < w; j++)
                     *pix++ = *src++;
@@ -881,14 +890,14 @@ void osd_update_video_and_audio(struct osd_bitmap *bitmap)
               
               DirtyLines[0] = old2;
               DirtyLines[1] = new2;
-              DirtyLines[2] = new;
+              DirtyLines[2] = newb;
               DirtyLines[3] = old;
               
               for(i = 0; i < h; i++)
               {
-                if((*new++ | *new2++ | *old++ | *old2++))
+                if((*newb++ | *new2++ | *old++ | *old2++))
                 {
-                  src = (ULONG *) lines[i];
+                  src = (uint32_t *) lines[i];
               
                   for(j = 0; j < w; j++)
                     *pix++ = *src++;
@@ -909,16 +918,16 @@ void osd_update_video_and_audio(struct osd_bitmap *bitmap)
               
               DirtyLines[0] = old3;
               DirtyLines[1] = new3;
-              DirtyLines[2] = new;
+              DirtyLines[2] = newb;
               DirtyLines[3] = old;
               DirtyLines[4] = new2;
               DirtyLines[5] = old2;
               
               for(i = 0; i < h; i++)
               {
-                if((*new++ | *new2++ | *new3++ | *old++ | *old2++ | *old3++))
+                if((*newb++ | *new2++ | *new3++ | *old++ | *old2++ | *old3++))
                 {
-                  src = (ULONG *) lines[i];
+                  src = (uint32_t *) lines[i];
               
                   for(j = 0; j < w; j++)
                     *pix++ = *src++;
@@ -939,11 +948,11 @@ void osd_update_video_and_audio(struct osd_bitmap *bitmap)
           lines = bitmap->line;
           h   = bitmap->height;
           w   = bitmap->width >> 2;
-          pix   = (ULONG *) DirectArray->Pixels;
+          pix   = (uint32_t *) DirectArray->Pixels;
           bpr   = DirectArray->BytesPerRow >> 2;
           mod   = bpr - w;
-          src   = (ULONG *) lines[0];
-          srcmod  = (((ULONG) bitmap->_private) >> 2) - w;
+          src   = (uint32_t *) lines[0];
+          srcmod  = (((uint32_t) bitmap->_private) >> 2) - w;
 
           for(i = 0; i < h; i++)
           {
@@ -965,17 +974,17 @@ void osd_update_video_and_audio(struct osd_bitmap *bitmap)
     {
       h = bitmap->height;
       dst = PixelArray[CurrentArray]->DirtyLines + 8;
-      new = DirtyLines[0];
+      newb = DirtyLines[0];
       old = DirtyLines[1];
 
       switch(Config[CFG_BUFFERING])
       {
         case CFGB_SINGLE:           
           DirtyLines[0] = old;
-          DirtyLines[1] = new;
+          DirtyLines[1] = newb;
 
           for(i = 0; i < h; i++)
-            *dst++ = *new++ | *old++;
+            *dst++ = *newb++ | *old++;
           
           break;
 
@@ -985,11 +994,11 @@ void osd_update_video_and_audio(struct osd_bitmap *bitmap)
           
           DirtyLines[0] = old2;
           DirtyLines[1] = new2;
-          DirtyLines[2] = new;
+          DirtyLines[2] = newb;
           DirtyLines[3] = old;
           
           for(i = 0; i < h; i++)
-            *dst++ = *new++ | *new2++ | *old++ | *old2++;
+            *dst++ = *newb++ | *new2++ | *old++ | *old2++;
           
           break;
 
@@ -1001,13 +1010,13 @@ void osd_update_video_and_audio(struct osd_bitmap *bitmap)
           
           DirtyLines[0] = old3;
           DirtyLines[1] = new3;
-          DirtyLines[2] = new;
+          DirtyLines[2] = newb;
           DirtyLines[3] = old;
           DirtyLines[4] = new2;
           DirtyLines[5] = old2;
           
           for(i = 0; i < h; i++)
-            *dst++ = *new++ | *new2++ | *new3++ | *old++ | *old2++ | *old3++;
+            *dst++ = *newb++ | *new2++ | *new3++ | *old++ | *old2++ | *old3++;
           
           break;
       }
@@ -1081,26 +1090,24 @@ int osd_fchecksum (const char *game, const char *filename, unsigned int *length,
 void *osd_fopen(const char *gamename,const char *filename,int filetype,int write)
 {
   struct File *file;
-  char    *zip_name;
+  std::string *zip_name=NULL;
 
   file = NULL;
 
   if(!write)
   {
     if(filetype == OSD_FILETYPE_ROM)
-      zip_name = ROMZipName;
+      zip_name = &ROMZipName;
     else if(filetype == OSD_FILETYPE_SAMPLE)
-      zip_name = SampleZipName;
-    else
-      zip_name = NULL;
+      zip_name = &SampleZipName;
 
-    if(zip_name && zip_name[0])
+    if(zip_name && !zip_name->empty() )
     {
-      file = calloc(sizeof(struct File), 1);
+      file = (struct File *)calloc(sizeof(struct File), 1);
           
       if(file)
       {
-        if(!load_zipped_file(zip_name, filename, &file->Data, &file->Length))
+        if(!load_zipped_file(zip_name->c_str(), filename, &file->Data, &file->Length))
         {
           file->Type  = FILETYPE_CUSTOM;
           file->CRC = crc32(0, file->Data, file->Length);
@@ -1121,18 +1128,17 @@ void *osd_fopen(const char *gamename,const char *filename,int filetype,int write
     if(file && (file->Type == FILETYPE_ZIP))
     {
       if(filetype == OSD_FILETYPE_ROM)
-        zip_name = ROMZipName;
+        zip_name = &ROMZipName;
       else if(filetype == OSD_FILETYPE_SAMPLE)
-        zip_name = SampleZipName;
+        zip_name = &SampleZipName;
       else
-        zip_name = NULL;
+        zip_name= NULL;
 
       /* Cache the zip filename. */
       
-      if(zip_name)
-        strcpy(zip_name, file->Name);
+      if(zip_name) (*zip_name) = file->Name;
 
-      if(load_zipped_file(zip_name, filename, &file->Data, &file->Length))
+      if(load_zipped_file(zip_name->c_str(), filename, &file->Data, &file->Length))
       {
         file->Data = NULL;
         osd_fclose(file);
@@ -1187,14 +1193,14 @@ int osd_fread(void *file_handle, void *buffer, int length)
 int osd_fread_scatter(void *void_file_p, void *buffer_p, int length, int increment)
 {
   struct File *file_p;
-  UBYTE buf[4096];
-  UBYTE *dst_p;
-  UBYTE *src_p;
+  uint8_t buf[4096];
+  uint8_t *dst_p;
+  uint8_t *src_p;
   int   remaining_len;
   int   len;
 
   file_p = (struct File *) void_file_p;
-  dst_p  = buffer_p;
+  dst_p  = (uint8_t*)buffer_p;
 
   switch(file_p->Type)
   {
@@ -1266,14 +1272,13 @@ int osd_fread_scatter(void *void_file_p, void *buffer_p, int length, int increme
 int osd_fread_swap(void *file_handle, void *buffer, int length)
 {
 	int i;
-	unsigned char *buf;
-	unsigned char temp;
+	uint8_t *buf;
+	uint8_t temp;
 	int res;
-
 
 	res = osd_fread(file_handle,buffer,length);
 
-	buf = buffer;
+	buf = (uint8_t*)buffer;
 	for (i = 0;i < length;i+=2)
 	{
 		temp = buf[i];
@@ -1411,12 +1416,11 @@ void osd_fclose(void *file)
 void osd_led_w(int led,int on)
 {
 }
-
+/*
 static int map_key(int key)
 {
   switch(key)
   {
-/*re
     case OSD_KEY_CANCEL:
       return(OSD_KEY_ESC);
     case OSD_KEY_RESET_MACHINE:
@@ -1461,7 +1465,7 @@ static int map_key(int key)
 
     case OSD_KEY_UI_DOWN:
       return(OSD_KEY_DOWN);
-*/
+
     default:
       return(key);
   }
@@ -1513,7 +1517,7 @@ const char *osd_key_name(int keycode)
 	if(keycode && keycode <= OSD_MAX_KEY)
     return(keynames[keycode-1]);
 	else
-	*/
+
     return("None");
 }
 
@@ -1542,13 +1546,13 @@ int osd_key_pressed(int key)
 
   if((key < OSD_MAX_KEY) && Keys[key])
     return(1);
-  */
+
   return(0);
 }
 
 int osd_key_pressed_memory(int key)
 {
-/*todo
+
 #ifndef POWERUP
   // To prevent the m68k version from being stuck in a waiting for
   // key loop.
@@ -1576,7 +1580,6 @@ int osd_key_pressed_memory(int key)
       return(1);
     }
   }
-  */
   return(0);
 }
 
@@ -1584,7 +1587,7 @@ int osd_key_pressed_memory_repeat(int key, int speed)
 {
   static int counter;
   static int keydelay;
-/*re
+
 #ifndef POWERUP
   // To prevent the m68k version from being stuck in a waiting for
   // key loop.
@@ -1624,7 +1627,6 @@ int osd_key_pressed_memory_repeat(int key, int speed)
       return(1);
     }   
   }
-  */
   return(0);
 
 }
@@ -1632,7 +1634,7 @@ int osd_key_pressed_memory_repeat(int key, int speed)
 int osd_read_key_immediate(void)
 {
   int key;
-/*re
+
 #ifndef POWERUP
   / To prevent the m68k version from being stuck in a waiting for
   // key loop.
@@ -1654,7 +1656,7 @@ int osd_read_key_immediate(void)
 
     return(key);
   }
-*/
+
   return(OSD_KEY_NONE);
 }
 
@@ -1667,6 +1669,7 @@ int osd_read_keyrepeat(void)
 
   return(key);
 }
+*/
 /*old
 const char *osd_joy_name(int joycode)
 {
@@ -1819,12 +1822,6 @@ int osd_joy_pressed(int joycode)
 }
 */
 
-void osd_analogjoy_read(int player, int *analog_x, int *analog_y)
-{
-  *analog_x = 0;
-  *analog_y = 0;
-}
-
 void osd_play_sample(int channel,signed char *data,int len,int freq,int volume,int loop)
 {
   if(ChannelArray[0] && (channel < AUDIO_CHANNELS))
@@ -1846,7 +1843,7 @@ void osd_play_sample(int channel,signed char *data,int len,int freq,int volume,i
 
       data = ChannelArray[CurrentArray]->Channels[channel].Buffer;
 #endif
-      APlaySample(ChannelArray[CurrentArray], channel, freq, volume * 100 / 255, len, data, loop);
+      APlaySample(ChannelArray[CurrentArray], channel, freq, volume * 100 / 255, len, (UBYTE*)data, loop);
     }
     else if(len < 0)
     {
@@ -1988,8 +1985,8 @@ struct GameSamples *readsamples(const char **samplenames,const char *basename)
   struct MameSample *mame_sample;
   struct GameSamples  *samples;
   struct ASound   *sound;
-  LONG        skipfirst;
-  LONG        i;
+  int        skipfirst;
+  int        i;
 
 #ifdef POWERUP
     if(!ChannelArray[1])
@@ -2010,7 +2007,7 @@ struct GameSamples *readsamples(const char **samplenames,const char *basename)
       while(samplenames[i+skipfirst])
         i++;
 
-      if((samples = malloc(sizeof(struct GameSamples) + (i-1)*sizeof(struct GameSample))))
+      if((samples = (struct GameSamples *)malloc(sizeof(struct GameSamples) + (i-1)*sizeof(struct GameSample))))
       {
         samples->total = i;
 
@@ -2023,10 +2020,12 @@ struct GameSamples *readsamples(const char **samplenames,const char *basename)
 
           if(samplenames[i+skipfirst][0])
           {
-            file = osd_fopen(basename,samplenames[i+skipfirst],OSD_FILETYPE_SAMPLE,0);
+            file = (struct File *)
+                    osd_fopen(basename,samplenames[i+skipfirst],OSD_FILETYPE_SAMPLE,0);
             
             if(!file && skipfirst)
-              file = osd_fopen(samplenames[0]+1,samplenames[i+skipfirst],OSD_FILETYPE_SAMPLE,0);
+              file = (struct File *)
+                      osd_fopen(samplenames[0]+1,samplenames[i+skipfirst],OSD_FILETYPE_SAMPLE,0);
 
             if(file)
             {
@@ -2038,8 +2037,8 @@ struct GameSamples *readsamples(const char **samplenames,const char *basename)
                 {
                   sound = ALoadSound(Audio, mame_sample->Data,
                                 mame_sample->Resolution,
-                                INTELULONG(mame_sample->Length),
-                                INTELULONG(mame_sample->Frequency),
+                                INTELuint32_t(mame_sample->Length),
+                                INTELuint32_t(mame_sample->Frequency),
                                 mame_sample->Volume);
                 }
                 else
@@ -2050,9 +2049,9 @@ struct GameSamples *readsamples(const char **samplenames,const char *basename)
 
               if(sound)
               {
-                samples->sample[i] = malloc(sizeof(struct GameSample));
+                samples->sample[i] = (struct GameSample *)malloc(sizeof(struct GameSample));
                 
-                if(samples->sample[i]);
+                if(samples->sample[i])
                 {
                   samples->sample[i]->length    = -sound->Sound;
            //krb: no volume       samples->sample[i]->Volume    = sound->Volume;
@@ -2341,29 +2340,6 @@ void osd_profiler(int type)
 void osd_save_snapshot(struct osd_bitmap *bitmap)
 {
 
-}
-
-int osd_joystick_needs_calibration (void)
-{
-  return(0);
-}
-
-
-void osd_joystick_start_calibration (void)
-{
-}
-
-char *osd_joystick_calibrate_next (void)
-{
-  return(NULL);
-}
-
-void osd_joystick_calibrate (void)
-{
-}
-
-void osd_joystick_end_calibration (void)
-{
 }
 
 int osd_display_loading_rom_message(const char *name,int current,int total)

@@ -15,6 +15,7 @@
 
 #include <stdio.h>
 
+extern "C" {
 #include <clib/alib_protos.h>
 
 #include <exec/types.h>
@@ -48,6 +49,8 @@
 #endif
 
 #include <macros.h>
+}
+
 #include "video.h"
 
 #define ABS(a) ((a>=0)?(a):-(a))
@@ -223,7 +226,7 @@ struct Video *AllocVideo(Tag tags,...)
   ULONG  mode_id;
   BOOL   use_screen, use_screen_req, no_refresh;
 
-  if((video = AllocVec(sizeof(struct Video), MEMF_PUBLIC|MEMF_CLEAR)))
+  if((video = (struct Video *)AllocVec(sizeof(struct Video), MEMF_PUBLIC|MEMF_CLEAR)))
   {
     /* Setup defaults. */
 
@@ -486,7 +489,7 @@ struct Video *AllocVideo(Tag tags,...)
               video->Pointer  = AllocVec(8, MEMF_CHIP|MEMF_CLEAR);
               
               if(video->Pointer)
-                SetPointer(win, video->Pointer, 0, 0, 0, 0);
+                SetPointer(win,(UWORD*) video->Pointer, 0, 0, 0, 0);
             }
             else
               VError = OpenWindowFailed;
@@ -584,7 +587,7 @@ struct Video *AllocVideo(Tag tags,...)
 
       if(video->Screen && ((1 << video->Screen->RastPort.BitMap->Depth) < max_colors))
       {
-        video->RemapBuffer = AllocVec((((video->Width + 31) >> 5) << 5) * video->Height,
+        video->RemapBuffer = (UBYTE*) AllocVec((((video->Width + 31) >> 5) << 5) * video->Height,
                                       MEMF_PUBLIC|MEMF_CLEAR);
       }
 
@@ -628,7 +631,7 @@ struct Video *AllocVideo(Tag tags,...)
       video->TimerMsgPort.mp_SigTask      = video->Window->UserPort->mp_SigTask;
       NewList(&video->TimerMsgPort.mp_MsgList);
       
-      video->TimerRequest = CreateIORequest(&video->TimerMsgPort, sizeof(struct timerequest));
+      video->TimerRequest = (struct timerequest*)CreateIORequest(&video->TimerMsgPort, sizeof(struct timerequest));
         
       if(video->TimerRequest)
       {
@@ -1035,7 +1038,7 @@ struct VPixelArray *VAllocPixelArray(struct Video *video, LONG width, LONG heigh
   if(dirty)
     size += height;
 
-  pa  = memAlloc(size);
+  pa  = (struct VPixelArray *)memAlloc(size);
 
   if(pa)
   {
@@ -1410,7 +1413,7 @@ struct VVectorArray *VAllocVectorArray( struct Video *video, LONG width, LONG he
 {
   struct VVectorArray *va;
 
-  va  = memAlloc(sizeof(struct VVectorArray) + length * sizeof(struct VVector));
+  va  = (struct VVectorArray *)memAlloc(sizeof(struct VVectorArray) + length * sizeof(struct VVector));
 
   if(va)
   {
@@ -1667,7 +1670,7 @@ struct VDirectArray *VAllocDirectArray(struct Video *video, LONG width, LONG hei
 #ifdef POWERUP  
   da = PPCAllocVec(sizeof(struct VDirectArray), MEMF_PUBLIC|MEMF_CLEAR|MEMF_NOCACHESYNCPPC|MEMF_NOCACHESYNCM68K);
 #else
-  da = AllocVec(sizeof(struct VDirectArray), MEMF_PUBLIC|MEMF_CLEAR);
+  da = (struct VDirectArray *)AllocVec(sizeof(struct VDirectArray), MEMF_PUBLIC|MEMF_CLEAR);
 #endif
 
   if(da)
@@ -1792,7 +1795,7 @@ LONG VSaveILBM(struct Video *video, STRPTR filename)
 {
   BPTR  file;
   APTR  buffer;
-  APTR  buf;
+  UBYTE  *buf;
   UBYTE *pix;
   UBYTE *line;
   LONG  w;
@@ -1810,7 +1813,7 @@ LONG VSaveILBM(struct Video *video, STRPTR filename)
     
     buffer = AllocVec(9*sizeof(ULONG)+sizeof(struct BMHD)+(256*3)+(((w+15)&0xfffffff0)*h), MEMF_PUBLIC);
     
-    buf = buffer;
+    buf = (UBYTE *)buffer;
     
     if(buf)
     {
@@ -1818,11 +1821,16 @@ LONG VSaveILBM(struct Video *video, STRPTR filename)
       
       if(file)
       {
-        *((ULONG *) buf)++  = ID_FORM;
-        *((ULONG *) buf)++  = 7*sizeof(ULONG)+sizeof(struct BMHD)+(256*3)+(((w+15)&0xfffffff0)*h);
-        *((ULONG *) buf)++  = MAKE_ID('I','L','B','M');
-        *((ULONG *) buf)++  = MAKE_ID('B','M','H','D');
-        *((ULONG *) buf)++  = sizeof(struct BMHD);
+        *((ULONG *) buf)  = ID_FORM;
+        buf+=4;
+        *((ULONG *) buf)  = 7*sizeof(ULONG)+sizeof(struct BMHD)+(256*3)+(((w+15)&0xfffffff0)*h);
+        buf+=4;
+        *((ULONG *) buf)  = MAKE_ID('I','L','B','M');
+        buf+=4;
+        *((ULONG *) buf)  = MAKE_ID('B','M','H','D');
+        buf+=4;
+        *((ULONG *) buf)  = sizeof(struct BMHD);
+        buf+=4;
         ((struct BMHD *) buf)->Width      = w;
         ((struct BMHD *) buf)->Height     = h;
         ((struct BMHD *) buf)->Left       = 0;
@@ -1836,17 +1844,21 @@ LONG VSaveILBM(struct Video *video, STRPTR filename)
         ((struct BMHD *) buf)->YAspect      = 1;
         ((struct BMHD *) buf)->PageWidth    = w;
         ((struct BMHD *) buf)->PageHeight   = h;
-        ((struct BMHD *) buf)++;
-        *((ULONG *) buf)++  = MAKE_ID('C','M','A','P');
-        *((ULONG *) buf)++  = 256*3;
+        buf += sizeof(struct BMHD);
+        *((ULONG *) buf)  = MAKE_ID('C','M','A','P');
+         buf+=4;
+        *((ULONG *) buf)  = 256*3;
+         buf+=4;
         for(i = 0; i < 256; i++)
         {
-          *((UBYTE *) buf)++  = video->CMAP[i] >> 16;
-          *((UBYTE *) buf)++  = (video->CMAP[i] >> 8) & 0xff;
-          *((UBYTE *) buf)++  = video->CMAP[i] & 0xff;
+          *buf++ = video->CMAP[i] >> 16;
+          *buf++ = (video->CMAP[i] >> 8) & 0xff;
+          *buf++ = video->CMAP[i] & 0xff;
         }
-        *((ULONG *) buf)++  = MAKE_ID('B','O','D','Y');
-        *((ULONG *) buf)++  = (((w+15)&0xfffffff0)*h);
+        *((ULONG *) buf)  = MAKE_ID('B','O','D','Y');
+         buf+=4;
+        *((ULONG *) buf)  = (((w+15)&0xfffffff0)*h);
+         buf+=4;
         line = VGetPixelArrayAddr(video->CurrentPixelArray);
         for(i = 0; i < h; i++)
         {
@@ -1867,15 +1879,16 @@ LONG VSaveILBM(struct Video *video, STRPTR filename)
                 l--;
               else
               {
-                *((UWORD *) buf)++ = t;
-                
+                *((UWORD *) buf) = t;
+                buf+=2;
                 t = 0;
                 l = 15;
               }
             }
             
             if(l < 15)
-              *((UWORD *) buf)++ = t;
+              *((UWORD *) buf) = t;
+                buf+=2;
           }
           
           line += video->CurrentPixelArray->BytesPerRow;

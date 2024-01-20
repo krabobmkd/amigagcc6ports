@@ -113,7 +113,8 @@ void osd_trak_read(int player, int *deltax, int *deltay)
 /* return values in the range -128 .. 128 (yes, 128, not 127) */
 void osd_analogjoy_read(int player,int *analog_x, int *analog_y)
 {
-
+    *analog_x = 0;
+    *analog_y = 0;
 }
 
 

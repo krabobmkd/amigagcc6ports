@@ -10,7 +10,7 @@
  *
  *
  *************************************************************************/
-
+#include <sstream>
 #include <stdio.h>
 
 #include <exec/types.h>
@@ -28,13 +28,7 @@
 #include "file.h"
 #include "osdepend.h"
 
-#ifndef POWERUP
-#define MAlloc(a) AllocVec(a,MEMF_PUBLIC|MEMF_CLEAR)
-#define Free(a)   FreeVec(a)
-#else
-#define MAlloc(a) PPCAllocVec(a,MEMF_PUBLIC|MEMF_CLEAR|MEMF_NOCACHESYNCPPC|MEMF_NOCACHESYNCM68K)
-#define Free(a)   PPCFreeVec(a)
-#endif
+using namespace std;
 
 struct File *OpenFile(const char *dir_name, const char *file_name, int mode)
 {
@@ -42,7 +36,7 @@ struct File *OpenFile(const char *dir_name, const char *file_name, int mode)
   BPTR    lock;
   LONG    i;
 
-  file = MAlloc(sizeof(struct File));
+  file = (struct File *)calloc(sizeof(struct File),1);
   
   if(file)
   {
@@ -50,16 +44,20 @@ struct File *OpenFile(const char *dir_name, const char *file_name, int mode)
 
     if(i)
     {
-      sprintf(file->Name, "%s/%s", dir_name, file_name);
+       { stringstream ss;
+        ss << dir_name << "/" <<file_name;
+        file->Name = ss.str(); }
 
-      file->File  = Open(file->Name, mode);
+      file->File  = (BPTR)Open(file->Name.c_str(), mode);
       file->Type  = FILETYPE_NORMAL;
       
       if(!file->File && i && (mode == MODE_OLDFILE))
       {
-        sprintf(&file->Name[i], ".zip");
+         { stringstream ss;
+          ss << dir_name << ".zip";
+          file->Name = ss.str();}
 
-        lock = Lock(file->Name, ACCESS_READ);
+        lock = Lock(file->Name.c_str(), ACCESS_READ);
   
         if(lock)
         {
@@ -68,29 +66,45 @@ struct File *OpenFile(const char *dir_name, const char *file_name, int mode)
         }
         else
         {
-          sprintf(&file->Name[i], ".lha");
+            {stringstream ss;
+            ss << dir_name << ".lha";
+            file->Name = ss.str();}
 
-          lock = Lock(file->Name, ACCESS_READ);
+          lock = Lock(file->Name.c_str(), ACCESS_READ);
   
           if(lock)
-            sprintf(file->Name, "lha <>NIL: e %s.lha %s T:", dir_name, file_name);
+          {
+              stringstream ss;
+             ss <<  "lha <>NIL: e "<< dir_name<<".lha "<< file_name<<" T:";
+              file->Name =ss.str();
+           // sprintf(file->Name, "lha <>NIL: e %s.lha %s T:", dir_name, file_name);
+          }
           else
           {
-            sprintf(&file->Name[i], ".lzx");
+            { stringstream ss;
+            ss << dir_name << ".lzx";
+            file->Name = ss.str();}
 
-            lock = Lock(file->Name, ACCESS_READ);
+            lock = Lock(file->Name.c_str(), ACCESS_READ);
   
-            if(lock)
-              sprintf(file->Name, "lzx <>NIL: x %s.lzx %s T:", dir_name, file_name);
+            if(lock) {
+                stringstream ss;
+               ss <<  "lzx <>NIL: x "<< dir_name<<".lha "<< file_name<<" T:";
+                file->Name =ss.str();
+            }
+
           }
 
           if(lock)
           {
-            System(file->Name, NULL);
+            System(file->Name.c_str(), NULL);
           
-            sprintf(file->Name,"T:%s", file_name);
+            { stringstream ss;
+            ss << "T:"<<file_name ;
+            file->Name = ss.str();}
+          //  sprintf(file->Name,"T:%s", file_name);
           
-            file->File  = Open(file->Name, mode);
+            file->File  = Open(file->Name.c_str(), mode);
             file->Type  = FILETYPE_TMP;
           }
         }
@@ -107,7 +121,7 @@ struct File *OpenFile(const char *dir_name, const char *file_name, int mode)
     
     if(!file->File)
     {
-      Free(file);
+      free(file);
       return(NULL);
     }
   }
@@ -283,14 +297,15 @@ struct File *OpenFileType(const char *dir_name, const char *file_name, int mode,
 
 void CloseFile(struct File *file)
 {
+    if(!file) return;
   if(file->Type != FILETYPE_CUSTOM)
   {
     if(file->Type != FILETYPE_ZIP)
       Close(file->File);
   
     if(file->Type == FILETYPE_TMP)
-      DeleteFile(file->Name);
+      DeleteFile(file->Name.c_str());
   
-    Free(file);
+    free(file);
   }
 }
