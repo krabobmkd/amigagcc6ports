@@ -34,12 +34,15 @@ extern "C" {
 #include <inline/exec.h>
 #include <inline/dos.h>
 #include <inline/graphics.h>
-#include <inline/intuition.h>
+#include <clib/intuition_protos.h>
 #include <inline/muimaster.h>
 #include <inline/utility.h>
 #include <inline/keymap.h>
 }
+#define CATCOMP_NUMBERS
+#include "messages.h"
 
+#include "macros.h"
 #include "main.h"
 #include "driver.h"
 #include "gui.h"
@@ -97,6 +100,10 @@ struct DriverData
   ULONG           Micros;
   APTR            List;
 };
+
+// this is from mui.h, but unreachable from C++ there
+#define get(obj,attr,store) GetAttr(attr,(Object *)obj,(ULONG *)store)
+#define set(obj,attr,value) SetAttrs(obj,attr,value,TAG_DONE)
 
 extern struct Library *KeymapBase;
 
@@ -294,396 +301,396 @@ static ULONG ASM UseDefaultsNotify(struct Hook *hook REG(a0), APTR obj REG(a2), 
 /* Convert an index in SortedDrivers into an index for the same
  * driver in Drivers. */
 
-//static inline int GetSortedDriverIndex(int sorted_index)
-//{
-//  int index;
+static inline int GetSortedDriverIndex(int sorted_index)
+{
+  int index;
 
-//  if(sorted_index < DRIVER_OFFSET)
-//    index = sorted_index - DRIVER_OFFSET;
-//  else
-//    index = (((ULONG) SortedDrivers[sorted_index]) - ((ULONG) &Drivers[0])) / sizeof(struct GameDriver *);
+  if(sorted_index < DRIVER_OFFSET)
+    index = sorted_index - DRIVER_OFFSET;
+  else
+    index = (((ULONG) SortedDrivers[sorted_index]) - ((ULONG) &Drivers[0])) / sizeof(struct GameDriver *);
 
-//  return(index);
-//}
+  return(index);
+}
 
-//static inline int GetEntryDriverIndex(ULONG entry)
-//{
-//  int index;
+static inline int GetEntryDriverIndex(ULONG entry)
+{
+  int index;
 
-//  index = (entry - ((ULONG) &Drivers[0])) / sizeof(struct GameDriver *);
+  index = (entry - ((ULONG) &Drivers[0])) / sizeof(struct GameDriver *);
   
-//  return(index);
-//}
+  return(index);
+}
 
-//static int GetDriverIndex(void)
-//{
-//  ULONG entry;
-//  ULONG list_index;
-//  int   index;
+static int GetDriverIndex(void)
+{
+  ULONG entry;
+  ULONG list_index;
+  int   index;
 
-//  get(LI_Driver, MUIA_List_Active, &list_index);
+  get(LI_Driver, MUIA_List_Active, &list_index);
 
-//  if(list_index == MUIV_List_Active_Off)
-//  {
-//    index = -DRIVER_OFFSET - 1;
-//  }
-//  else if(list_index < DRIVER_OFFSET)
-//  {
-//    index = list_index - DRIVER_OFFSET;
-//  }
-//  else
-//  {
-//    DoMethod(LI_Driver, MUIM_List_GetEntry, list_index, &entry);
+  if(list_index == MUIV_List_Active_Off)
+  {
+    index = -DRIVER_OFFSET - 1;
+  }
+  else if(list_index < DRIVER_OFFSET)
+  {
+    index = list_index - DRIVER_OFFSET;
+  }
+  else
+  {
+    DoMethod((Object*)LI_Driver,(ULONG) MUIM_List_GetEntry, (ULONG)list_index, (ULONG)&entry);
 
-//    index = GetEntryDriverIndex(entry);
-//  }
+    index = GetEntryDriverIndex(entry);
+  }
 
-//  return(index);
-//}
+  return(index);
+}
 
-//static struct GameDriver *GetDriver(void)
-//{
-//  struct GameDriver *drv;
+static struct GameDriver *GetDriver(void)
+{
+  struct GameDriver *drv;
 
-//  ULONG entry;
-//  ULONG list_index;
+  ULONG entry;
+  ULONG list_index;
 
-//  get(LI_Driver, MUIA_List_Active, &list_index);
+  get(LI_Driver, MUIA_List_Active, &list_index);
 
-//  if((list_index == MUIV_List_Active_Off) || (list_index < DRIVER_OFFSET))
-//    return(NULL);
+  if((list_index == MUIV_List_Active_Off) || (list_index < DRIVER_OFFSET))
+    return(NULL);
 
-//  DoMethod(LI_Driver, MUIM_List_GetEntry, list_index, &entry);
+  DoMethod((Object*)LI_Driver, MUIM_List_GetEntry, list_index, &entry);
 
-//  if(!entry)
-//    return(NULL);
+  if(!entry)
+    return(NULL);
 
-//  drv = *((struct GameDriver **) entry);
+  drv = *((struct GameDriver **) entry);
 
-//  return(drv);
-//}
+  return(drv);
+}
 
-//#ifndef MESS
-//static void ScanDrivers(void)
-//{
-//  struct FileInfoBlock *fib;
-//  const char           *str;
+#ifndef MESS
+static void ScanDrivers(void)
+{
+  struct FileInfoBlock *fib;
+  const char           *str;
 
-//  BPTR locks[4];
-//  LONG i, j, len;
-//  char buf[13];    /* 8.3 filename. */
-//  int  bitmap_lock;
-//  int  vector_lock;
+  BPTR locks[4];
+  LONG i, j, len;
+  char buf[13];    /* 8.3 filename. */
+  int  bitmap_lock;
+  int  vector_lock;
 
-//  if(DriversFound)
-//  {
-//    memset(DriversFound, 0, NumDrivers);
+  if(DriversFound)
+  {
+    memset(DriversFound, 0, NumDrivers);
   
-//    fib = AllocDosObject(DOS_FIB, NULL);
+    fib = (struct FileInfoBlock *)AllocDosObject(DOS_FIB, NULL);
 
-//    if(fib)
-//    {
-//      bitmap_lock = -1;
-//      vector_lock = -1;
+    if(fib)
+    {
+      bitmap_lock = -1;
+      vector_lock = -1;
 
-//      j = 0;
+      j = 0;
 
-//      locks[j++] = DupLock(((struct Process *) FindTask(NULL))->pr_CurrentDir);
+      locks[j++] = DupLock(((struct Process *) FindTask(NULL))->pr_CurrentDir);
 
-//      locks[j++] = Lock("roms", ACCESS_READ);
+      locks[j++] = Lock("roms", ACCESS_READ);
 
-//      str = GetRomPath(0, 0);
+      str = GetRomPath(0, 0);
 
-//      if(str)
-//      {
-//        if(str[0])
-//        {
-//          locks[j] = Lock((STRPTR) str, ACCESS_READ);
+      if(str)
+      {
+        if(str[0])
+        {
+          locks[j] = Lock((STRPTR) str, ACCESS_READ);
 
-//          if(locks[j])
-//          {
-//            if( (SameLock(locks[0], locks[j]) == LOCK_SAME)
-//            ||  (SameLock(locks[1], locks[j]) == LOCK_SAME))
-//              UnLock(locks[j]);
-//            else
-//              bitmap_lock = j++;
-//          }
-//        }
-//      }
+          if(locks[j])
+          {
+            if( (SameLock(locks[0], locks[j]) == LOCK_SAME)
+            ||  (SameLock(locks[1], locks[j]) == LOCK_SAME))
+              UnLock(locks[j]);
+            else
+              bitmap_lock = j++;
+          }
+        }
+      }
 
-//      str = GetRomPath(1, 0);
+      str = GetRomPath(1, 0);
 
-//      if(str)
-//      {
-//        if(strlen(str))
-//        {
-//          locks[j] = Lock((STRPTR) str, ACCESS_READ);
+      if(str)
+      {
+        if(strlen(str))
+        {
+          locks[j] = Lock((STRPTR) str, ACCESS_READ);
 
-//          if(locks[j])
-//          {
-//            if( (SameLock(locks[0], locks[j]) == LOCK_SAME)
-//            ||  (SameLock(locks[1], locks[j]) == LOCK_SAME))
-//              UnLock(locks[j]);
-//            else
-//              vector_lock = j++;
-//          }
-//        }
-//      }
+          if(locks[j])
+          {
+            if( (SameLock(locks[0], locks[j]) == LOCK_SAME)
+            ||  (SameLock(locks[1], locks[j]) == LOCK_SAME))
+              UnLock(locks[j]);
+            else
+              vector_lock = j++;
+          }
+        }
+      }
 
-//      for(; --j >= 0;)
-//      {
-//        if(Examine(locks[j], fib))
-//        {
-//          if(fib->fib_DirEntryType > 0)
-//          {
-//            while(ExNext(locks[j], fib))
-//            {
-//              for(i = 0; i < NumDrivers; i++)
-//              {
-//                if( !DriversFound[i]
-//                &&  ((j != bitmap_lock) || !((*SortedDrivers[i+DRIVER_OFFSET])->drv->video_attributes & VIDEO_TYPE_VECTOR))
-//                &&  ((j != vector_lock) || ((*SortedDrivers[i+DRIVER_OFFSET])->drv->video_attributes & VIDEO_TYPE_VECTOR)))
-//                {
-//                  len = strlen((*SortedDrivers[i+DRIVER_OFFSET])->name);
+      for(; --j >= 0;)
+      {
+        if(Examine(locks[j], fib))
+        {
+          if(fib->fib_DirEntryType > 0)
+          {
+            while(ExNext(locks[j], fib))
+            {
+              for(i = 0; i < NumDrivers; i++)
+              {
+                if( !DriversFound[i]
+                &&  ((j != bitmap_lock) || !((*SortedDrivers[i+DRIVER_OFFSET])->drv->video_attributes & VIDEO_TYPE_VECTOR))
+                &&  ((j != vector_lock) || ((*SortedDrivers[i+DRIVER_OFFSET])->drv->video_attributes & VIDEO_TYPE_VECTOR)))
+                {
+                  len = strlen((*SortedDrivers[i+DRIVER_OFFSET])->name);
 
-//                  if(!strnicmp(fib->fib_FileName, (*SortedDrivers[i+DRIVER_OFFSET])->name, len))
-//                  {
-//                    if(!fib->fib_FileName[len])
-//                    {
-//                      if(fib->fib_DirEntryType > 0)
-//                      {
-//                        DriversFound[i] = 1;
-//                        break;
-//                      }
-//                    }
-//                    else if(fib->fib_DirEntryType < 0)
-//                    {
-//                      if( !stricmp(&fib->fib_FileName[len], ".zip")
-//                      ||  !stricmp(&fib->fib_FileName[len], ".lha")
-//                      ||  !stricmp(&fib->fib_FileName[len], ".lzx"))
-//                      {
-//                        DriversFound[i] = 1;
-//                        break;
-//                      }
-//                    }
-//                  }
-//                }
-//              }
-//            }
-//          }
-//        }
+                  if(!strnicmp(fib->fib_FileName, (*SortedDrivers[i+DRIVER_OFFSET])->name, len))
+                  {
+                    if(!fib->fib_FileName[len])
+                    {
+                      if(fib->fib_DirEntryType > 0)
+                      {
+                        DriversFound[i] = 1;
+                        break;
+                      }
+                    }
+                    else if(fib->fib_DirEntryType < 0)
+                    {
+                      if( !stricmp(&fib->fib_FileName[len], ".zip")
+                      ||  !stricmp(&fib->fib_FileName[len], ".lha")
+                      ||  !stricmp(&fib->fib_FileName[len], ".lzx"))
+                      {
+                        DriversFound[i] = 1;
+                        break;
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
         
-//        if(locks[j])
-//          UnLock(locks[j]);
-//      }
-//    }
+        if(locks[j])
+          UnLock(locks[j]);
+      }
+    }
     
-//    /* The code above searched in current dir, roms/ and any the rom path specified for
-//     * the bitmap and vector driver defaults. Now I'll look for any driver that has its
-//     * own rom path. */
+    /* The code above searched in current dir, roms/ and any the rom path specified for
+     * the bitmap and vector driver defaults. Now I'll look for any driver that has its
+     * own rom path. */
     
-//    for(i = 0; i < NumDrivers; i++)
-//    {
-//      if(!DriversFound[i])
-//      {
-//        if(!GetUseDefaults(GetSortedDriverIndex(DRIVER_OFFSET+i)))
-//        {
-//          str = GetRomPath(GetSortedDriverIndex(DRIVER_OFFSET+i), 0);
+    for(i = 0; i < NumDrivers; i++)
+    {
+      if(!DriversFound[i])
+      {
+        if(!GetUseDefaults(GetSortedDriverIndex(DRIVER_OFFSET+i)))
+        {
+          str = GetRomPath(GetSortedDriverIndex(DRIVER_OFFSET+i), 0);
           
-//          if(str && strlen(str))
-//          {
-//            locks[0] = Lock((STRPTR) str, ACCESS_READ);
+          if(str && strlen(str))
+          {
+            locks[0] = Lock((STRPTR) str, ACCESS_READ);
             
-//            if(locks[0])
-//            {
-//              locks[1] = CurrentDir(locks[0]);
+            if(locks[0])
+            {
+              locks[1] = CurrentDir(locks[0]);
             
-//              locks[2] = Lock((char *) (*SortedDrivers[i+DRIVER_OFFSET])->name, ACCESS_READ);
+              locks[2] = Lock((char *) (*SortedDrivers[i+DRIVER_OFFSET])->name, ACCESS_READ);
             
-//              if(!locks[2])
-//              {
-//                sprintf(buf, "%s.zip", (*SortedDrivers[i+DRIVER_OFFSET])->name);
-//                locks[2] = Lock(buf, ACCESS_READ);
+              if(!locks[2])
+              {
+                sprintf(buf, "%s.zip", (*SortedDrivers[i+DRIVER_OFFSET])->name);
+                locks[2] = Lock(buf, ACCESS_READ);
 
-//                if(!locks[2])
-//                {
-//                  sprintf(buf, "%s.lha", (*SortedDrivers[i+DRIVER_OFFSET])->name);
-//                  locks[2] = Lock(buf, ACCESS_READ);
+                if(!locks[2])
+                {
+                  sprintf(buf, "%s.lha", (*SortedDrivers[i+DRIVER_OFFSET])->name);
+                  locks[2] = Lock(buf, ACCESS_READ);
 
-//                  if(!locks[2])
-//                  {
-//                    sprintf(buf, "%s.lzx", (*SortedDrivers[i+DRIVER_OFFSET])->name);
-//                    locks[2] = Lock(buf, ACCESS_READ);
-//                  }
-//                }
-//              }
+                  if(!locks[2])
+                  {
+                    sprintf(buf, "%s.lzx", (*SortedDrivers[i+DRIVER_OFFSET])->name);
+                    locks[2] = Lock(buf, ACCESS_READ);
+                  }
+                }
+              }
               
-//              if(locks[2])
-//              {
-//                UnLock(locks[2]);
+              if(locks[2])
+              {
+                UnLock(locks[2]);
   
-//                DriversFound[i] = 1;
-//              }
+                DriversFound[i] = 1;
+              }
               
-//              CurrentDir(locks[1]);
-//              UnLock(locks[0]);
-//            }
-//          }
-//        }
-//      }
-//    }
+              CurrentDir(locks[1]);
+              UnLock(locks[0]);
+            }
+          }
+        }
+      }
+    }
 
-//    for(i = 0; i < NumDrivers; i++)
-//      SetFound(DRIVER_OFFSET+GetSortedDriverIndex(DRIVER_OFFSET+i),DriversFound[i]);
-//  }
-//}
+    for(i = 0; i < NumDrivers; i++)
+      SetFound(DRIVER_OFFSET+GetSortedDriverIndex(DRIVER_OFFSET+i),DriversFound[i]);
+  }
+}
 
-//static void ShowFound(void)
-//{
-//  int start;
-//  int end;
-//  int num;
-//  int max;
+static void ShowFound(void)
+{
+  int start;
+  int end;
+  int num;
+  int max;
 
-//  start = 0;
-//  end   = DRIVER_OFFSET;
-//  max   = NumDrivers + DRIVER_OFFSET;
+  start = 0;
+  end   = DRIVER_OFFSET;
+  max   = NumDrivers + DRIVER_OFFSET;
 
-//  while(start < max)
-//  {
-//    for(; (end < max) && GetFound(DRIVER_OFFSET+GetSortedDriverIndex(end)); end++);
+  while(start < max)
+  {
+    for(; (end < max) && GetFound(DRIVER_OFFSET+GetSortedDriverIndex(end)); end++);
     
-//    num = end - start;
+    num = end - start;
 
-//    if(num > 0)
-//      DoMethod(LI_Driver, MUIM_List_Insert, &SortedDrivers[start], num, MUIV_List_Insert_Bottom);
+    if(num > 0)
+      DoMethod((Object *)LI_Driver, MUIM_List_Insert, &SortedDrivers[start], num, MUIV_List_Insert_Bottom);
 
-//    for(; (end < max) && !GetFound(DRIVER_OFFSET+GetSortedDriverIndex(end)); end++);
+    for(; (end < max) && !GetFound(DRIVER_OFFSET+GetSortedDriverIndex(end)); end++);
 
-//    start = end;
+    start = end;
 
-//    end++;
-//  }
-//}
-//#endif
+    end++;
+  }
+}
+#endif
 
-//static int DriverCompare(struct GameDriver ***drv1, struct GameDriver ***drv2)
-//{
-//  return(stricmp((**drv1)->description, (**drv2)->description));
-//}
+static int DriverCompare(struct GameDriver ***drv1, struct GameDriver ***drv2)
+{
+  return(stricmp((**drv1)->description, (**drv2)->description));
+}
 
-//static ULONG ASM DriverDisplay(struct Hook *hook REG(a0), char **array REG(a2), struct GameDriver **drv_indirect REG(a1))
-//{
-//  struct GameDriver *drv;
+static ULONG ASM DriverDisplay(struct Hook *hook REG(a0), char **array REG(a2), struct GameDriver **drv_indirect REG(a1))
+{
+  struct GameDriver *drv;
 
-//#ifdef MESS
-//  *array++ = (char *) drv->description;
-//#else
-//  static char driver[55];
-//  static char directory[55];
-//  static char type[55];
-//  static char width[55];
-//  static char height[55];
-//  static char colors[55];
-//  static char comment[105];
+#ifdef MESS
+  *array++ = (char *) drv->description;
+#else
+  static char driver[55];
+  static char directory[55];
+  static char type[55];
+  static char width[55];
+  static char height[55];
+  static char colors[55];
+  static char comment[105];
 
-//  if(!drv_indirect)
-//  {
-//    sprintf(driver,   "\033b\033u%s", DriverString);
-//    sprintf(directory,  "\033b\033u%s", DirectoryString);
-//    sprintf(type,   "\033b\033u%s", TypeString);
-//    sprintf(width,    "\033b\033u%s", WidthString);
-//    sprintf(height,   "\033b\033u%s", HeightString);
-//    sprintf(colors,   "\033b\033u%s", ColorsString);
-//    sprintf(comment,  "\033b\033u%s", CommentString);
+  if(!drv_indirect)
+  {
+    sprintf(driver,   "\033b\033u%s", DriverString);
+    sprintf(directory,  "\033b\033u%s", DirectoryString);
+    sprintf(type,   "\033b\033u%s", TypeString);
+    sprintf(width,    "\033b\033u%s", WidthString);
+    sprintf(height,   "\033b\033u%s", HeightString);
+    sprintf(colors,   "\033b\033u%s", ColorsString);
+    sprintf(comment,  "\033b\033u%s", CommentString);
 
-//    *array++  = driver;
-//    *array++  = directory;
-//    *array++  = type;
-//    *array++  = width;
-//    *array++  = height;
-//    *array++  = colors;
-//    *array++  = comment;
+    *array++  = driver;
+    *array++  = directory;
+    *array++  = type;
+    *array++  = width;
+    *array++  = height;
+    *array++  = colors;
+    *array++  = comment;
 
-//    return(0);
-//  }
+    return(0);
+  }
 
-//  if(drv_indirect == (struct GameDriver **) 1)
-//  {
-//    sprintf(driver, "\0338%s", BitmapGameDefaultsString);
+  if(drv_indirect == (struct GameDriver **) 1)
+  {
+    sprintf(driver, "\0338%s", BitmapGameDefaultsString);
 
-//    *array++  = driver;
-//    *array++  = "";
-//    *array++  = "";
-//    *array++  = "";
-//    *array++  = "";
-//    *array++  = "";
-//    *array++  = "";
+    *array++  = driver;
+    *array++  = "";
+    *array++  = "";
+    *array++  = "";
+    *array++  = "";
+    *array++  = "";
+    *array++  = "";
 
-//    return(0);
-//  }
+    return(0);
+  }
 
-//  if(drv_indirect == (struct GameDriver **) 2)
-//  {
-//    sprintf(driver, "\0338%s", VectorGameDefaultsString);
+  if(drv_indirect == (struct GameDriver **) 2)
+  {
+    sprintf(driver, "\0338%s", VectorGameDefaultsString);
   
-//    *array++  = driver;
-//    *array++  = "";
-//    *array++  = "";
-//    *array++  = "";
-//    *array++  = "";
-//    *array++  = "";
-//    *array++  = "";
+    *array++  = driver;
+    *array++  = "";
+    *array++  = "";
+    *array++  = "";
+    *array++  = "";
+    *array++  = "";
+    *array++  = "";
     
-//    return(0);
-//  }
+    return(0);
+  }
 
-//  drv = *drv_indirect;
+  drv = *drv_indirect;
 
-//  *array++ = (char *) drv->description;
-//  *array++ = (char *) drv->name;
+  *array++ = (char *) drv->description;
+  *array++ = (char *) drv->name;
   
-//  if(drv->drv->video_attributes & VIDEO_TYPE_VECTOR)
-//  {
-//    *array++  = VectorString;
-//    *array++  = "";
-//    *array++  = "";
-//  }
-//  else
-//  {
-//    *array++  = BitmapString;
-//    if(drv->orientation & ORIENTATION_SWAP_XY)
-//      sprintf(width, "%d", drv->drv->screen_height);
-//    else
-//      sprintf(width, "%d", drv->drv->screen_width);
-//    *array++  = width;
-//    if(drv->orientation & ORIENTATION_SWAP_XY)
-//      sprintf(height, "%d", drv->drv->screen_width);
-//    else
-//      sprintf(height, "%d", drv->drv->screen_height);
-//    *array++  = height;
-//  }
+  if(drv->drv->video_attributes & VIDEO_TYPE_VECTOR)
+  {
+    *array++  = VectorString;
+    *array++  = "";
+    *array++  = "";
+  }
+  else
+  {
+    *array++  = BitmapString;
+    if(drv->orientation & ORIENTATION_SWAP_XY)
+      sprintf(width, "%d", drv->drv->screen_height);
+    else
+      sprintf(width, "%d", drv->drv->screen_width);
+    *array++  = width;
+    if(drv->orientation & ORIENTATION_SWAP_XY)
+      sprintf(height, "%d", drv->drv->screen_width);
+    else
+      sprintf(height, "%d", drv->drv->screen_height);
+    *array++  = height;
+  }
 
-//  if(drv->drv->video_attributes & VIDEO_SUPPORTS_16BIT)
-//    sprintf(colors, "16Bit");
-//  else if(drv->drv->total_colors > 256)
-//    sprintf(colors, "256");
-//  else
-//    sprintf(colors, "%d", drv->drv->total_colors);
+  if(drv->drv->video_attributes & VIDEO_SUPPORTS_16BIT)
+    sprintf(colors, "16Bit");
+  else if(drv->drv->total_colors > 256)
+    sprintf(colors, "256");
+  else
+    sprintf(colors, "%d", drv->drv->total_colors);
 
-//  *array++ = colors;
+  *array++ = colors;
 
-//  if(drv->flags & GAME_NOT_WORKING)
-//    *array++ = NotWorkingString;
-//  else if(drv->flags & GAME_WRONG_COLORS)
-//    *array++ = WrongColorsString;
-//  else if(drv->flags & GAME_IMPERFECT_COLORS)
-//    *array++ = ImperfectColorsString;
-//  else
-//    *array++ = "";
-//#endif
-//  return(0);
-//}
+  if(drv->flags & GAME_NOT_WORKING)
+    *array++ = NotWorkingString;
+  else if(drv->flags & GAME_WRONG_COLORS)
+    *array++ = WrongColorsString;
+  else if(drv->flags & GAME_IMPERFECT_COLORS)
+    *array++ = ImperfectColorsString;
+  else
+    *array++ = "";
+#endif
+  return(0);
+}
 
 //static ULONG ASM DriverDispatcher(struct IClass *class REG(a0), APTR obj REG(a2), Msg msg REG(a1))
 //{
