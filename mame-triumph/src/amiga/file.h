@@ -26,7 +26,7 @@ struct File
   int          Type;
   std::string Name;
   unsigned char *Data;
-  int           Length;
+  uint32_t      Length;
   int           Offset;
   unsigned int  CRC;
 };

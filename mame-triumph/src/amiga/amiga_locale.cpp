@@ -7,7 +7,7 @@ extern "C" {
 
 // please include that generated horror ony here:
 #define CATCOMP_BLOCK
-#include "mame_msg.h"
+#include "messages.h"
 
 struct LocaleInfo   LocaleInfo ={NULL,NULL};
 
@@ -39,8 +39,7 @@ STRPTR  builtIn;
     return(builtIn);
 }
 
-
-const char* GetMessage(int id)
+STRPTR GetMessage(LONG id)
 {
     return(GetString(&LocaleInfo, id));
 }

@@ -94,8 +94,8 @@ void ASM IDCMPHandler(struct Hook *hook REG(a0), APTR null REG(a2), ULONG *imcla
 void     SaveILBM(void);
 void     ErrorRequest(LONG msg_id, ...);
 
-void     StartGame(void);  /* In amiga/amiga.c. */
 }
+void     StartGame(void);  /* In amiga/amiga.c. */
 
 #ifdef POWERUP
 struct GameDriver **Drivers;

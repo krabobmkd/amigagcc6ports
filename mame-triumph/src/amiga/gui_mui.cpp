@@ -15,7 +15,7 @@
  *************************************************************************/
 
 #include <ctype.h>
-
+extern "C" {
 #include <clib/alib_protos.h>
 
 #include <exec/types.h>
@@ -32,6 +32,7 @@
 #include <inline/muimaster.h>
 #include <inline/utility.h>
 #include <inline/keymap.h>
+}
 
 #include "main.h"
 #include "driver.h"

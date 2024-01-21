@@ -25,7 +25,7 @@ set(AMIGA_SRC
 	src/amiga/amiga037b_keyboard.cpp
 	src/amiga/amiga037b_joysticks.cpp
 	src/amiga/main.cpp
-#re	src/amiga/gui_mui.cpp
+	src/amiga/gui_mui.cpp
 	src/amiga/config.cpp
 	src/amiga/file.cpp
 	src/amiga/audio.cpp
@@ -48,8 +48,8 @@ set(PROGNAME TriumphMame)
 add_executable(${PROGNAME} ${AMIGA_SRC} )
 set_property(TARGET ${PROGNAME} PROPERTY C_STANDARD 11)
 target_compile_definitions(${PROGNAME} PUBLIC MAMEVERSION=37 )
-target_link_libraries(${PROGNAME} PUBLIC mamecore)
-target_include_directories(${PROGNAME} PUBLIC "include" "src/mame037b/src")
+target_link_libraries(${PROGNAME} PUBLIC mamecore z)
+target_include_directories(${PROGNAME} PUBLIC "include" "src/mame037b/src" "../extrasdk/MUI/include")
 
 # include_directories(src/mame037b/src)
 ## generate zconf.h

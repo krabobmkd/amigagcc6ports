@@ -35,6 +35,8 @@ extern "C" {
 // from mame since 0.37:
 #include "input.h"
 
+#include "zlib.h"
+
 #define INTELuint32_t(i) (((i)<<24)|((i)>>24)|(((i)<<8)&0x00ff0000)|(((i)>>8)&0x0000ff00))
 
 #ifdef POWERUP
@@ -88,8 +90,9 @@ extern int beam;
 extern int flicker;
 extern int translucency;
 
-int load_zipped_file(const char *zipfile, const char *filename, unsigned char **buf, int *length);
-unsigned int crc32(unsigned int crc, const unsigned char *buf, unsigned int len);
+int load_zipped_file(const char *zipfile, const char *filename, unsigned char **buf, unsigned int *length);
+
+//unsigned int crc32(unsigned int crc, const unsigned char *buf, unsigned int len);
 
 #ifndef ORIENTATION_DEFAULT
 #define ORIENTATION_DEFAULT 0
