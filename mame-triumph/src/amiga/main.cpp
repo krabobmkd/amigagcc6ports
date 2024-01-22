@@ -78,6 +78,8 @@ extern "C" {
 #include "driver.h"
 #include "file.h"
 
+typedef ULONG (*RE_HOOKFUNC)();
+
 #define MIN_STACK (10*1024)
 
 #define ITEM_NEW    0
@@ -863,9 +865,9 @@ LONG VideoOpen(LONG width, LONG height, LONG left, LONG top, LONG right, LONG bo
 
     if(!fail)
     {
-      RefreshHook.h_Entry = (HOOKFUNC) RefreshHandler;
-      MenuHook.h_Entry    = (HOOKFUNC) MenuHandler;
-      IDCMPHook.h_Entry   = (HOOKFUNC) IDCMPHandler;
+      RefreshHook.h_Entry = (RE_HOOKFUNC) RefreshHandler;
+      MenuHook.h_Entry    = (RE_HOOKFUNC) MenuHandler;
+      IDCMPHook.h_Entry   = (RE_HOOKFUNC) IDCMPHandler;
 
       Inputs = AllocInputs(IA_Port1,          (Config[CFG_JOY1TYPE] == CFGJ1_MOUSE1)
                                               ? IPT_MOUSE
@@ -1092,9 +1094,9 @@ void ErrorRequest(LONG msg_id, ...)
   
   es.es_StructSize   = sizeof(struct EasyStruct);
   es.es_Flags        = 0;
-  es.es_Title        = const_cast<UBYTE*>((UBYTE*)APPNAME);
-  es.es_TextFormat   = (UBYTE*)GetMessage(msg_id);
-  es.es_GadgetFormat = (UBYTE*)GetMessage(MSG_OK);
+  es.es_Title        = const_cast<CONST_STRPTR>(APPNAME);
+  es.es_TextFormat   = const_cast<CONST_STRPTR>(GetMessage(msg_id));
+  es.es_GadgetFormat =  const_cast<CONST_STRPTR>(GetMessage(MSG_OK));
   
   EasyRequestArgs(NULL, &es, NULL, &((&msg_id)[1]));
 }

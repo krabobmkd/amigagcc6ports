@@ -54,6 +54,7 @@ extern "C" {
 #include "video.h"
 
 #define ABS(a) ((a>=0)?(a):-(a))
+typedef ULONG (*RE_HOOKFUNC)();
 
 struct BackFillMsg
 {
@@ -246,7 +247,7 @@ struct Video *AllocVideo(Tag tags,...)
     video->VectorPen   = -1;
     video->BackFillPen = -1;
 
-    video->BackFillHook.h_Entry = (HOOKFUNC) VBackFill;
+    video->BackFillHook.h_Entry = (RE_HOOKFUNC) VBackFill;
     video->BackFillHook.h_Data  = (APTR) video;
 
     video->MaxFrameSkip = 4;

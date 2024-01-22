@@ -49,7 +49,9 @@ add_executable(${PROGNAME} ${AMIGA_SRC} )
 set_property(TARGET ${PROGNAME} PROPERTY C_STANDARD 11)
 target_compile_definitions(${PROGNAME} PUBLIC MAMEVERSION=37 )
 target_link_libraries(${PROGNAME} PUBLIC mamecore z)
-target_include_directories(${PROGNAME} PUBLIC "include" "src/mame037b/src" "../extrasdk/MUI/include")
+target_include_directories(${PROGNAME} PUBLIC "include" )
+target_include_directories(${PROGNAME} PUBLIC "src/mame037b/src")
+target_include_directories(${PROGNAME} PUBLIC "../extrasdk/MUI/include")
 
 # include_directories(src/mame037b/src)
 ## generate zconf.h

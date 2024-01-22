@@ -152,7 +152,12 @@ LIST(APPEND CMAKE_SYSTEM_INCLUDE_PATH
 LIST(APPEND CMAKE_SYSTEM_LIBRARY_PATH
     "${M68KAMIGA_ROOT_PATH}/lib"
     )
-
+if("${CMAKE_HOST_SYSTEM_NAME}" STREQUAL "Windows")
+    # just so qtcreator windows parse that
+    include_directories(
+    "${M68KAMIGA_ROOT_PATH}/m68k-amigaos/ndk-include"
+    "${M68KAMIGA_ROOT_PATH}/m68k-amigaos/include")
+endif()
 
 # We would prefer to specify a standard set of Clang+Emscripten-friendly common convention for suffix files, especially for CMake executable files,
 # but if these are adjusted, ${CMAKE_ROOT}/Modules/CheckIncludeFile.cmake will fail, since it depends on being able to compile output files with predefined names.
