@@ -126,51 +126,51 @@ static Object *MainWin=NULL;
 static APTR AboutWin=NULL;
 static APTR DisplayName=NULL;
 
-static APTR RE_Options=NULL;
-static APTR CM_Allow16Bit=NULL;
-static APTR CM_FlipX=NULL;
-static APTR CM_FlipY=NULL;
-static APTR CM_DirtyLines=NULL;
-static APTR CM_AutoFrameSkip=NULL;
+static Object * RE_Options=NULL;
+static Object * CM_Allow16Bit=NULL;
+static Object * CM_FlipX=NULL;
+static Object * CM_FlipY=NULL;
+static Object * CM_DirtyLines=NULL;
+static Object * CM_AutoFrameSkip=NULL;
 #ifndef MESS
-static APTR CY_Show;
+static Object * CY_Show;
 static Object *CM_UseDefaults;
-static APTR BU_Scan;
+static Object * BU_Scan;
 #endif
-static APTR CM_Antialiasing;
-static APTR CM_Translucency;
-static APTR SL_BeamWidth;
-static APTR SL_VectorFlicker;
-static APTR SL_AudioChannel[4];
-static APTR SL_MinFreeChip;
-static APTR SL_FrameSkip;
-static APTR SL_Joy1ButtonBTime;
-static APTR SL_Joy1AutoFireRate;
-static APTR SL_Joy2ButtonBTime;
-static APTR SL_Joy2AutoFireRate;
-static APTR ST_Width;
-static APTR ST_Height;
-static APTR ST_RomPath;
-static APTR ST_SamplePath;
-static APTR CY_ScreenType;
-static APTR CY_DirectMode;
-static APTR CY_Sound;
-static APTR CY_Buffering;
-static APTR CY_Rotation;
-static APTR CY_Joy1Type;
-static APTR CY_Joy2Type;
-static APTR PA_ScreenMode;
-static APTR PA_RomPath;
-static APTR PA_SamplePath;
-static APTR LI_Driver;
-static APTR LV_Driver;
-static APTR BU_Start;
-static APTR BU_Quit;
-static APTR BU_About_OK;
-static APTR PU_ScreenMode;
+static Object * CM_Antialiasing;
+static Object * CM_Translucency;
+static Object * SL_BeamWidth;
+static Object * SL_VectorFlicker;
+static Object * SL_AudioChannel[4];
+static Object * SL_MinFreeChip;
+static Object * SL_FrameSkip;
+static Object * SL_Joy1ButtonBTime;
+static Object * SL_Joy1AutoFireRate;
+static Object * SL_Joy2ButtonBTime;
+static Object * SL_Joy2AutoFireRate;
+static Object * ST_Width;
+static Object * ST_Height;
+static Object * ST_RomPath;
+static Object * ST_SamplePath;
+static Object * CY_ScreenType;
+static Object * CY_DirectMode;
+static Object * CY_Sound;
+static Object * CY_Buffering;
+static Object * CY_Rotation;
+static Object * CY_Joy1Type;
+static Object * CY_Joy2Type;
+static Object * PA_ScreenMode;
+static Object * PA_RomPath;
+static Object * PA_SamplePath;
+static Object *LI_Driver;
+static Object * LV_Driver;
+static Object * BU_Start;
+static Object * BU_Quit;
+static Object * BU_About_OK;
+static Object * PU_ScreenMode;
 
 #ifdef POWERUP
-static APTR CM_AsyncPPC;
+static Object * CM_AsyncPPC;
 #endif
 
 static struct NameInfo DisplayNameInfo;
@@ -323,7 +323,7 @@ static inline int GetEntryDriverIndex(ULONG entry)
   int index;
 
   index = (entry - ((ULONG) &Drivers[0])) / sizeof(struct GameDriver *);
-  
+
   return(index);
 }
 
@@ -390,7 +390,7 @@ static void ScanDrivers(void)
   if(DriversFound)
   {
     memset(DriversFound, 0, NumDrivers);
-  
+
     fib = (struct FileInfoBlock *)AllocDosObject(DOS_FIB, NULL);
 
     if(fib)
@@ -484,16 +484,16 @@ static void ScanDrivers(void)
             }
           }
         }
-        
+
         if(locks[j])
           UnLock(locks[j]);
       }
     }
-    
+
     /* The code above searched in current dir, roms/ and any the rom path specified for
      * the bitmap and vector driver defaults. Now I'll look for any driver that has its
      * own rom path. */
-    
+
     for(i = 0; i < NumDrivers; i++)
     {
       if(!DriversFound[i])
@@ -501,17 +501,17 @@ static void ScanDrivers(void)
         if(!GetUseDefaults(GetSortedDriverIndex(DRIVER_OFFSET+i)))
         {
           str = GetRomPath(GetSortedDriverIndex(DRIVER_OFFSET+i), 0);
-          
+
           if(str && strlen(str))
           {
             locks[0] = Lock((STRPTR) str, ACCESS_READ);
-            
+
             if(locks[0])
             {
               locks[1] = CurrentDir(locks[0]);
-            
+
               locks[2] = Lock((char *) (*SortedDrivers[i+DRIVER_OFFSET])->name, ACCESS_READ);
-            
+
               if(!locks[2])
               {
                 sprintf(buf, "%s.zip", (*SortedDrivers[i+DRIVER_OFFSET])->name);
@@ -529,14 +529,14 @@ static void ScanDrivers(void)
                   }
                 }
               }
-              
+
               if(locks[2])
               {
                 UnLock(locks[2]);
-  
+
                 DriversFound[i] = 1;
               }
-              
+
               CurrentDir(locks[1]);
               UnLock(locks[0]);
             }
@@ -564,7 +564,7 @@ static void ShowFound(void)
   while(start < max)
   {
     for(; (end < max) && GetFound(DRIVER_OFFSET+GetSortedDriverIndex(end)); end++);
-    
+
     num = end - start;
 
     if(num > 0)
@@ -638,7 +638,7 @@ static ULONG ASM DriverDisplay(struct Hook *hook REG(a0), char **array REG(a2), 
   if(drv_indirect == (struct GameDriver **) 2)
   {
     sprintf(driver, "\0338%s", VectorGameDefaultsString);
-  
+
     *array++  = driver;
     *array++  = "";
     *array++  = "";
@@ -646,7 +646,7 @@ static ULONG ASM DriverDisplay(struct Hook *hook REG(a0), char **array REG(a2), 
     *array++  = "";
     *array++  = "";
     *array++  = "";
-    
+
     return(0);
   }
 
@@ -654,7 +654,7 @@ static ULONG ASM DriverDisplay(struct Hook *hook REG(a0), char **array REG(a2), 
 
   *array++ = (char *) drv->description;
   *array++ = (char *) drv->name;
-  
+
   if(drv->drv->video_attributes & VIDEO_TYPE_VECTOR)
   {
     *array++  = VectorString;
@@ -743,9 +743,9 @@ static ULONG ASM DriverDispatcher(struct IClass *cclass REG(a0), Object * obj RE
 
         return(TRUE);
       }
-      
+
       return(FALSE);
-    
+
     case MUIM_Cleanup:
       data = (struct DriverData *)INST_DATA(cclass, obj);
 
@@ -766,15 +766,15 @@ static ULONG ASM DriverDispatcher(struct IClass *cclass REG(a0), Object * obj RE
           ie.ie_SubClass  = 0;
           ie.ie_Code    = imsg->Code;
           ie.ie_Qualifier = 0;
-        
+
 //  MapRawKey( CONST struct InputEvent *event, STRPTR buffer, LONG length, CONST struct KeyMap *keyMap );
           if(MapRawKey(&ie,(STRPTR)&key, 1, NULL) && isalnum(key))
           {
             i = imsg->Seconds - data->Seconds;
-            
+
             if(imsg->Micros < data->Micros)
               i--;
-          
+
             if(i < 1)
             {
               data->CharIndex++;
@@ -794,19 +794,19 @@ static ULONG ASM DriverDispatcher(struct IClass *cclass REG(a0), Object * obj RE
             do
             {
               DoMethod(list, MUIM_List_GetEntry, i, &drv_indirect);
-              
+
               if(drv_indirect)
               {
                 drv = *drv_indirect;
-              
+
                 if(data->CharIndex < strlen(drv->description))
                 {
                   if(key <= tolower(drv->description[data->CharIndex]))
                   {
                     data->CurrentEntry = i;
-                
+
                     set(list, MUIA_List_Active, i);
-                
+
                     break;
                   }
                 }
@@ -820,7 +820,7 @@ static ULONG ASM DriverDispatcher(struct IClass *cclass REG(a0), Object * obj RE
           }
         }
       }
-      
+
       return(0);
   }
 
@@ -832,7 +832,7 @@ void AllocGUI(void)
   LONG  i;
 
   for(NumDrivers = 0; Drivers[NumDrivers]; NumDrivers++);
-    
+
   SortedDrivers = ( struct GameDriver ***)malloc((NumDrivers + DRIVER_OFFSET) * sizeof(struct GameDriver **));
 
   if(SortedDrivers)
@@ -880,7 +880,7 @@ void AllocGUI(void)
 
     for(i = 0; Bufferings[i]; i++)
       Bufferings[i] = GetMessage((LONG) Bufferings[i]);
-  
+
     ScreenModeStartHook.h_Entry  = (RE_HOOKFUNC) ScreenModeStart;
     ScreenModeStopHook.h_Entry   = (RE_HOOKFUNC) ScreenModeStop;
     ScreenTypeNotifyHook.h_Entry = (RE_HOOKFUNC) ScreenTypeNotify;
@@ -984,6 +984,47 @@ inline Object *cMainWin()
             );
 }
 */
+// use less macros
+inline Object *MUINewObject( char *pclassname,ULONG tag1, ... )
+{
+   return MUI_NewObjectA(pclassname, (struct TagItem *) &tag1);
+}
+inline ULONG UMUINO(char *pclassname,ULONG tag1, ... )
+{
+   return (ULONG)MUI_NewObjectA(pclassname, (struct TagItem *) &tag1);
+}
+inline Object *OMUINO(char *pclassname,ULONG tag1, ... )
+{
+   return MUI_NewObjectA(pclassname, (struct TagItem *) &tag1);
+}
+#define UCheckMark(selected)\
+	(ULONG)MUI_NewObject(MUIC_Image,\
+		ImageButtonFrame,\
+		MUIA_InputMode        , MUIV_InputMode_Toggle,\
+		MUIA_Image_Spec       , MUII_CheckMark,\
+		MUIA_Image_FreeVert   , TRUE,\
+		MUIA_Selected         , selected,\
+		MUIA_Background       , MUII_ButtonBack,\
+		MUIA_ShowSelState     , FALSE,\
+		TAG_DONE)
+#define OCheckMark(selected)\
+	MUI_NewObject(MUIC_Image,\
+		ImageButtonFrame,\
+		MUIA_InputMode        , MUIV_InputMode_Toggle,\
+		MUIA_Image_Spec       , MUII_CheckMark,\
+		MUIA_Image_FreeVert   , TRUE,\
+		MUIA_Selected         , selected,\
+		MUIA_Background       , MUII_ButtonBack,\
+		MUIA_ShowSelState     , FALSE,\
+		TAG_DONE)
+#define OString(contents,maxlen)\
+	MUI_NewObject(MUIC_String,\
+		StringFrame,\
+		MUIA_String_MaxLen  , maxlen,\
+		MUIA_String_Contents, contents,\
+		TAG_DONE)
+
+
 int MainGUI(void)
 {
   ULONG rid;
@@ -1000,25 +1041,25 @@ int MainGUI(void)
       if(!MainWin)
       {
 // //#define MUI_NewObject(MUIC_List          MUI_NewObject(MUIC_List
-        MainWin =  MUI_NewObject(MUIC_Window,
+        MainWin =  MUINewObject(MUIC_Window,
           MUIA_Window_Title,(ULONG) APPNAME,
           MUIA_Window_ID   , MAKE_ID('M','A','I','N'),
 
-          MUIA_Window_Menustrip, MUI_NewObject(MUIC_Menustrip,
-            MUIA_Family_Child,MUI_NewObject(MUIC_Menu,MUIA_Menu_Title,(ULONG)GetMessage(MSG_MENU_GAME),
-              MUIA_Family_Child, MUI_NewObject(MUIC_Menuitem,
+          MUIA_Window_Menustrip, UMUINO(MUIC_Menustrip,
+            MUIA_Family_Child,UMUINO(MUIC_Menu,MUIA_Menu_Title,(ULONG)GetMessage(MSG_MENU_GAME),
+              MUIA_Family_Child, UMUINO(MUIC_Menuitem,
                 MUIA_Menuitem_Title,  (ULONG)GetMessage(MSG_MENU_ABOUT),
                 MUIA_Menuitem_Shortcut,(ULONG) "?",
                 MUIA_UserData,      MID_About,
               TAG_DONE),
-              MUIA_Family_Child, MUI_NewObject(MUIC_Menuitem,
+              MUIA_Family_Child, UMUINO(MUIC_Menuitem,
                 MUIA_Menuitem_Title, (ULONG) "About MUI...",
                 MUIA_UserData,      MID_AboutMUI,
               TAG_DONE),
-              MUIA_Family_Child, MUI_NewObject(MUIC_Menuitem,
+              MUIA_Family_Child, UMUINO(MUIC_Menuitem,
                 MUIA_Menuitem_Title,  NM_BARLABEL,
               TAG_DONE),
-              MUIA_Family_Child, MUI_NewObject(MUIC_Menuitem,
+              MUIA_Family_Child, UMUINO(MUIC_Menuitem,
                 MUIA_Menuitem_Title,  (ULONG)GetMessage(MSG_MENU_QUIT),
                 MUIA_Menuitem_Shortcut,(ULONG) "Q",
                 MUIA_UserData,      MUIV_Application_ReturnID_Quit,
@@ -1026,232 +1067,238 @@ int MainGUI(void)
             TAG_DONE),
           TAG_DONE),
 
-          WindowContents, MUI_NewObject(MUIC_Group,
+          WindowContents, UMUINO(MUIC_Group,
 
-            Child, RE_Options = MUI_NewObject(MUIC_Register,MUIA_Register_Titles,(RegisterTitles),
+            Child, RE_Options = OMUINO(MUIC_Register,MUIA_Register_Titles,(RegisterTitles),
 
-              Child, MUI_NewObject(MUIC_Group,
-                Child,  LV_Driver = (DriverClass)
-                  ? NewObject(DriverClass->mcc_Class, NULL,
+              Child, UMUINO(MUIC_Group,
+                Child, LV_Driver = (Object *)(DriverClass!=NULL)?
+
+                    ((Object *)NewObject(DriverClass->mcc_Class, NULL,
                   MUIA_Listview_Input,    TRUE,
-                    MUIA_Listview_List,     (ULONG) LI_Driver = MUI_NewObject(MUIC_List,
+                    MUIA_Listview_List, (ULONG)( LI_Driver = MUINewObject(MUIC_List,
                       MUIA_List_Title,    TRUE,
                       MUIA_List_Format,   "BAR,BAR,BAR,BAR,BAR,BAR,",
-                      MUIA_List_DisplayHook,  &DriverDisplayHook,
+                      MUIA_List_DisplayHook,(ULONG)  &DriverDisplayHook,
                     InputListFrame,
-                  TAG_DONE),
+                  TAG_DONE)),
                 TAG_END)
-                : MUI_NewObject(MUIC_Listview,
+                     )
+                :(Object *) OMUINO(MUIC_Listview,
                   MUIA_Listview_Input, TRUE,
-                    MUIA_Listview_List,  LI_Driver = MUI_NewObject(MUIC_List,
+                    MUIA_Listview_List, (ULONG)( LI_Driver = MUINewObject(MUIC_List,
                       MUIA_List_Title, TRUE,
                       MUIA_List_Format, "BAR,BAR,BAR,BAR,BAR,BAR,",
                       MUIA_List_DisplayHook,  &DriverDisplayHook,
                     InputListFrame,
-                  TAG_DONE),
-                TAG_DONE),
+                  TAG_DONE)),
+                TAG_DONE)
+                ,
 #ifndef MESS
-                Child, MUI_NewObject(MUIC_Group,MUIA_Group_Horiz,TRUE,
+                Child, UMUINO(MUIC_Group,MUIA_Group_Horiz,TRUE,
                   Child, Label((ULONG)GetMessage(MSG_USE_DEFAULTS)),
-                  Child, CM_UseDefaults = CheckMark(Config[CFG_USEDEFAULTS]),
+                  Child, (ULONG)(CM_UseDefaults = OCheckMark(Config[CFG_USEDEFAULTS])),
                   Child, Label((ULONG)GetMessage(MSG_SHOW)),
-                  Child, CY_Show = MUI_NewObject(MUIC_Cycle,
+                  Child, (ULONG) (CY_Show = OMUINO(MUIC_Cycle,
                     MUIA_Cycle_Entries, (ULONG) Shows,
-                  TAG_DONE),
-                  Child, BU_Scan = SimpleButton((ULONG)GetMessage(MSG_SCAN)),
+                  TAG_DONE)),
+                  Child,(ULONG)(BU_Scan = SimpleButton((ULONG)GetMessage(MSG_SCAN))),
                 TAG_DONE),
 #endif
               TAG_DONE),
-              Child, MUI_NewObject(MUIC_Group,
+              Child, UMUINO(MUIC_Group,
                 Child, HVSpace,
-                Child, MUI_NewObject(MUIC_Group,MUIA_Group_Horiz,TRUE,
+                Child, UMUINO(MUIC_Group,MUIA_Group_Horiz,TRUE,
                   Child, HSpace(0),
-                  Child, ColGroup(4),
+                  Child, UMUINO(MUIC_Group,MUIA_Group_Columns,4,
                     MUIA_HorizWeight, 1000,
                     Child, Label((ULONG)GetMessage(MSG_ALLOW16BIT)),
-                    Child, CM_Allow16Bit = CheckMark(Config[CFG_ALLOW16BIT]),
+                    Child, (ULONG)(CM_Allow16Bit = OCheckMark(Config[CFG_ALLOW16BIT]))),
                     Child, Label((ULONG)GetMessage(MSG_AUTO_FRAMESKIP)),
-                    Child, CM_AutoFrameSkip = CheckMark(Config[CFG_AUTOFRAMESKIP]),
+                    Child, (ULONG)(CM_AutoFrameSkip = OCheckMark(Config[CFG_AUTOFRAMESKIP])),
                     Child, Label((ULONG)GetMessage(MSG_FLIPX)),
-                    Child, CM_FlipX = CheckMark(Config[CFG_FLIPX]),
+                    Child, (ULONG)(CM_FlipX = OCheckMark(Config[CFG_FLIPX])),
                     Child, Label((ULONG)GetMessage(MSG_ANTIALIAS)),
-                    Child, CM_Antialiasing = CheckMark(Config[CFG_ANTIALIASING]),
+                    Child, (ULONG)(CM_Antialiasing = OCheckMark(Config[CFG_ANTIALIASING])),
                     Child, Label((ULONG)GetMessage(MSG_FLIPY)),
-                    Child, CM_FlipY = CheckMark(Config[CFG_FLIPY]),
+                    Child, (ULONG)(CM_FlipY = OCheckMark(Config[CFG_FLIPY])),
                     Child, Label((ULONG)GetMessage(MSG_TRANSLUCENCY)),
-                    Child, CM_Translucency = CheckMark(Config[CFG_TRANSLUCENCY]),
+                    Child, (ULONG)(CM_Translucency = OCheckMark(Config[CFG_TRANSLUCENCY])),
                     Child, Label((ULONG)GetMessage(MSG_DIRTY_LINES)),
-                    Child, CM_DirtyLines = CheckMark(Config[CFG_DIRTYLINES]),
+                    Child, (ULONG)(CM_DirtyLines = OCheckMark(Config[CFG_DIRTYLINES])),
 #ifdef POWERUP
                     Child, Label((ULONG)GetMessage(MSG_ASYNCPPC)),
-                    Child, CM_AsyncPPC = CheckMark(Config[CFG_ASYNCPPC]),
+                    Child, CM_AsyncPPC = UCheckMark(Config[CFG_ASYNCPPC]),
 #endif
                   TAG_DONE),
                   Child, HSpace(0),
                 TAG_DONE),
-                Child, MUI_NewObject(MUIC_Group,MUIA_Group_Horiz,TRUE,
+                Child, UMUINO(MUIC_Group,MUIA_Group_Horiz,TRUE,
                   Child, HSpace(0),
-                  Child, ColGroup(2),
+                  Child, UMUINO(MUIC_Group,MUIA_Group_Columns,2,
                     MUIA_HorizWeight, 1000,
                     Child, Label((ULONG)GetMessage(MSG_BEAM)),
-                    Child, SL_BeamWidth = MUI_NewObject(MUIC_Slider,
+                    Child,(ULONG)( SL_BeamWidth = OMUINO(MUIC_Slider,
                       MUIA_Slider_Min, 1,
                       MUIA_Slider_Max, 16,
-                    TAG_DONE),
+                    TAG_DONE)),
                     Child, Label((ULONG)GetMessage(MSG_FLICKER)),
-                    Child, SL_VectorFlicker = MUI_NewObject(MUIC_Slider,
+                    Child,(ULONG)( SL_VectorFlicker = OMUINO(MUIC_Slider,
                       MUIA_Slider_Min, 0,
                       MUIA_Slider_Max, 100,
-                    TAG_DONE),
+                    TAG_DONE)),
                     Child, Label((ULONG)GetMessage(MSG_FRAMESKIP)),
-                    Child, SL_FrameSkip = MUI_NewObject(MUIC_Slider,
+                    Child,(ULONG)( SL_FrameSkip = OMUINO(MUIC_Slider,
                       MUIA_Slider_Min, 0,
                       MUIA_Slider_Max, 3,
-                    TAG_DONE),
+                    TAG_DONE)),
                     Child, Label((ULONG)GetMessage(MSG_WIDTH)),
-                    Child, ST_Width = StringObject,
+                    Child,(ULONG)( ST_Width = MUI_NewObject(MUIC_String,
                       StringFrame,
                       MUIA_String_Accept, (ULONG) "0123456789",
-                    TAG_DONE),
+                    TAG_DONE)),
                     Child, Label((ULONG)GetMessage(MSG_HEIGHT)),
-                    Child, ST_Height = StringObject,
+                    Child,(ULONG)( ST_Height = MUI_NewObject(MUIC_String,
                       StringFrame,
                       MUIA_String_Accept, (ULONG) "0123456789",
-                    TAG_DONE),
+                    TAG_DONE)),
                   TAG_DONE),
                   Child, HSpace(0),
                 TAG_DONE),
-                Child, MUI_NewObject(MUIC_Group,MUIA_Group_Horiz,TRUE,
+                Child, UMUINO(MUIC_Group,MUIA_Group_Horiz,TRUE,
                   Child, HSpace(0),
-                  Child, ColGroup(2),
+                  Child, UMUINO(MUIC_Group,MUIA_Group_Columns,2,
                     MUIA_HorizWeight, 1000,
                     Child, Label((ULONG)GetMessage(MSG_SCREEN_TYPE)),
-                    Child, CY_ScreenType = MUI_NewObject(MUIC_Cycle,
+                    Child, CY_ScreenType = OMUINO(MUIC_Cycle,
                       MUIA_Cycle_Entries, (ULONG) ScreenTypes,
                     TAG_DONE),
                     Child, Label((ULONG)GetMessage(MSG_DIRECT_MODE)),
-                    Child, CY_DirectMode = MUI_NewObject(MUIC_Cycle,
+                    Child, CY_DirectMode = OMUINO(MUIC_Cycle,
                       MUIA_Cycle_Entries, (ULONG) DirectModes,
                     TAG_DONE),
                     Child, Label((ULONG)GetMessage(MSG_BUFFERING)),
-                    Child, CY_Buffering = MUI_NewObject(MUIC_Cycle,
+                    Child, CY_Buffering = OMUINO(MUIC_Cycle,
                       MUIA_Cycle_Entries, (ULONG) Bufferings,
                     TAG_DONE),
                     Child, Label((ULONG)GetMessage(MSG_ROTATION)),
-                    Child, CY_Rotation = MUI_NewObject(MUIC_Cycle,
+                    Child, CY_Rotation = OMUINO(MUIC_Cycle,
                       MUIA_Cycle_Entries, (ULONG) Rotations,
                     TAG_DONE),
                   TAG_DONE),
                   Child, HSpace(0),
                 TAG_DONE),
-                Child, MUI_NewObject(MUIC_Group,MUIA_Group_Horiz,TRUE,
+                Child, UMUINO(MUIC_Group,MUIA_Group_Horiz,TRUE,
                   Child, HSpace(0),
-                  Child, ColGroup(2),
+                  Child, UMUINO(MUIC_Group,MUIA_Group_Columns,2,
                     MUIA_HorizWeight, 1000,
+
                     Child, Label((ULONG)GetMessage(MSG_SCREENMODE)),
-                    Child, PA_ScreenMode = PopaslObject,
-                      MUIA_Popstring_String,  DisplayName = TextObject,
+                    Child,(ULONG)( PA_ScreenMode = MUI_NewObject(MUIC_Popasl,
+
+                      MUIA_Popstring_String,(ULONG)( DisplayName = MUI_NewObject(MUIC_Text,
                         TextFrame,
                         MUIA_Background, MUII_TextBack,
-                      TAG_DONE),
-                      MUIA_Popstring_Button,  PU_ScreenMode = PopButton(MUII_PopUp),
+                      TAG_DONE)),
+
+                      MUIA_Popstring_Button,(ULONG)(PU_ScreenMode = PopButton(MUII_PopUp)),
                       MUIA_Popasl_Type,     ASL_ScreenModeRequest,
                       MUIA_Popasl_StartHook,  (ULONG) &ScreenModeStartHook,
                       MUIA_Popasl_StopHook, (ULONG) &ScreenModeStopHook,
-                      MUIA_Disabled,      (Config[CFG_SCREENTYPE] != CFGST_CUSTOM),
-                    TAG_DONE),
+                      MUIA_Disabled, (ULONG) (Config[CFG_SCREENTYPE] != CFGST_CUSTOM),
+                    TAG_DONE)),
                   TAG_DONE),
                   Child, HSpace(0),
                 TAG_DONE),
                 Child, HVSpace,
               TAG_DONE),
-              Child, MUI_NewObject(MUIC_Group,
+              Child, UMUINO(MUIC_Group,
                 Child, HVSpace,
-                Child, MUI_NewObject(MUIC_Group,MUIA_Group_Horiz,TRUE,
+                Child, UMUINO(MUIC_Group,MUIA_Group_Horiz,TRUE,
                   Child, HSpace(0),
-                  Child, ColGroup(4),
+                  Child, UMUINO(MUIC_Group,MUIA_Group_Columns,4,
                     MUIA_HorizWeight, 1000,
                     Child, Label((ULONG)GetMessage(MSG_SOUND)),
-                    Child, CY_Sound =  MUI_NewObject(MUIC_Cycle,
+                    Child, CY_Sound =  OMUINO(MUIC_Cycle,
                       MUIA_Cycle_Entries, (ULONG) Sounds,
                     TAG_DONE),
                   TAG_DONE),
                   Child, HSpace(0),
                 TAG_DONE),
-                Child, MUI_NewObject(MUIC_Group,MUIA_Group_Horiz,TRUE,
-                  Child, RectangleObject, TAG_DONE),
-                  Child, ColGroup(2),
+                Child, UMUINO(MUIC_Group,MUIA_Group_Horiz,TRUE,
+                  Child, MUI_NewObject(MUIC_Rectangle, TAG_DONE),
+                  Child, UMUINO(MUIC_Group,MUIA_Group_Columns,2,
                     MUIA_HorizWeight, 1000,
                     Child, Label((ULONG)GetMessage(MSG_AUDIO_CH_0)),
-                    Child, SL_AudioChannel[0] = MUI_NewObject(MUIC_Slider,
+                    Child, SL_AudioChannel[0] = OMUINO(MUIC_Slider,
                       MUIA_Slider_Min,    0,
                       MUIA_Slider_Max,    15,
                     TAG_DONE),
                     Child, Label((ULONG)GetMessage(MSG_AUDIO_CH_1)),
-                    Child, SL_AudioChannel[1] = MUI_NewObject(MUIC_Slider,
+                    Child, SL_AudioChannel[1] = OMUINO(MUIC_Slider,
                       MUIA_Slider_Min,    0,
                       MUIA_Slider_Max,    15,
                     TAG_DONE),
                     Child, Label((ULONG)GetMessage(MSG_AUDIO_CH_2)),
-                    Child, SL_AudioChannel[2] = MUI_NewObject(MUIC_Slider,
+                    Child, SL_AudioChannel[2] = OMUINO(MUIC_Slider,
                       MUIA_Slider_Min,    0,
                       MUIA_Slider_Max,    15,
                     TAG_DONE),
                     Child, Label((ULONG)GetMessage(MSG_AUDIO_CH_3)),
-                    Child, SL_AudioChannel[3] = MUI_NewObject(MUIC_Slider,
+                    Child, SL_AudioChannel[3] = OMUINO(MUIC_Slider,
                       MUIA_Slider_Min,    0,
                       MUIA_Slider_Max,    15,
                     TAG_DONE),
                     Child, Label((ULONG)GetMessage(MSG_MIN_CHIP)),
-                    Child, SL_MinFreeChip = MUI_NewObject(MUIC_Slider,
+                    Child, SL_MinFreeChip = OMUINO(MUIC_Slider,
                       MUIA_Slider_Min,    0,
                       MUIA_Slider_Max,    2048,
                     TAG_DONE),
                   TAG_DONE),
-                  Child, RectangleObject, TAG_DONE),
+                  Child, MUI_NewObject(MUIC_Rectangle, TAG_DONE),
                 TAG_DONE),
                 Child, HVSpace,
               TAG_DONE),
-              Child, MUI_NewObject(MUIC_Group,
+              Child, UMUINO(MUIC_Group,
                 Child, HVSpace,
-                Child, MUI_NewObject(MUIC_Group,MUIA_Group_Horiz,TRUE,
+                Child, UMUINO(MUIC_Group,MUIA_Group_Horiz,TRUE,
                   Child, HSpace(0),
-                  Child, ColGroup(2),
+                  Child, UMUINO(MUIC_Group,MUIA_Group_Columns,2,
                     GroupFrameT((ULONG)GetMessage(MSG_PRIMARY_CONTROLLER)),
                     MUIA_HorizWeight, 1000,
                     Child, Label((ULONG)GetMessage(MSG_TYPE)),
-                    Child, CY_Joy1Type = MUI_NewObject(MUIC_Cycle,
+                    Child, CY_Joy1Type = OMUINO(MUIC_Cycle,
                       MUIA_Cycle_Entries, (ULONG) Joy1Types,
                     TAG_DONE),
                     Child, Label((ULONG)GetMessage(MSG_BUTTON_B_HOLD_TIME)),
-                    Child, SL_Joy1ButtonBTime = MUI_NewObject(MUIC_Slider,
+                    Child, SL_Joy1ButtonBTime = OMUINO(MUIC_Slider,
                       MUIA_Slider_Min,    0,
                       MUIA_Slider_Max,    9,
                     TAG_DONE),
                     Child, Label((ULONG)GetMessage(MSG_AUTO_FIRE_RATE)),
-                    Child, SL_Joy1AutoFireRate = MUI_NewObject(MUIC_Slider,
+                    Child, SL_Joy1AutoFireRate = OMUINO(MUIC_Slider,
                       MUIA_Slider_Min,    0,
                       MUIA_Slider_Max,    5,
                     TAG_DONE),
                   TAG_DONE),
                   Child, HSpace(0),
                 TAG_DONE),
-                Child, MUI_NewObject(MUIC_Group,MUIA_Group_Horiz,TRUE,
+                Child, UMUINO(MUIC_Group,MUIA_Group_Horiz,TRUE,
                   Child, HSpace(0),
-                  Child, ColGroup(2),
+                  Child, UMUINO(MUIC_Group,MUIA_Group_Columns,2,
                     GroupFrameT((ULONG)GetMessage(MSG_SECONDARY_CONTROLLER)),
                     MUIA_HorizWeight, 1000,
                     Child, Label((ULONG)GetMessage(MSG_TYPE)),
-                    Child, CY_Joy2Type = MUI_NewObject(MUIC_Cycle,
+                    Child, CY_Joy2Type = OMUINO(MUIC_Cycle,
                       MUIA_Cycle_Entries, (ULONG) Joy2Types,
                     TAG_DONE),
                     Child, Label((ULONG)GetMessage(MSG_BUTTON_B_HOLD_TIME)),
-                    Child, SL_Joy2ButtonBTime = MUI_NewObject(MUIC_Slider,
+                    Child, SL_Joy2ButtonBTime = OMUINO(MUIC_Slider,
                       MUIA_Slider_Min,    0,
                       MUIA_Slider_Max,    9,
                     TAG_DONE),
                     Child, Label((ULONG)GetMessage(MSG_AUTO_FIRE_RATE)),
-                    Child, SL_Joy2AutoFireRate = MUI_NewObject(MUIC_Slider,
+                    Child, SL_Joy2AutoFireRate = OMUINO(MUIC_Slider,
                       MUIA_Slider_Min,    0,
                       MUIA_Slider_Max,    5,
                     TAG_DONE),
@@ -1260,36 +1307,36 @@ int MainGUI(void)
                 TAG_DONE),
                 Child, HVSpace,
               TAG_DONE),
-              Child, MUI_NewObject(MUIC_Group,
+              Child, UMUINO(MUIC_Group,
                 Child, HVSpace,
-                Child, MUI_NewObject(MUIC_Group,MUIA_Group_Horiz,TRUE,
+                Child, UMUINO(MUIC_Group,MUIA_Group_Horiz,TRUE,
                   Child, HSpace(0),
-                  Child, ColGroup(2),
+                  Child, UMUINO(MUIC_Group,MUIA_Group_Columns,2,
                     MUIA_HorizWeight, 1000,
                     Child, Label((ULONG)GetMessage(MSG_ROM_PATH)),
-                    Child, PA_RomPath = PopaslObject,
-                      MUIA_Popstring_String,  ST_RomPath = String(0, 256),
-                      MUIA_Popstring_Button,  PopButton(MUII_PopDrawer),
+                    Child,(ULONG) (PA_RomPath = MUI_NewObject(MUIC_Popasl,
+                      MUIA_Popstring_String,(ULONG)(ST_RomPath = OString(0, 256)),
+                      MUIA_Popstring_Button, (ULONG)(PopButton(MUII_PopDrawer)),
                       ASLFR_DrawersOnly,    TRUE,
-                    TAG_DONE),
+                    TAG_DONE)),
                     Child, Label((ULONG)GetMessage(MSG_SAMPLE_PATH)),
-                    Child, PA_SamplePath = PopaslObject,
-                      MUIA_Popstring_String,  ST_SamplePath = String(0, 256),
-                      MUIA_Popstring_Button,  PopButton(MUII_PopDrawer),
+                    Child,(ULONG)(PA_SamplePath = MUI_NewObject(MUIC_Popasl,
+                      MUIA_Popstring_String,(ULONG)(  ST_SamplePath = OString(0, 256)),
+                      MUIA_Popstring_Button,(ULONG)(PopButton(MUII_PopDrawer)),
                       ASLFR_DrawersOnly,    TRUE,
-                    TAG_DONE),
+                    TAG_DONE)),
                   TAG_DONE),
                   Child, HSpace(0),
                 TAG_DONE),
                 Child, HVSpace,
               TAG_DONE),
             TAG_DONE),
-            Child, MUI_NewObject(MUIC_Group,MUIA_Group_Horiz,TRUE,
+            Child, UMUINO(MUIC_Group,MUIA_Group_Horiz,TRUE,
               Child, BU_Start   = SimpleButton((ULONG)GetMessage(MSG_START)),
               Child, BU_Quit    = SimpleButton((ULONG)GetMessage(MSG_QUIT)),
             TAG_DONE),
-          TAG_DONE),
-        TAG_DONE);
+          TAG_DONE);
+//        TAG_DONE);
 
 
         if(MainWin)
@@ -1298,7 +1345,7 @@ int MainGUI(void)
 
           DoMethod(LV_Driver, MUIM_Notify,  MUIA_Listview_DoubleClick, TRUE,
                    App, 2, MUIM_Application_ReturnID,  RID_Start);
-                   
+
           DoMethod(BU_Start, MUIM_Notify, MUIA_Pressed, FALSE,
                    App, 2, MUIM_Application_ReturnID, RID_Start);
 
@@ -1356,7 +1403,7 @@ int MainGUI(void)
 #ifdef MESS
           DoMethod(LI_Driver, MUIM_List_Insert, SortedDrivers, NumDrivers + DRIVER_OFFSET, MUIV_List_Insert_Bottom);
 #else
-          ShowNotify(NULL, NULL, &Config[CFG_SHOW]);
+          ShowNotify(NULL, NULL,(ULONG*) &Config[CFG_SHOW]);
 #endif
         }
       }
@@ -1444,134 +1491,146 @@ int MainGUI(void)
   return(1);
 };
 
-//void AboutGUI(void)
-//{
-//  ULONG signals = 0;
+void AboutGUI(void)
+{
+  ULONG signals = 0;
 
-//  if(MUIMasterBase)
-//  {
-//    if(!App)
-//      CreateApp();
-//    if(App)
-//    {
-//      set(AboutWin, MUIA_Window_ActiveObject, (ULONG) BU_About_OK);
-//      set(AboutWin, MUIA_Window_Open, TRUE);
+  if(MUIMasterBase)
+  {
+    if(!App)
+      CreateApp();
+    if(App)
+    {
+      set(AboutWin, MUIA_Window_ActiveObject, (ULONG) BU_About_OK);
+      set(AboutWin, MUIA_Window_Open, TRUE);
 
-//      for(;DoMethod(App, MUIM_Application_NewInput, &signals) != RID_CloseAbout;)
-//      {
-//        if(signals)
-//        {
-//          if(Inputs)
-//            signals = Wait(signals|SIGBREAKF_CTRL_C|Inputs->SignalMask);
-//          else
-//            signals = Wait(signals|SIGBREAKF_CTRL_C);
+      for(;DoMethod(App, MUIM_Application_NewInput, &signals) != RID_CloseAbout;)
+      {
+        if(signals)
+        {
+          if(Inputs)
+            signals = Wait(signals|SIGBREAKF_CTRL_C|Inputs->SignalMask);
+          else
+            signals = Wait(signals|SIGBREAKF_CTRL_C);
 
-//          if((signals & SIGBREAKF_CTRL_C))
-//            break;
+          if((signals & SIGBREAKF_CTRL_C))
+            break;
 
-//          if(signals & Inputs->SignalMask)
-//            IUpdate(Inputs);
-//        }
-//      }
+          if(signals & Inputs->SignalMask)
+            IUpdate(Inputs);
+        }
+      }
 
-//      set(AboutWin, MUIA_Window_Open, FALSE);
-//    }
-//  }
-//}
+      set(AboutWin, MUIA_Window_Open, FALSE);
+    }
+  }
+}
 
-//static void CreateApp(void)
-//{
-//  App = ApplicationObject,
-//    MUIA_Application_Title      , APPNAME,
-//    MUIA_Application_Version    , "$VER: "APPNAME" ("REVDATE")",
-//    MUIA_Application_Author     , AUTHOR,
-//    MUIA_Application_Base       , "MAME",
-//    SubWindow, AboutWin = WindowObject,
-//      MUIA_Window_Title, APPNAME,
-//      MUIA_Window_ID   , MAKE_ID('A','B','O','U'),
-//      WindowContents, MUI_NewObject(MUIC_Group,
-//        Child, ScrollgroupObject,
-//          MUIA_Scrollgroup_FreeHoriz, FALSE,
-//          MUIA_Scrollgroup_FreeVert, TRUE,
-//          MUIA_Scrollgroup_Contents, VirtgroupObject,
-//            VirtualFrame,
-//            MUIA_Background, MUII_TextBack,
-//            Child, MUI_NewObject(MUIC_Group,
-//              Child, TextObject,
-//                MUIA_Text_Contents, TEXT_ABOUT,
-//              End,
-//              Child, VSpace(0),
-//            End,
-//          End,
-//          End,
-//        Child, HCenter(BU_About_OK = SimpleButton("_OK")),
-//      End,
-//    End,
-//  End;
+inline Object *OHCenter(Object *obj)
+{
+  return MUI_NewObject(MUIC_Group,
+                       MUIA_Group_Horiz,TRUE,
+                       MUIA_Group_Spacing,0,
+                       Child,(ULONG) MUI_MakeObject(MUIO_HSpace,0),
+                       Child, (ULONG)(obj),
+                       Child,(ULONG) MUI_MakeObject(MUIO_HSpace,0),
+                       TAG_DONE);
+}
 
-//  if(App)
-//  {
-//    DoMethod(BU_About_OK, MUIM_Notify, MUIA_Pressed, FALSE,
-//             App, 2, MUIM_Application_ReturnID, RID_CloseAbout);
 
-//    DoMethod(AboutWin, MUIM_Notify, MUIA_Window_CloseRequest, TRUE,
-//             App, 2, MUIM_Application_ReturnID, RID_CloseAbout);
-//  }
-//}
+static void CreateApp(void)
+{
+  App = MUI_NewObject(MUIC_Application,
+    MUIA_Application_Title      , APPNAME,
+    MUIA_Application_Version    , "$VER: "APPNAME" ("REVDATE")",
+    MUIA_Application_Author     , AUTHOR,
+    MUIA_Application_Base       , "MAME",
+    SubWindow, (AboutWin = MUI_NewObject(MUIC_Window,
+      MUIA_Window_Title, APPNAME,
+      MUIA_Window_ID   , MAKE_ID('A','B','O','U'),
+      WindowContents, MUI_NewObject(MUIC_Group,
+        Child, MUI_NewObject(MUIC_Scrollgroup,
+          MUIA_Scrollgroup_FreeHoriz, FALSE,
+          MUIA_Scrollgroup_FreeVert, TRUE,
+          MUIA_Scrollgroup_Contents, MUI_NewObject(MUIC_Virtgroup,
+            VirtualFrame,
+            MUIA_Background, MUII_TextBack,
+            Child, MUI_NewObject(MUIC_Group,
+              Child, MUI_NewObject(MUIC_Text,
+                MUIA_Text_Contents, TEXT_ABOUT,
+              TAG_DONE),
+              Child, VSpace(0),
+            TAG_DONE),
+          TAG_DONE),
+          TAG_DONE),
+        Child,(ULONG) OHCenter(BU_About_OK = SimpleButton("_OK")),
+      TAG_DONE), // end group
+    TAG_DONE)),
+  TAG_DONE);
 
-//static void GetOptions(BOOL get_driver)
-//{
-//  int config_index;
+  if(App)
+  {
+    DoMethod(BU_About_OK, MUIM_Notify, MUIA_Pressed, FALSE,
+             App, 2, MUIM_Application_ReturnID, RID_CloseAbout);
 
-//  get(CY_ScreenType,       MUIA_Cycle_Active,    &Config[CFG_SCREENTYPE]);
-//  get(CY_DirectMode,       MUIA_Cycle_Active,    &Config[CFG_DIRECTMODE]);
-//  get(CM_DirtyLines,       MUIA_Selected,        &Config[CFG_DIRTYLINES]);
-//  get(CM_Allow16Bit,       MUIA_Selected,        &Config[CFG_ALLOW16BIT]);
-//  get(CM_FlipX,            MUIA_Selected,        &Config[CFG_FLIPX]);
-//  get(CM_FlipY,            MUIA_Selected,        &Config[CFG_FLIPY]);
-//#ifndef MESS
-//  get(CY_Show,             MUIA_Cycle_Active,    &Config[CFG_SHOW]);
-//  get(CM_UseDefaults,      MUIA_Selected,        &Config[CFG_USEDEFAULTS]);
-//#endif
-//  get(CM_Antialiasing,     MUIA_Selected,        &Config[CFG_ANTIALIASING]);
-//  get(CM_Translucency,     MUIA_Selected,        &Config[CFG_TRANSLUCENCY]);
-//  get(CM_AutoFrameSkip,    MUIA_Selected,        &Config[CFG_AUTOFRAMESKIP]);
-//  get(SL_BeamWidth,        MUIA_Slider_Level,    &Config[CFG_BEAMWIDTH]);
-//  get(SL_VectorFlicker,    MUIA_Slider_Level,    &Config[CFG_VECTORFLICKER]);
-//  get(SL_FrameSkip,        MUIA_Slider_Level,    &Config[CFG_FRAMESKIP]);
-//  get(ST_Width,            MUIA_String_Integer,  &Config[CFG_WIDTH]);
-//  get(ST_Height,           MUIA_String_Integer,  &Config[CFG_HEIGHT]);
-//  get(CY_Buffering,        MUIA_Cycle_Active,    &Config[CFG_BUFFERING]);
-//  get(CY_Rotation,         MUIA_Cycle_Active,    &Config[CFG_ROTATION]);
-//  get(CY_Sound,            MUIA_Cycle_Active,    &Config[CFG_SOUND]);
-//  get(SL_AudioChannel[0],  MUIA_Slider_Level,    &Config[CFG_AUDIOCHANNEL0]);
-//  get(SL_AudioChannel[1],  MUIA_Slider_Level,    &Config[CFG_AUDIOCHANNEL1]);
-//  get(SL_AudioChannel[2],  MUIA_Slider_Level,    &Config[CFG_AUDIOCHANNEL2]);
-//  get(SL_AudioChannel[3],  MUIA_Slider_Level,    &Config[CFG_AUDIOCHANNEL3]);
-//  get(SL_MinFreeChip,      MUIA_Slider_Level,    &Config[CFG_MINFREECHIP]);
-//  get(CY_Joy1Type,         MUIA_Cycle_Active,    &Config[CFG_JOY1TYPE]);
-//  get(SL_Joy1ButtonBTime,  MUIA_Slider_Level,    &Config[CFG_JOY1BUTTONBTIME]);
-//  get(SL_Joy1AutoFireRate, MUIA_Slider_Level,    &Config[CFG_JOY1AUTOFIRERATE]);
-//  get(CY_Joy2Type,         MUIA_Cycle_Active,    &Config[CFG_JOY2TYPE]);
-//  get(SL_Joy2ButtonBTime,  MUIA_Slider_Level,    &Config[CFG_JOY2BUTTONBTIME]);
-//  get(SL_Joy2AutoFireRate, MUIA_Slider_Level,    &Config[CFG_JOY2AUTOFIRERATE]);
-//  get(ST_RomPath,          MUIA_String_Contents, &Config[CFG_ROMPATH]);
-//  get(ST_SamplePath,       MUIA_String_Contents, &Config[CFG_SAMPLEPATH]);
-//#ifdef POWERUP
-//  get(CM_AsyncPPC,         MUIA_Selected,        &Config[CFG_ASYNCPPC]);
-//#endif
+    DoMethod(AboutWin, MUIM_Notify, MUIA_Window_CloseRequest, TRUE,
+             App, 2, MUIM_Application_ReturnID, RID_CloseAbout);
+  }
+}
 
-//  Config[CFG_SCREENMODE] = ScreenModeTags[SMT_DISPLAYID].ti_Data;
-//  Config[CFG_DEPTH]      = ScreenModeTags[SMT_DEPTH].ti_Data;
+static void GetOptions(BOOL get_driver)
+{
+  int config_index;
 
-//  if(get_driver)
-//    Config[CFG_DRIVER] = GetDriverIndex();
+  get(CY_ScreenType,       MUIA_Cycle_Active,    &Config[CFG_SCREENTYPE]);
+  get(CY_DirectMode,       MUIA_Cycle_Active,    &Config[CFG_DIRECTMODE]);
+  get(CM_DirtyLines,       MUIA_Selected,        &Config[CFG_DIRTYLINES]);
+  get(CM_Allow16Bit,       MUIA_Selected,        &Config[CFG_ALLOW16BIT]);
+  get(CM_FlipX,            MUIA_Selected,        &Config[CFG_FLIPX]);
+  get(CM_FlipY,            MUIA_Selected,        &Config[CFG_FLIPY]);
+#ifndef MESS
+  get(CY_Show,             MUIA_Cycle_Active,    &Config[CFG_SHOW]);
+  get(CM_UseDefaults,      MUIA_Selected,        &Config[CFG_USEDEFAULTS]);
+#endif
+  get(CM_Antialiasing,     MUIA_Selected,        &Config[CFG_ANTIALIASING]);
+  get(CM_Translucency,     MUIA_Selected,        &Config[CFG_TRANSLUCENCY]);
+  get(CM_AutoFrameSkip,    MUIA_Selected,        &Config[CFG_AUTOFRAMESKIP]);
+  get(SL_BeamWidth,        MUIA_Slider_Level,    &Config[CFG_BEAMWIDTH]);
+  get(SL_VectorFlicker,    MUIA_Slider_Level,    &Config[CFG_VECTORFLICKER]);
+  get(SL_FrameSkip,        MUIA_Slider_Level,    &Config[CFG_FRAMESKIP]);
+  get(ST_Width,            MUIA_String_Integer,  &Config[CFG_WIDTH]);
+  get(ST_Height,           MUIA_String_Integer,  &Config[CFG_HEIGHT]);
+  get(CY_Buffering,        MUIA_Cycle_Active,    &Config[CFG_BUFFERING]);
+  get(CY_Rotation,         MUIA_Cycle_Active,    &Config[CFG_ROTATION]);
+  get(CY_Sound,            MUIA_Cycle_Active,    &Config[CFG_SOUND]);
+  get(SL_AudioChannel[0],  MUIA_Slider_Level,    &Config[CFG_AUDIOCHANNEL0]);
+  get(SL_AudioChannel[1],  MUIA_Slider_Level,    &Config[CFG_AUDIOCHANNEL1]);
+  get(SL_AudioChannel[2],  MUIA_Slider_Level,    &Config[CFG_AUDIOCHANNEL2]);
+  get(SL_AudioChannel[3],  MUIA_Slider_Level,    &Config[CFG_AUDIOCHANNEL3]);
+  get(SL_MinFreeChip,      MUIA_Slider_Level,    &Config[CFG_MINFREECHIP]);
+  get(CY_Joy1Type,         MUIA_Cycle_Active,    &Config[CFG_JOY1TYPE]);
+  get(SL_Joy1ButtonBTime,  MUIA_Slider_Level,    &Config[CFG_JOY1BUTTONBTIME]);
+  get(SL_Joy1AutoFireRate, MUIA_Slider_Level,    &Config[CFG_JOY1AUTOFIRERATE]);
+  get(CY_Joy2Type,         MUIA_Cycle_Active,    &Config[CFG_JOY2TYPE]);
+  get(SL_Joy2ButtonBTime,  MUIA_Slider_Level,    &Config[CFG_JOY2BUTTONBTIME]);
+  get(SL_Joy2AutoFireRate, MUIA_Slider_Level,    &Config[CFG_JOY2AUTOFIRERATE]);
+  get(ST_RomPath,          MUIA_String_Contents, &Config[CFG_ROMPATH]);
+  get(ST_SamplePath,       MUIA_String_Contents, &Config[CFG_SAMPLEPATH]);
+#ifdef POWERUP
+  get(CM_AsyncPPC,         MUIA_Selected,        &Config[CFG_ASYNCPPC]);
+#endif
 
-//  config_index = DRIVER_OFFSET + ((LONG) Config[CFG_DRIVER]);
+  Config[CFG_SCREENMODE] = ScreenModeTags[SMT_DISPLAYID].ti_Data;
+  Config[CFG_DEPTH]      = ScreenModeTags[SMT_DEPTH].ti_Data;
 
-//  if(config_index >= 0)
-//    SetConfig(config_index, Config);
-//}
+  if(get_driver)
+    Config[CFG_DRIVER] = GetDriverIndex();
+
+  config_index = DRIVER_OFFSET + ((LONG) Config[CFG_DRIVER]);
+
+  if(config_index >= 0)
+    SetConfig(config_index, Config);
+}
 
 //static void SetOptions(BOOL set_driver)
 //{
@@ -1746,13 +1805,13 @@ int MainGUI(void)
 //      set(BU_Scan, MUIA_Disabled, TRUE);
 //      DoMethod(LI_Driver, MUIM_List_Insert, SortedDrivers, NumDrivers + DRIVER_OFFSET, MUIV_List_Insert_Bottom);
 //      break;
-      
+
 //    case CFGS_FOUND:
 //      set(BU_Scan, MUIA_Disabled, FALSE);
 //      ShowFound();
 //      break;
 //  }
-  
+
 //  return(0);
 //}
 //#endif
@@ -1823,7 +1882,7 @@ int MainGUI(void)
 //  Config[CFG_DRIVER] = GetDriverIndex();
 
 //  SetOptions(FALSE);
-  
+
 //  return(0);
 //}
 

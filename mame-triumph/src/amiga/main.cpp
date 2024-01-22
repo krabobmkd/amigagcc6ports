@@ -43,6 +43,7 @@ extern "C" {
 #include <libraries/asl.h>
 #include <libraries/gadtools.h>
 #include <cybergraphx/cybergraphics.h>
+#include <intuition/intuition.h>
 
 #include <inline/exec.h>
 #include <inline/dos.h>
@@ -1094,9 +1095,9 @@ void ErrorRequest(LONG msg_id, ...)
   
   es.es_StructSize   = sizeof(struct EasyStruct);
   es.es_Flags        = 0;
-  es.es_Title        = const_cast<CONST_STRPTR>(APPNAME);
-  es.es_TextFormat   = const_cast<CONST_STRPTR>(GetMessage(msg_id));
-  es.es_GadgetFormat =  const_cast<CONST_STRPTR>(GetMessage(MSG_OK));
-  
+  es.es_Title        = (UBYTE*)(APPNAME);
+  es.es_TextFormat   = (UBYTE*)(GetMessage(msg_id));
+  es.es_GadgetFormat = (UBYTE*)(GetMessage(MSG_OK));
+
   EasyRequestArgs(NULL, &es, NULL, &((&msg_id)[1]));
 }
