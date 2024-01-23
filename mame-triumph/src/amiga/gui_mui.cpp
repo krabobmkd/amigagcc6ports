@@ -51,6 +51,8 @@ extern "C" {
 #include "version.h"
 
 #include <vector>
+#include <string>
+#include <cstdio>
 
 typedef ULONG (*RE_HOOKFUNC)();
 
@@ -123,8 +125,8 @@ static struct MUI_CustomClass *DriverClass;
 
 static Object *App=NULL;
 static Object *MainWin=NULL;
-static APTR AboutWin=NULL;
-static APTR DisplayName=NULL;
+static Object *AboutWin=NULL;
+static Object *DisplayName=NULL;
 
 static Object * RE_Options=NULL;
 static Object * CM_Allow16Bit=NULL;
@@ -173,8 +175,8 @@ static Object * PU_ScreenMode;
 static Object * CM_AsyncPPC;
 #endif
 
-static struct NameInfo DisplayNameInfo;
-static UBYTE           DisplayNameBuffer[256];
+//static UBYTE           DisplayNameBuffer[256];
+std::string DisplayNameBuffer;
 
 static STRPTR Shows[] =
 {
@@ -691,7 +693,7 @@ static ULONG ASM DriverDisplay(struct Hook *hook REG(a0), char **array REG(a2), 
 // GAME_REQUIRES_16BIT
 //0.35  if(drv->drv->video_attributes & VIDEO_SUPPORTS_16BIT)
   if(drv->flags & GAME_REQUIRES_16BIT ||
-    drv->flags > 256
+    drv->drv->total_colors > 256
     )
     sprintf(colors, "16Bit");
   else
@@ -1541,29 +1543,29 @@ inline Object *OHCenter(Object *obj)
 static void CreateApp(void)
 {
   App = MUI_NewObject(MUIC_Application,
-    MUIA_Application_Title      , APPNAME,
-    MUIA_Application_Version    , "$VER: "APPNAME" ("REVDATE")",
-    MUIA_Application_Author     , AUTHOR,
-    MUIA_Application_Base       , "MAME",
-    SubWindow, (AboutWin = MUI_NewObject(MUIC_Window,
-      MUIA_Window_Title, APPNAME,
+    MUIA_Application_Title      , (ULONG)APPNAME,
+    MUIA_Application_Version    , (ULONG)("$VER: "APPNAME" ("REVDATE")"),
+    MUIA_Application_Author     , (ULONG)AUTHOR,
+    MUIA_Application_Base       , (ULONG)"MAME",
+    SubWindow, (ULONG)(AboutWin = MUI_NewObject(MUIC_Window,
+      MUIA_Window_Title, (ULONG)APPNAME,
       MUIA_Window_ID   , MAKE_ID('A','B','O','U'),
-      WindowContents, MUI_NewObject(MUIC_Group,
-        Child, MUI_NewObject(MUIC_Scrollgroup,
+      WindowContents, UMUINO(MUIC_Group,
+        Child, UMUINO(MUIC_Scrollgroup,
           MUIA_Scrollgroup_FreeHoriz, FALSE,
           MUIA_Scrollgroup_FreeVert, TRUE,
-          MUIA_Scrollgroup_Contents, MUI_NewObject(MUIC_Virtgroup,
+          MUIA_Scrollgroup_Contents, UMUINO(MUIC_Virtgroup,
             VirtualFrame,
             MUIA_Background, MUII_TextBack,
-            Child, MUI_NewObject(MUIC_Group,
-              Child, MUI_NewObject(MUIC_Text,
-                MUIA_Text_Contents, TEXT_ABOUT,
+            Child, UMUINO(MUIC_Group,
+              Child, UMUINO(MUIC_Text,
+                MUIA_Text_Contents, (ULONG)TEXT_ABOUT,
               TAG_DONE),
               Child, VSpace(0),
             TAG_DONE),
           TAG_DONE),
           TAG_DONE),
-        Child,(ULONG) OHCenter(BU_About_OK = SimpleButton("_OK")),
+        Child,(ULONG) OHCenter(BU_About_OK = SimpleButton((ULONG)"_OK")),
       TAG_DONE), // end group
     TAG_DONE)),
   TAG_DONE);
@@ -1632,356 +1634,339 @@ static void GetOptions(BOOL get_driver)
     SetConfig(config_index, Config);
 }
 
-//static void SetOptions(BOOL set_driver)
-//{
-//  ULONG i, v;
+static void SetOptions(BOOL set_driver)
+{
+  ULONG i, v;
 
-//  GetConfig(Config[CFG_DRIVER] + DRIVER_OFFSET, Config);
+  GetConfig(Config[CFG_DRIVER] + DRIVER_OFFSET, Config);
 
-//#ifndef MESS
-//  if(Config[CFG_DRIVER] < 0)
-//    Config[CFG_USEDEFAULTS] = FALSE;
+#ifndef MESS
+  if(Config[CFG_DRIVER] < 0)
+    Config[CFG_USEDEFAULTS] = FALSE;
 
-//  set(CY_Show,             MUIA_Cycle_Active,    Config[CFG_SHOW]);
-//  set(CM_UseDefaults,      MUIA_Selected,        Config[CFG_USEDEFAULTS]);
-//#endif
-//  set(CY_ScreenType,       MUIA_Cycle_Active,    Config[CFG_SCREENTYPE]);
-//  set(CY_DirectMode,       MUIA_Cycle_Active,    Config[CFG_DIRECTMODE]);
-//  set(CM_DirtyLines,       MUIA_Selected,        Config[CFG_DIRTYLINES]);
-//  set(CM_Allow16Bit,       MUIA_Selected,        Config[CFG_ALLOW16BIT]);
-//  set(CM_FlipX,            MUIA_Selected,        Config[CFG_FLIPX]);
-//  set(CM_FlipY,            MUIA_Selected,        Config[CFG_FLIPY]);
-//  set(CM_Antialiasing,     MUIA_Selected,        Config[CFG_ANTIALIASING]);
-//  set(CM_Translucency,     MUIA_Selected,        Config[CFG_TRANSLUCENCY]);
-//  set(CM_AutoFrameSkip,    MUIA_Selected,        Config[CFG_AUTOFRAMESKIP]);
-//  set(SL_BeamWidth,        MUIA_Slider_Level,    Config[CFG_BEAMWIDTH]);
-//  set(SL_VectorFlicker,    MUIA_Slider_Level,    Config[CFG_VECTORFLICKER]);
-//  set(SL_FrameSkip,        MUIA_Slider_Level,    Config[CFG_FRAMESKIP]);
-//  set(ST_Width,            MUIA_String_Integer,  Config[CFG_WIDTH]);
-//  set(ST_Height,           MUIA_String_Integer,  Config[CFG_HEIGHT]);
-//  set(CY_Buffering,        MUIA_Cycle_Active,    Config[CFG_BUFFERING]);
-//  set(CY_Rotation,         MUIA_Cycle_Active,    Config[CFG_ROTATION]);
-//  set(CY_Sound,            MUIA_Cycle_Active,    Config[CFG_SOUND]);
-//  set(SL_AudioChannel[0],  MUIA_Slider_Level,    Config[CFG_AUDIOCHANNEL0]);
-//  set(SL_AudioChannel[1],  MUIA_Slider_Level,    Config[CFG_AUDIOCHANNEL1]);
-//  set(SL_AudioChannel[2],  MUIA_Slider_Level,    Config[CFG_AUDIOCHANNEL2]);
-//  set(SL_AudioChannel[3],  MUIA_Slider_Level,    Config[CFG_AUDIOCHANNEL3]);
-//  set(SL_MinFreeChip,      MUIA_Slider_Level,    Config[CFG_MINFREECHIP]);
-//  set(CY_Joy1Type,         MUIA_Cycle_Active,    Config[CFG_JOY1TYPE]);
-//  set(SL_Joy1ButtonBTime,  MUIA_Slider_Level,    Config[CFG_JOY1BUTTONBTIME]);
-//  set(SL_Joy1AutoFireRate, MUIA_Slider_Level,    Config[CFG_JOY1AUTOFIRERATE]);
-//  set(CY_Joy2Type,         MUIA_Cycle_Active,    Config[CFG_JOY2TYPE]);
-//  set(SL_Joy2ButtonBTime,  MUIA_Slider_Level,    Config[CFG_JOY2BUTTONBTIME]);
-//  set(SL_Joy2AutoFireRate, MUIA_Slider_Level,    Config[CFG_JOY2AUTOFIRERATE]);
-//  set(ST_RomPath,          MUIA_String_Contents, Config[CFG_ROMPATH]);
-//  set(ST_SamplePath,       MUIA_String_Contents, Config[CFG_SAMPLEPATH]);
-//#ifdef POWERUP
-//  set(CM_AsyncPPC,         MUIA_Selected,        Config[CFG_ASYNCPPC]);
-//#endif
+  set(CY_Show,             MUIA_Cycle_Active,    Config[CFG_SHOW]);
+  set(CM_UseDefaults,      MUIA_Selected,        Config[CFG_USEDEFAULTS]);
+#endif
+  set(CY_ScreenType,       MUIA_Cycle_Active,    Config[CFG_SCREENTYPE]);
+  set(CY_DirectMode,       MUIA_Cycle_Active,    Config[CFG_DIRECTMODE]);
+  set(CM_DirtyLines,       MUIA_Selected,        Config[CFG_DIRTYLINES]);
+  set(CM_Allow16Bit,       MUIA_Selected,        Config[CFG_ALLOW16BIT]);
+  set(CM_FlipX,            MUIA_Selected,        Config[CFG_FLIPX]);
+  set(CM_FlipY,            MUIA_Selected,        Config[CFG_FLIPY]);
+  set(CM_Antialiasing,     MUIA_Selected,        Config[CFG_ANTIALIASING]);
+  set(CM_Translucency,     MUIA_Selected,        Config[CFG_TRANSLUCENCY]);
+  set(CM_AutoFrameSkip,    MUIA_Selected,        Config[CFG_AUTOFRAMESKIP]);
+  set(SL_BeamWidth,        MUIA_Slider_Level,    Config[CFG_BEAMWIDTH]);
+  set(SL_VectorFlicker,    MUIA_Slider_Level,    Config[CFG_VECTORFLICKER]);
+  set(SL_FrameSkip,        MUIA_Slider_Level,    Config[CFG_FRAMESKIP]);
+  set(ST_Width,            MUIA_String_Integer,  Config[CFG_WIDTH]);
+  set(ST_Height,           MUIA_String_Integer,  Config[CFG_HEIGHT]);
+  set(CY_Buffering,        MUIA_Cycle_Active,    Config[CFG_BUFFERING]);
+  set(CY_Rotation,         MUIA_Cycle_Active,    Config[CFG_ROTATION]);
+  set(CY_Sound,            MUIA_Cycle_Active,    Config[CFG_SOUND]);
+  set(SL_AudioChannel[0],  MUIA_Slider_Level,    Config[CFG_AUDIOCHANNEL0]);
+  set(SL_AudioChannel[1],  MUIA_Slider_Level,    Config[CFG_AUDIOCHANNEL1]);
+  set(SL_AudioChannel[2],  MUIA_Slider_Level,    Config[CFG_AUDIOCHANNEL2]);
+  set(SL_AudioChannel[3],  MUIA_Slider_Level,    Config[CFG_AUDIOCHANNEL3]);
+  set(SL_MinFreeChip,      MUIA_Slider_Level,    Config[CFG_MINFREECHIP]);
+  set(CY_Joy1Type,         MUIA_Cycle_Active,    Config[CFG_JOY1TYPE]);
+  set(SL_Joy1ButtonBTime,  MUIA_Slider_Level,    Config[CFG_JOY1BUTTONBTIME]);
+  set(SL_Joy1AutoFireRate, MUIA_Slider_Level,    Config[CFG_JOY1AUTOFIRERATE]);
+  set(CY_Joy2Type,         MUIA_Cycle_Active,    Config[CFG_JOY2TYPE]);
+  set(SL_Joy2ButtonBTime,  MUIA_Slider_Level,    Config[CFG_JOY2BUTTONBTIME]);
+  set(SL_Joy2AutoFireRate, MUIA_Slider_Level,    Config[CFG_JOY2AUTOFIRERATE]);
+  set(ST_RomPath,          MUIA_String_Contents, Config[CFG_ROMPATH]);
+  set(ST_SamplePath,       MUIA_String_Contents, Config[CFG_SAMPLEPATH]);
+#ifdef POWERUP
+  set(CM_AsyncPPC,         MUIA_Selected,        Config[CFG_ASYNCPPC]);
+#endif
 
-//  ScreenModeTags[SMT_DISPLAYID].ti_Data = Config[CFG_SCREENMODE];
-//  ScreenModeTags[SMT_DEPTH].ti_Data     = Config[CFG_DEPTH];
+  ScreenModeTags[SMT_DISPLAYID].ti_Data = Config[CFG_SCREENMODE];
+  ScreenModeTags[SMT_DEPTH].ti_Data     = Config[CFG_DEPTH];
 
-//  SetDisplayName(Config[CFG_SCREENMODE]);
+  SetDisplayName(Config[CFG_SCREENMODE]);
 
-//  if((Config[CFG_DRIVER] < 0) || (!Config[CFG_USEDEFAULTS]
-//     && (Drivers[Config[CFG_DRIVER]]->drv->video_attributes & VIDEO_SUPPORTS_16BIT)))
-//  {
-//    set(CM_Allow16Bit, MUIA_Disabled, FALSE);
-//  }
-//  else
-//    set(CM_Allow16Bit, MUIA_Disabled, TRUE);
+  if((Config[CFG_DRIVER] < 0) || (!Config[CFG_USEDEFAULTS]
+     && /*(Drivers[Config[CFG_DRIVER]]->drv->video_attributes & VIDEO_SUPPORTS_16BIT)*/
+       ((Drivers[Config[CFG_DRIVER]]->flags & GAME_REQUIRES_16BIT) ||
+        (Drivers[Config[CFG_DRIVER]]->drv->total_colors > 256)
+       )
+     ))
+  {
+    set(CM_Allow16Bit, MUIA_Disabled, FALSE);
+  }
+  else
+    set(CM_Allow16Bit, MUIA_Disabled, TRUE);
 
-//  if(set_driver)
-//  {
-//#ifdef MESS
-//    if(Config[CFG_DRIVER] < 0)
-//      Config[CFG_DRIVER] = 0;
+  if(set_driver)
+  {
+#ifdef MESS
+    if(Config[CFG_DRIVER] < 0)
+      Config[CFG_DRIVER] = 0;
 
-//    for(i = 0; ; i++)
-//#else
-//    if(Config[CFG_DRIVER] == -2)
-//      set(LI_Driver,  MUIA_List_Active, 0);
-//    else if(Config[CFG_DRIVER] == -1)
-//      set(LI_Driver,  MUIA_List_Active, 1);
-//    else
-//    {
-//      for(i = 2; ; i++)
-//#endif
-//      {
-//        DoMethod(LI_Driver, MUIM_List_GetEntry, i, &v);
+    for(i = 0; ; i++)
+#else
+    if(Config[CFG_DRIVER] == -2)
+      set(LI_Driver,  MUIA_List_Active, 0);
+    else if(Config[CFG_DRIVER] == -1)
+      set(LI_Driver,  MUIA_List_Active, 1);
+    else
+    {
+      for(i = 2; ; i++)
+#endif
+      {
+        DoMethod(LI_Driver, MUIM_List_GetEntry, i, &v);
 
-//        if(!v)
-//          break;
+        if(!v)
+          break;
 
-//        if(v == (ULONG) &Drivers[Config[CFG_DRIVER]])
-//        {
-//          set(LI_Driver,  MUIA_List_Active, i);
-//          break;
-//        }
-//      }
-//#ifndef MESS
-//    }
-//#endif
-//  }
-//}
+        if(v == (ULONG) &Drivers[Config[CFG_DRIVER]])
+        {
+          set(LI_Driver,  MUIA_List_Active, i);
+          break;
+        }
+      }
+#ifndef MESS
+    }
+#endif
+  }
+}
 
-//static void SetDisplayName(ULONG displayid)
-//{
-//  LONG i, v;
+static void SetDisplayName(ULONG displayid)
+{
+    if(!DisplayName) return;
+  if(displayid == INVALID_ID)
+    DisplayNameBuffer = GetMessage(MSG_INVALID);
+  else
+  {
+    LONG v;
+    struct NameInfo DisplayNameInfo;
+    v = GetDisplayInfoData(NULL, (UBYTE *) &DisplayNameInfo, sizeof(DisplayNameInfo),
+                         DTAG_NAME, displayid);
 
-//  i = 0;
-//  v = GetDisplayInfoData(NULL, (UBYTE *) &DisplayNameInfo, sizeof(DisplayNameInfo),
-//                         DTAG_NAME, displayid);
+    if(v > sizeof(struct QueryHeader))
+    {
+        DisplayNameBuffer = (const char *) DisplayNameInfo.Name;
+    }
+    char temp[16];
+    snprintf(temp,15," (0x%08x)",(int)displayid);
+    DisplayNameBuffer += temp;
+  }
 
-//  if(v > sizeof(struct QueryHeader))
-//    {
-//    for(; (i < sizeof(DisplayNameBuffer) - 1) && DisplayNameInfo.Name[i]; i++)
-//      DisplayNameBuffer[i]  = DisplayNameInfo.Name[i];
-//  }
+  set(DisplayName, MUIA_Text_Contents, (ULONG) DisplayNameBuffer.c_str());
+}
 
-//  if(displayid == INVALID_ID)
-//    strcpy(DisplayNameBuffer, GetMessage(MSG_INVALID));
-//  else
-//  {
-//    if(i < sizeof(DisplayNameBuffer) - sizeof(" (0x00000000)"))
-//    {
-//      DisplayNameBuffer[i++]  = ' ';
-//      DisplayNameBuffer[i++]  = '(';
-//      DisplayNameBuffer[i++]  = '0';
-//      DisplayNameBuffer[i++]  = 'x';
+static ULONG ASM ScreenModeStart(struct Hook *hook REG(a0), APTR popasl REG(a2), struct TagItem *taglist REG(a1))
+{
+  LONG  i;
 
-//      for(v = 28; (v >= 0) && (!((displayid >> v) & 0xf)); v -= 4);
+  for(i = 0; taglist[i].ti_Tag != TAG_END; i++);
 
-//      if(v < 0)
-//        DisplayNameBuffer[i++]  = '0';
+  taglist[i].ti_Tag = TAG_MORE;
+  taglist[i].ti_Data  = (ULONG) ScreenModeTags;
 
-//      for(; (v >= 0); v -= 4)
-//      {
-//        if(((displayid >> v) & 0xf) > 9)
-//          DisplayNameBuffer[i++]  = ((displayid >> v) & 0xf) + 'a' - 10;
-//        else
-//          DisplayNameBuffer[i++]  = ((displayid >> v) & 0xf) + '0';
-//      }
-//      DisplayNameBuffer[i++]  = ')';
-//    }
+  return(TRUE);
+}
 
-//    DisplayNameBuffer[i++]  = 0;
-//  }
+static ULONG ASM ScreenModeStop(struct Hook *hook REG(a0), APTR popasl REG(a2), struct ScreenModeRequester *smreq REG(a1))
+{
+  ScreenModeTags[SMT_DISPLAYID].ti_Data = smreq->sm_DisplayID;
+  ScreenModeTags[SMT_DEPTH].ti_Data   = smreq->sm_DisplayDepth;
 
-//  set(DisplayName, MUIA_Text_Contents, (ULONG) DisplayNameBuffer);
-//}
+  SetDisplayName(smreq->sm_DisplayID);
 
-//static ULONG ASM ScreenModeStart(struct Hook *hook REG(a0), APTR popasl REG(a2), struct TagItem *taglist REG(a1))
-//{
-//  LONG  i;
+  return(0);
+}
 
-//  for(i = 0; taglist[i].ti_Tag != TAG_END; i++);
+#ifndef MESS
+static ULONG ASM ShowNotify(struct Hook *hook REG(a0), APTR obj REG(a2), ULONG *par REG(a1))
+{
+  DoMethod(LI_Driver, MUIM_List_Clear);
 
-//  taglist[i].ti_Tag = TAG_MORE;
-//  taglist[i].ti_Data  = (ULONG) ScreenModeTags;
+  switch(*par)
+  {
+    case CFGS_ALL:
+      set(BU_Scan, MUIA_Disabled, TRUE);
+      DoMethod(LI_Driver, MUIM_List_Insert, SortedDrivers, NumDrivers + DRIVER_OFFSET, MUIV_List_Insert_Bottom);
+      break;
 
-//  return(TRUE);
-//}
+    case CFGS_FOUND:
+      set(BU_Scan, MUIA_Disabled, FALSE);
+      ShowFound();
+      break;
+  }
 
-//static ULONG ASM ScreenModeStop(struct Hook *hook REG(a0), APTR popasl REG(a2), struct ScreenModeRequester *smreq REG(a1))
-//{
-//  ScreenModeTags[SMT_DISPLAYID].ti_Data = smreq->sm_DisplayID;
-//  ScreenModeTags[SMT_DEPTH].ti_Data   = smreq->sm_DisplayDepth;
+  return(0);
+}
+#endif
 
-//  SetDisplayName(smreq->sm_DisplayID);
+static ULONG ASM ScreenTypeNotify(struct Hook *hook REG(a0), APTR obj REG(a2), ULONG *par REG(a1))
+{
+  if(*par == CFGST_CUSTOM)
+  {
+    set(PA_ScreenMode,  MUIA_Disabled, FALSE);
+    set(PU_ScreenMode,  MUIA_Disabled, FALSE);
+  }
+  else
+  {
+    set(PA_ScreenMode,  MUIA_Disabled, TRUE);
+    set(PU_ScreenMode,  MUIA_Disabled, TRUE);
+  }
 
-//  return(0);
-//}
+  return(0);
+}
 
-//#ifndef MESS
-//static ULONG ASM ShowNotify(struct Hook *hook REG(a0), APTR obj REG(a2), ULONG *par REG(a1))
-//{
-//  DoMethod(LI_Driver, MUIM_List_Clear);
+static ULONG ASM DirectModeNotify(struct Hook *hook REG(a0), APTR obj REG(a2), ULONG *par REG(a1))
+{
+  if(*par == CFGDM_DRAW)
+    set(CM_DirtyLines, MUIA_Disabled, TRUE);
+  else
+    set(CM_DirtyLines, MUIA_Disabled, FALSE);
 
-//  switch(*par)
-//  {
-//    case CFGS_ALL:
-//      set(BU_Scan, MUIA_Disabled, TRUE);
-//      DoMethod(LI_Driver, MUIM_List_Insert, SortedDrivers, NumDrivers + DRIVER_OFFSET, MUIV_List_Insert_Bottom);
-//      break;
+  return(0);
+}
 
-//    case CFGS_FOUND:
-//      set(BU_Scan, MUIA_Disabled, FALSE);
-//      ShowFound();
-//      break;
-//  }
+static ULONG ASM SoundNotify(struct Hook *hook REG(a0), APTR obj REG(a2), ULONG *par REG(a1))
+{
+  switch(*par)
+  {
+    case 1:
+      set(SL_AudioChannel[0], MUIA_Disabled, FALSE);
+      set(SL_AudioChannel[1], MUIA_Disabled, FALSE);
+      set(SL_AudioChannel[2], MUIA_Disabled, FALSE);
+      set(SL_AudioChannel[3], MUIA_Disabled, FALSE);
+      set(SL_MinFreeChip, MUIA_Disabled, FALSE);
+      break;
+    default:
+      set(SL_AudioChannel[0], MUIA_Disabled, TRUE);
+      set(SL_AudioChannel[1], MUIA_Disabled, TRUE);
+      set(SL_AudioChannel[2], MUIA_Disabled, TRUE);
+      set(SL_AudioChannel[3], MUIA_Disabled, TRUE);
+      set(SL_MinFreeChip, MUIA_Disabled, TRUE);
+      break;
+  }
 
-//  return(0);
-//}
-//#endif
+  return(0);
+}
 
-//static ULONG ASM ScreenTypeNotify(struct Hook *hook REG(a0), APTR obj REG(a2), ULONG *par REG(a1))
-//{
-//  if(*par == CFGST_CUSTOM)
-//  {
-//    set(PA_ScreenMode,  MUIA_Disabled, FALSE);
-//    set(PU_ScreenMode,  MUIA_Disabled, FALSE);
-//  }
-//  else
-//  {
-//    set(PA_ScreenMode,  MUIA_Disabled, TRUE);
-//    set(PU_ScreenMode,  MUIA_Disabled, TRUE);
-//  }
+static ULONG ASM DriverNotify(struct Hook *hook REG(a0), APTR obj REG(a2), ULONG *par REG(a1))
+{
+  GetOptions(FALSE);
 
-//  return(0);
-//}
+  if(*par < DRIVER_OFFSET)
+  {
+    set(CM_UseDefaults, MUIA_Disabled, TRUE);
+    set(CM_Allow16Bit,  MUIA_Disabled, FALSE);
+  }
+  else
+  {
+    set(CM_UseDefaults, MUIA_Disabled, FALSE);
+  }
 
-//static ULONG ASM DirectModeNotify(struct Hook *hook REG(a0), APTR obj REG(a2), ULONG *par REG(a1))
-//{
-//  if(*par == CFGDM_DRAW)
-//    set(CM_DirtyLines, MUIA_Disabled, TRUE);
-//  else
-//    set(CM_DirtyLines, MUIA_Disabled, FALSE);
+  Config[CFG_DRIVER] = GetDriverIndex();
 
-//  return(0);
-//}
+  SetOptions(FALSE);
 
-//static ULONG ASM SoundNotify(struct Hook *hook REG(a0), APTR obj REG(a2), ULONG *par REG(a1))
-//{
-//  switch(*par)
-//  {
-//    case 1:
-//      set(SL_AudioChannel[0], MUIA_Disabled, FALSE);
-//      set(SL_AudioChannel[1], MUIA_Disabled, FALSE);
-//      set(SL_AudioChannel[2], MUIA_Disabled, FALSE);
-//      set(SL_AudioChannel[3], MUIA_Disabled, FALSE);
-//      set(SL_MinFreeChip, MUIA_Disabled, FALSE);
-//      break;
-//    default:
-//      set(SL_AudioChannel[0], MUIA_Disabled, TRUE);
-//      set(SL_AudioChannel[1], MUIA_Disabled, TRUE);
-//      set(SL_AudioChannel[2], MUIA_Disabled, TRUE);
-//      set(SL_AudioChannel[3], MUIA_Disabled, TRUE);
-//      set(SL_MinFreeChip, MUIA_Disabled, TRUE);
-//      break;
-//  }
+  return(0);
+}
 
-//  return(0);
-//}
+#ifndef MESS
+static ULONG ASM UseDefaultsNotify(struct Hook *hook REG(a0), APTR obj REG(a2), ULONG *par REG(a1))
+{
+  struct GameDriver *drv;
 
-//static ULONG ASM DriverNotify(struct Hook *hook REG(a0), APTR obj REG(a2), ULONG *par REG(a1))
-//{
-//  GetOptions(FALSE);
+  ULONG v;
 
-//  if(*par < DRIVER_OFFSET)
-//  {
-//    set(CM_UseDefaults, MUIA_Disabled, TRUE);
-//    set(CM_Allow16Bit,  MUIA_Disabled, FALSE);
-//  }
-//  else
-//  {
-//    set(CM_UseDefaults, MUIA_Disabled, FALSE);
-//  }
+  if(*par)
+  {
+    set(CY_ScreenType,       MUIA_Disabled, TRUE);
+    set(CY_DirectMode,       MUIA_Disabled, TRUE);
+    set(CM_Allow16Bit,       MUIA_Disabled, TRUE);
+    set(CM_FlipX,            MUIA_Disabled, TRUE);
+    set(CM_FlipY,            MUIA_Disabled, TRUE);
+    set(CM_Antialiasing,     MUIA_Disabled, TRUE);
+    set(CM_Translucency,     MUIA_Disabled, TRUE);
+    set(CM_AutoFrameSkip,    MUIA_Disabled, TRUE);
+    set(SL_BeamWidth,        MUIA_Disabled, TRUE);
+    set(SL_VectorFlicker,    MUIA_Disabled, TRUE);
+    set(SL_FrameSkip,        MUIA_Disabled, TRUE);
+    set(ST_Width,            MUIA_Disabled, TRUE);
+    set(ST_Height,           MUIA_Disabled, TRUE);
+    set(CY_Buffering,        MUIA_Disabled, TRUE);
+    set(CY_Rotation,         MUIA_Disabled, TRUE);
+    set(CY_Sound,            MUIA_Disabled, TRUE);
+    set(SL_MinFreeChip,      MUIA_Disabled, TRUE);
+    set(CY_Joy1Type,         MUIA_Disabled, TRUE);
+    set(SL_Joy1ButtonBTime,  MUIA_Disabled, TRUE);
+    set(SL_Joy1AutoFireRate, MUIA_Disabled, TRUE);
+    set(CY_Joy2Type,         MUIA_Disabled, TRUE);
+    set(SL_Joy2ButtonBTime,  MUIA_Disabled, TRUE);
+    set(SL_Joy2AutoFireRate, MUIA_Disabled, TRUE);
+    set(ST_RomPath,          MUIA_Disabled, TRUE);
+    set(ST_SamplePath,       MUIA_Disabled, TRUE);
+    set(PA_RomPath,          MUIA_Disabled, TRUE);
+    set(PA_SamplePath,       MUIA_Disabled, TRUE);
+    set(CM_DirtyLines,       MUIA_Disabled, TRUE);
+    set(PU_ScreenMode,       MUIA_Disabled, TRUE);
+    set(PA_ScreenMode,       MUIA_Disabled, TRUE);
+    set(SL_AudioChannel[0],  MUIA_Disabled, TRUE);
+    set(SL_AudioChannel[1],  MUIA_Disabled, TRUE);
+    set(SL_AudioChannel[2],  MUIA_Disabled, TRUE);
+    set(SL_AudioChannel[3],  MUIA_Disabled, TRUE);
+#ifdef POWERUP
+    set(CM_AsyncPPC,         MUIA_Disabled, TRUE);
+#endif
+  }
+  else
+  {
+    set(CY_ScreenType,       MUIA_Disabled, FALSE);
+    set(CY_DirectMode,       MUIA_Disabled, FALSE);
+    set(CM_FlipX,            MUIA_Disabled, FALSE);
+    set(CM_FlipY,            MUIA_Disabled, FALSE);
+    set(CM_Antialiasing,     MUIA_Disabled, FALSE);
+    set(CM_Translucency,     MUIA_Disabled, FALSE);
+    set(CM_AutoFrameSkip,    MUIA_Disabled, FALSE);
+    set(SL_BeamWidth,        MUIA_Disabled, FALSE);
+    set(SL_VectorFlicker,    MUIA_Disabled, FALSE);
+    set(SL_FrameSkip,        MUIA_Disabled, FALSE);
+    set(ST_Width,            MUIA_Disabled, FALSE);
+    set(ST_Height,           MUIA_Disabled, FALSE);
+    set(CY_Buffering,        MUIA_Disabled, FALSE);
+    set(CY_Rotation,         MUIA_Disabled, FALSE);
+    set(CY_Sound,            MUIA_Disabled, FALSE);
+    set(SL_MinFreeChip,      MUIA_Disabled, FALSE);
+    set(CY_Joy1Type,         MUIA_Disabled, FALSE);
+    set(SL_Joy1ButtonBTime,  MUIA_Disabled, FALSE);
+    set(SL_Joy1AutoFireRate, MUIA_Disabled, FALSE);
+    set(CY_Joy2Type,         MUIA_Disabled, FALSE);
+    set(SL_Joy2ButtonBTime,  MUIA_Disabled, FALSE);
+    set(SL_Joy2AutoFireRate, MUIA_Disabled, FALSE);
+    set(ST_RomPath,          MUIA_Disabled, FALSE);
+    set(ST_SamplePath,       MUIA_Disabled, FALSE);
+    set(PA_RomPath,          MUIA_Disabled, FALSE);
+    set(PA_SamplePath,       MUIA_Disabled, FALSE);
+#ifdef POWERUP
+    set(CM_AsyncPPC,         MUIA_Disabled, FALSE);
+#endif
 
-//  Config[CFG_DRIVER] = GetDriverIndex();
+    get(CY_ScreenType, MUIA_Cycle_Active, &v);
+    ScreenTypeNotify(&ScreenTypeNotifyHook, CY_ScreenType, &v);
 
-//  SetOptions(FALSE);
+    get(CY_DirectMode, MUIA_Cycle_Active,  &v);
+    DirectModeNotify(&DirectModeNotifyHook, CY_DirectMode, &v);
 
-//  return(0);
-//}
+    get(CY_Sound, MUIA_Cycle_Active, &v);
+    SoundNotify(&SoundNotifyHook, CY_Sound, &v);
 
-//#ifndef MESS
-//static ULONG ASM UseDefaultsNotify(struct Hook *hook REG(a0), APTR obj REG(a2), ULONG *par REG(a1))
-//{
-//  struct GameDriver *drv;
+    drv = GetDriver();
 
-//  ULONG v;
+    //0.35 if(!drv || (drv->drv->video_attributes & VIDEO_SUPPORTS_16BIT))
+    if(!drv || drv->drv->total_colors<256 || (drv->flags & GAME_REQUIRES_16BIT)==0)
+      set(CM_Allow16Bit, MUIA_Disabled, FALSE);
+    else
+      set(CM_Allow16Bit, MUIA_Disabled, TRUE);
+  }
 
-//  if(*par)
-//  {
-//    set(CY_ScreenType,       MUIA_Disabled, TRUE);
-//    set(CY_DirectMode,       MUIA_Disabled, TRUE);
-//    set(CM_Allow16Bit,       MUIA_Disabled, TRUE);
-//    set(CM_FlipX,            MUIA_Disabled, TRUE);
-//    set(CM_FlipY,            MUIA_Disabled, TRUE);
-//    set(CM_Antialiasing,     MUIA_Disabled, TRUE);
-//    set(CM_Translucency,     MUIA_Disabled, TRUE);
-//    set(CM_AutoFrameSkip,    MUIA_Disabled, TRUE);
-//    set(SL_BeamWidth,        MUIA_Disabled, TRUE);
-//    set(SL_VectorFlicker,    MUIA_Disabled, TRUE);
-//    set(SL_FrameSkip,        MUIA_Disabled, TRUE);
-//    set(ST_Width,            MUIA_Disabled, TRUE);
-//    set(ST_Height,           MUIA_Disabled, TRUE);
-//    set(CY_Buffering,        MUIA_Disabled, TRUE);
-//    set(CY_Rotation,         MUIA_Disabled, TRUE);
-//    set(CY_Sound,            MUIA_Disabled, TRUE);
-//    set(SL_MinFreeChip,      MUIA_Disabled, TRUE);
-//    set(CY_Joy1Type,         MUIA_Disabled, TRUE);
-//    set(SL_Joy1ButtonBTime,  MUIA_Disabled, TRUE);
-//    set(SL_Joy1AutoFireRate, MUIA_Disabled, TRUE);
-//    set(CY_Joy2Type,         MUIA_Disabled, TRUE);
-//    set(SL_Joy2ButtonBTime,  MUIA_Disabled, TRUE);
-//    set(SL_Joy2AutoFireRate, MUIA_Disabled, TRUE);
-//    set(ST_RomPath,          MUIA_Disabled, TRUE);
-//    set(ST_SamplePath,       MUIA_Disabled, TRUE);
-//    set(PA_RomPath,          MUIA_Disabled, TRUE);
-//    set(PA_SamplePath,       MUIA_Disabled, TRUE);
-//    set(CM_DirtyLines,       MUIA_Disabled, TRUE);
-//    set(PU_ScreenMode,       MUIA_Disabled, TRUE);
-//    set(PA_ScreenMode,       MUIA_Disabled, TRUE);
-//    set(SL_AudioChannel[0],  MUIA_Disabled, TRUE);
-//    set(SL_AudioChannel[1],  MUIA_Disabled, TRUE);
-//    set(SL_AudioChannel[2],  MUIA_Disabled, TRUE);
-//    set(SL_AudioChannel[3],  MUIA_Disabled, TRUE);
-//#ifdef POWERUP
-//    set(CM_AsyncPPC,         MUIA_Disabled, TRUE);
-//#endif
-//  }
-//  else
-//  {
-//    set(CY_ScreenType,       MUIA_Disabled, FALSE);
-//    set(CY_DirectMode,       MUIA_Disabled, FALSE);
-//    set(CM_FlipX,            MUIA_Disabled, FALSE);
-//    set(CM_FlipY,            MUIA_Disabled, FALSE);
-//    set(CM_Antialiasing,     MUIA_Disabled, FALSE);
-//    set(CM_Translucency,     MUIA_Disabled, FALSE);
-//    set(CM_AutoFrameSkip,    MUIA_Disabled, FALSE);
-//    set(SL_BeamWidth,        MUIA_Disabled, FALSE);
-//    set(SL_VectorFlicker,    MUIA_Disabled, FALSE);
-//    set(SL_FrameSkip,        MUIA_Disabled, FALSE);
-//    set(ST_Width,            MUIA_Disabled, FALSE);
-//    set(ST_Height,           MUIA_Disabled, FALSE);
-//    set(CY_Buffering,        MUIA_Disabled, FALSE);
-//    set(CY_Rotation,         MUIA_Disabled, FALSE);
-//    set(CY_Sound,            MUIA_Disabled, FALSE);
-//    set(SL_MinFreeChip,      MUIA_Disabled, FALSE);
-//    set(CY_Joy1Type,         MUIA_Disabled, FALSE);
-//    set(SL_Joy1ButtonBTime,  MUIA_Disabled, FALSE);
-//    set(SL_Joy1AutoFireRate, MUIA_Disabled, FALSE);
-//    set(CY_Joy2Type,         MUIA_Disabled, FALSE);
-//    set(SL_Joy2ButtonBTime,  MUIA_Disabled, FALSE);
-//    set(SL_Joy2AutoFireRate, MUIA_Disabled, FALSE);
-//    set(ST_RomPath,          MUIA_Disabled, FALSE);
-//    set(ST_SamplePath,       MUIA_Disabled, FALSE);
-//    set(PA_RomPath,          MUIA_Disabled, FALSE);
-//    set(PA_SamplePath,       MUIA_Disabled, FALSE);
-//#ifdef POWERUP
-//    set(CM_AsyncPPC,         MUIA_Disabled, FALSE);
-//#endif
-
-//    get(CY_ScreenType, MUIA_Cycle_Active, &v);
-//    ScreenTypeNotify(&ScreenTypeNotifyHook, CY_ScreenType, &v);
-
-//    get(CY_DirectMode, MUIA_Cycle_Active,  &v);
-//    DirectModeNotify(&DirectModeNotifyHook, CY_DirectMode, &v);
-
-//    get(CY_Sound, MUIA_Cycle_Active, &v);
-//    SoundNotify(&SoundNotifyHook, CY_Sound, &v);
-
-//    drv = GetDriver();
-
-//    if(!drv || (drv->drv->video_attributes & VIDEO_SUPPORTS_16BIT))
-//      set(CM_Allow16Bit, MUIA_Disabled, FALSE);
-//    else
-//      set(CM_Allow16Bit, MUIA_Disabled, TRUE);
-//  }
-
-//  return(0);
-//}
-//#endif
+  return(0);
+}
+#endif

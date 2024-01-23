@@ -1095,9 +1095,9 @@ void ErrorRequest(LONG msg_id, ...)
   
   es.es_StructSize   = sizeof(struct EasyStruct);
   es.es_Flags        = 0;
-  es.es_Title        = (UBYTE*)(APPNAME);
-  es.es_TextFormat   = (UBYTE*)(GetMessage(msg_id));
-  es.es_GadgetFormat = (UBYTE*)(GetMessage(MSG_OK));
+  es.es_Title        =(CONST_STRPTR)(APPNAME);
+  es.es_TextFormat   = (CONST_STRPTR)(GetMessage(msg_id));
+  es.es_GadgetFormat = (CONST_STRPTR)(GetMessage(MSG_OK));
 
   EasyRequestArgs(NULL, &es, NULL, &((&msg_id)[1]));
 }
