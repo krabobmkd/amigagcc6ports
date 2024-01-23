@@ -13,6 +13,7 @@
 #include <sstream>
 #include <stdio.h>
 
+extern "C" {
 #include <exec/types.h>
 #include <exec/memory.h>
 
@@ -23,7 +24,7 @@
 #include <powerup/ppclib/memory.h>
 #include <inline/ppc.h>
 #endif
-
+}
 #include "main.h"
 #include "file.h"
 #include "osdepend.h"

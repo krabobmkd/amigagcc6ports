@@ -35,7 +35,7 @@ extern "C" {
 // from mame since 0.37:
 #include "input.h"
 
-#include "zlib.h"
+//#include "zlib.h"
 
 #define INTELuint32_t(i) (((i)<<24)|((i)>>24)|(((i)<<8)&0x00ff0000)|(((i)>>8)&0x0000ff00))
 
@@ -67,8 +67,6 @@ static int Attenuation;
 static int FrameCounter;
 static const int NoFrameSkipCount = 10;
 
-//static char ROMZipName[256];
-//static char SampleZipName[256];
 std::string ROMZipName,SampleZipName;
 
 static int  ShowFPS;
@@ -89,10 +87,6 @@ extern int antialias;
 extern int beam;
 extern int flicker;
 extern int translucency;
-
-int load_zipped_file(const char *zipfile, const char *filename, unsigned char **buf, unsigned int *length);
-
-//unsigned int crc32(unsigned int crc, const unsigned char *buf, unsigned int len);
 
 #ifndef ORIENTATION_DEFAULT
 #define ORIENTATION_DEFAULT 0
@@ -1080,116 +1074,9 @@ void osd_get_pen(int pen, unsigned char *r, unsigned char *g, unsigned char *b)
   TRACE_LEAVE("osd_get_pen");
 }
 
-int osd_faccess (const char *filename, int filetype)
-{
-  return(1);
-}
 
 int osd_fchecksum (const char *game, const char *filename, unsigned int *length, unsigned int *sum)
 {
-  return(0);
-}
-
-void *osd_fopen(const char *gamename,const char *filename,int filetype,int write)
-{
-  struct File *file;
-  std::string *zip_name=NULL;
-
-  file = NULL;
-
-  if(!write)
-  {
-    if(filetype == OSD_FILETYPE_ROM)
-      zip_name = &ROMZipName;
-    else if(filetype == OSD_FILETYPE_SAMPLE)
-      zip_name = &SampleZipName;
-
-    if(zip_name && !zip_name->empty() )
-    {
-      file = (struct File *)calloc(sizeof(struct File), 1);
-          
-      if(file)
-      {
-        if(!load_zipped_file(zip_name->c_str(), filename, &file->Data, &file->Length))
-        {
-          file->Type  = FILETYPE_CUSTOM;
-          file->CRC = crc32(0, file->Data, file->Length);
-        }
-        else
-        {
-          free(file);
-          file = NULL;
-        }
-      }
-    }
-  }
-
-  if(!file)
-  {
-    file = OpenFileType(gamename, filename, write ? MODE_NEWFILE : MODE_OLDFILE, filetype);
-    
-    if(file && (file->Type == FILETYPE_ZIP))
-    {
-      if(filetype == OSD_FILETYPE_ROM)
-        zip_name = &ROMZipName;
-      else if(filetype == OSD_FILETYPE_SAMPLE)
-        zip_name = &SampleZipName;
-      else
-        zip_name= NULL;
-
-      /* Cache the zip filename. */
-      
-      if(zip_name) (*zip_name) = file->Name;
-
-      if(load_zipped_file(zip_name->c_str(), filename, &file->Data, &file->Length))
-      {
-        file->Data = NULL;
-        osd_fclose(file);
-
-        return(NULL);
-      }
-
-      file->CRC = crc32(0, file->Data, file->Length);
-    }
-  }
-
-  return((void *) file);
-}
-
-int osd_fread(void *file_handle, void *buffer, int length)
-{
-  struct File *file;
-  LONG len;
-
-  file = (struct File *) file_handle;
-
-  switch(file->Type)
-  {
-    case FILETYPE_ZIP:
-    case FILETYPE_CUSTOM:
-      if(file->Data)
-      {
-        len = file->Length - file->Offset;
-        
-        if(len > length)
-          len = length;
-    
-        memcpy(buffer, &file->Data[file->Offset], len);
-    
-        file->Offset += len;
-        
-        return(len);
-      }
-       
-      break;
-
-    case FILETYPE_NORMAL:
-    case FILETYPE_TMP:
-      len = ReadFile(file->File, buffer, length);
-
-      return(len);
-  }
-
   return(0);
 }
 
@@ -1270,150 +1157,6 @@ int osd_fread_scatter(void *void_file_p, void *buffer_p, int length, int increme
   }
 
   return(0);
-}
-
-int osd_fread_swap(void *file_handle, void *buffer, int length)
-{
-	int i;
-	uint8_t *buf;
-	uint8_t temp;
-	int res;
-
-	res = osd_fread(file_handle,buffer,length);
-
-	buf = (uint8_t*)buffer;
-	for (i = 0;i < length;i+=2)
-	{
-		temp = buf[i];
-		buf[i] = buf[i+1];
-		buf[i+1] = temp;
-	}
-
-	return res;
-}
-
-int osd_fwrite(void *void_file_p, const void *buffer_p, int length)
-{
-  struct File *file_p;
-  LONG rc;
-
-  file_p = (struct File *) void_file_p;
-
-  switch(file_p->Type)
-  {
-    case FILETYPE_ZIP:
-    case FILETYPE_CUSTOM:
-      return(-1);
-
-    case FILETYPE_NORMAL:
-    case FILETYPE_TMP:
-      rc = WriteFile(file_p->File, (void *) buffer_p, length);
-
-      if(rc > 0)
-        return(rc);
-  }
-
-  return(0);
-}
-
-int osd_fwrite_swap(void *file,const void *buffer,int length)
-{
-	int i;
-	unsigned char *buf;
-	unsigned char temp;
-	int res;
-
-
-	buf = (unsigned char *)buffer;
-	for (i = 0;i < length;i+=2)
-	{
-		temp = buf[i];
-		buf[i] = buf[i+1];
-		buf[i+1] = temp;
-	}
-
-	res = osd_fwrite(file,buffer,length);
-
-	for (i = 0;i < length;i+=2)
-	{
-		temp = buf[i];
-		buf[i] = buf[i+1];
-		buf[i+1] = temp;
-	}
-
-	return res;
-}
-
-int osd_fseek(void *file, int position, int mode)
-{
-  LONG  rc = 0;
-
-  if((((struct File *) file)->Type == FILETYPE_ZIP) || (((struct File *) file)->Type == FILETYPE_CUSTOM))
-  {
-    switch(mode)
-    {
-      case SEEK_SET:
-        ((struct File *) file)->Offset = position;
-        break;
-      case SEEK_CUR:
-        ((struct File *) file)->Offset += position;
-        break;
-      case SEEK_END:
-        ((struct File *) file)->Offset = ((struct File *) file)->Length + position;
-        break;
-      default:
-        return(-1);
-    }
-  }
-  else
-  {
-    switch(mode)
-    {
-      case SEEK_SET:
-        rc = SeekFile(((struct File *) file)->File, position, OFFSET_BEGINNING);
-        break;
-      case SEEK_CUR:
-        rc = SeekFile(((struct File *) file)->File, position, OFFSET_CURRENT);
-        break;
-      case SEEK_END:
-        rc = SeekFile(((struct File *) file)->File, position, OFFSET_END);
-        break;
-      default:
-        return(-1);
-    }
-
-#ifdef POWERUP
-    return(rc);
-#else
-    if(DOSBase->dl_lib.lib_Version > 37)
-    {
-      if(rc == -1)
-        return(-1);
-      else
-        return(0);
-    }
-    else
-    {
-      if(IoErr())
-        return(-1);
-      else
-        return(0);
-    }
-#endif
-  }
-
-  return(rc);
-}
-
-void osd_fclose(void *file)
-{
-  if(((((struct File *) file)->Type == FILETYPE_ZIP) || (((struct File *) file)->Type == FILETYPE_CUSTOM)) && ((struct File *) file)->Data)
-    free(((struct File *) file)->Data);
-  
-  if(((struct File *) file)->Type == FILETYPE_CUSTOM)
-    free(file);
-  else
-    CloseFile((struct File *) file);
 }
 
 void osd_led_w(int led,int on)
@@ -1982,7 +1725,7 @@ void osd_sound_enable(int enable)
     }
   }
 }
-
+// this fonction takes the place of the mame source one in common.cpp:
 struct GameSamples *readsamples(const char **samplenames,const char *basename)
 {
   struct MameSample *mame_sample;
@@ -2223,56 +1966,6 @@ static  int showvoltemp = 0;
 }
 #endif
 
-int osd_fdc_init(void)
-{
-  return(1);
-}
-
-void osd_fdc_exit(void)
-{
-}
-
-void osd_fdc_motors(unsigned char unit)
-{
-}
-
-void osd_fdc_density(unsigned char unit, unsigned char density, unsigned char tracks, unsigned char spt, unsigned char eot, unsigned char secl)
-{
-}
-
-void osd_fdc_interrupt(int param)
-{
-}
-
-unsigned char osd_fdc_recal(unsigned char *track)
-{
-  return(0);
-}
-
-unsigned char osd_fdc_seek(unsigned char t, unsigned char *track)
-{
-  return(0);
-}
-
-unsigned char osd_fdc_step(int dir, unsigned char *track)
-{
-  return(0);
-}
-
-unsigned char osd_fdc_format(unsigned char t, unsigned char h, unsigned char spt, unsigned char *fmt)
-{
-  return(0);
-}
-
-unsigned char osd_fdc_put_sector(unsigned char track, unsigned char side, unsigned char head, unsigned char sector, unsigned char *buff, unsigned char ddam)
-{
-  return(0);
-}
-
-unsigned char osd_fdc_get_sector(unsigned char track, unsigned char side, unsigned char head, unsigned char sector, unsigned char *buff)
-{
-  return(0);
-}
 #endif
 
 void osd_on_screen_display(const char *text,int percentage)
@@ -2348,4 +2041,14 @@ void osd_save_snapshot(struct osd_bitmap *bitmap)
 int osd_display_loading_rom_message(const char *name,int current,int total)
 {
   return(0);
+}
+// -  - - - -
+
+/* called when the game is paused/unpaused, so the OS dependant code can do special */
+/* things like changing the title bar or darkening the display. */
+/* Note that the OS dependant code must NOT stop processing input, since the user */
+/* interface is still active while the game is paused. */
+void osd_pause(int paused)
+{
+
 }

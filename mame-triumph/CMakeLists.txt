@@ -6,10 +6,12 @@ option(TINY_COMPILE "smaller compile including only one driver" OFF)
 option(NEOFREE "do not compile neo" ON)
 option(NEOMAME "compile neo" OFF)
 
+#SET(ASM_OPTIONS "-x assembler-with-cpp")
+#SET(CMAKE_ASM_FLAGS "${CFLAGS} ${ASM_OPTIONS}" )
 
 set(CXX_STANDARD 11)
 set(C_STANDARD 11)
-project(AmigaTriumphMame LANGUAGES C CXX VERSION 1.0)
+project(AmigaTriumphMame LANGUAGES C CXX ASM VERSION 1.0)
 
 if(AMIGA)
 
@@ -24,6 +26,8 @@ set(AMIGA_SRC
 	src/amiga/amiga037b.cpp
 	src/amiga/amiga037b_keyboard.cpp
 	src/amiga/amiga037b_joysticks.cpp
+	src/amiga/amiga037b_audiostream.cpp
+	src/amiga/amiga037b_filesystem.cpp
 	src/amiga/main.cpp
 	src/amiga/gui_mui.cpp
 	src/amiga/config.cpp
@@ -42,13 +46,21 @@ set(AMIGA_SRC
 	src/amiga/gui.h
 	src/amiga/mame_ver.h
 	src/amiga/mame_msg.h
+
+	src/amiga/c2p.s
 	)
 
 set(PROGNAME TriumphMame)
 add_executable(${PROGNAME} ${AMIGA_SRC} )
 set_property(TARGET ${PROGNAME} PROPERTY C_STANDARD 11)
 target_compile_definitions(${PROGNAME} PUBLIC MAMEVERSION=37 )
+
+target_link_directories(${PROGNAME} PUBLIC "lib")
+# the static libs that are part of this repo: 
 target_link_libraries(${PROGNAME} PUBLIC mamecore z)
+# the extra original static libs furnished by triumph,"moo db" is a database used for config:
+target_link_libraries(${PROGNAME} PUBLIC moo mood cgxhooks)
+
 target_include_directories(${PROGNAME} PUBLIC "include" )
 target_include_directories(${PROGNAME} PUBLIC "src/mame037b/src")
 target_include_directories(${PROGNAME} PUBLIC "../extrasdk/MUI/include")

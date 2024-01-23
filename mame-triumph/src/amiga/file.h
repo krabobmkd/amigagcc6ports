@@ -14,7 +14,7 @@
  *************************************************************************/
 
 #include <string>
-
+#include <stdint.h>
 #ifndef BPTR
 //from dos/dos.h
 typedef long  BPTR;
