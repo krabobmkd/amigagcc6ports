@@ -75,6 +75,9 @@ static int on_screen_display_timer;
 
 uint8_t *DirtyLines[6];
 
+// patch in mixer.cpp:
+int usestereo=0;
+
 int frameskip = 0;
 int autoframeskip = 0;
 int throttle = 0;
@@ -229,7 +232,8 @@ void osd_exit()
 {
 }
 
-struct osd_bitmap *osd_new_bitmap(int width, int height, int depth)
+//struct osd_bitmap *osd_new_bitmap(int width, int height, int depth)
+struct osd_bitmap *osd_alloc_bitmap(int width,int height,int depth)
 {
   struct osd_bitmap *bitmap;
   unsigned char   *line;
@@ -575,7 +579,7 @@ int osd_create_display(int width,int height,int depth,int fps,int attributes,int
 
     if(DirectArray)
     {
-      BitMap = osd_new_bitmap(width, height, 8);
+      BitMap = osd_alloc_bitmap(width, height, 8);
       
       if((Config[CFG_DIRECTMODE] == CFGDM_COPY) && Config[CFG_DIRTYLINES] && !Config[CFG_BUFFERING])
       {
@@ -1036,6 +1040,11 @@ void osd_update_video_and_audio(struct osd_bitmap *bitmap)
 
   TRACE_LEAVE("osd_update_video_and_audio");
 }
+void osd_set_visible_area(int min_x,int max_x,int min_y,int max_y)
+{
+    //TODO
+}
+
 
 void osd_modify_pen(int pen, unsigned char red, unsigned char green, unsigned char blue)
 {
@@ -2052,3 +2061,9 @@ void osd_pause(int paused)
 {
 
 }
+// from osd:
+void logerror(const char *text,...)
+{
+
+}
+

@@ -6,8 +6,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#ifdef __ODX__
+// krb note: this is for arm optimisations
 #include "port_wrapper.h"
-
+#endif
 #ifdef MESS
 #include "mess/mess.h"
 #endif

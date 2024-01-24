@@ -3,8 +3,10 @@
 #include "driver.h"
 #include "ui_text.h" /* LBO 042400 */
 #include "artwork.h"
+#ifdef __ODX__
+// krb note: this is for arm optimisations
 #include "port_wrapper.h"
-
+#endif
 static struct RunningMachine machine;
 struct RunningMachine *Machine = &machine;
 static const struct GameDriver *gamedrv;

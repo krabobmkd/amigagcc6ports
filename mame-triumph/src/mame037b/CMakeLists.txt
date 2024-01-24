@@ -8,7 +8,7 @@ set(C_STANDARD 11)
 project(MameLib LANGUAGES C CXX VERSION 1.0)
 
 if(AMIGA)
-	add_definitions(-O2 -m68060 -mhard-float -ffast-math -save-temps )	
+	add_definitions(-O2 -m68060 -mhard-float -ffast-math -save-temps -fno-rtti )
 endif()
 
 set(ZLIBPATH "../../../zlib")
@@ -69,7 +69,8 @@ set(MAME_SOUND_SRC
 add_library( mamecore STATIC ${MAME_CORE_SRC} ${MAME_CPU_SRC} ${MAME_SOUND_SRC} )
 set_property(TARGET mamecore PROPERTY C_STANDARD 11)
 set_property(TARGET mamecore PROPERTY CXX_STANDARD 11)
-set(MAME_INCLUDE_DIRS "src" "src/odx" )
+#no, odx is an arm machine. set(MAME_INCLUDE_DIRS "src" "src/odx" )
+set(MAME_INCLUDE_DIRS "src" "../amiga" )
 
 target_include_directories(mamecore PUBLIC ${MAME_INCLUDE_DIRS} ${ZLIBPATH} )
 target_compile_definitions(mamecore PUBLIC INLINE=inline )

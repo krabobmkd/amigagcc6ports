@@ -348,10 +348,13 @@ int osd_feof(void *file)
   // cast bool to int.
   return (int)( (uint32_t)file_p->Offset >= (uint32_t)file_p->Length );
 }
-/*int osd_ftell(void *file)
+// only used by mame datafile.cpp
+int osd_ftell(void *file)
 {
-    //UNUSED
-}*/
+    struct File *file_p = (struct File *) file;
+    if(!file_p) return -1;
+    return (file_p->Offset);
+}
 
 
 

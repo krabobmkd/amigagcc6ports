@@ -11,11 +11,11 @@ option(NEOMAME "compile neo" OFF)
 
 set(CXX_STANDARD 11)
 set(C_STANDARD 11)
-project(AmigaTriumphMame LANGUAGES C CXX ASM VERSION 1.0)
+project(AmigaTriumphMame LANGUAGES C CXX VERSION 1.0)
 
 if(AMIGA)
 
-	add_definitions(-O2 -m68060 -mhard-float -ffast-math -save-temps )
+	add_definitions(-O2 -m68060 -mhard-float -ffast-math -save-temps -fno-rtti )
 	
 endif()
 
@@ -47,7 +47,7 @@ set(AMIGA_SRC
 	src/amiga/mame_ver.h
 	src/amiga/mame_msg.h
 
-	src/amiga/c2p.s
+#	src/amiga/c2p.s
 	)
 
 set(PROGNAME TriumphMame)

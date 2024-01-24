@@ -44,9 +44,11 @@ void profiler_mark(int type)
 
 	if (type >= PROFILER_CPU1 && type <= PROFILER_CPU8)
 		profile.cpu_context_switches[memory]++;
-
+#ifdef __ODX__
 	curr_cycles = osd_cycles();
-
+#else
+    curr_cycles = 0;
+#endif
 	if (type != PROFILER_END)
 	{
 		if (FILO_length >= 10)
