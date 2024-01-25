@@ -11,6 +11,8 @@ if(AMIGA)
 	add_definitions(-O2 -m68060 -mhard-float -ffast-math -save-temps -fno-rtti )
 endif()
 
+include(gamedrivers.cmake)
+
 set(ZLIBPATH "../../../zlib")
 add_subdirectory(${ZLIBPATH} zlib)
 
@@ -24,7 +26,9 @@ set(MAME_CORE_SRC
 	src/version.cpp src/info.cpp src/audit.cpp src/datafile.cpp 
     src/state.cpp src/png.cpp src/artwork.cpp src/unzip.cpp 
 
-	src/driver.cpp
+#original file:	src/driver.cpp
+	#version more prone to be reconfigured
+	src/driver_mv.cpp
 
 	src/profiler.cpp src/cheat.cpp src/hiscore.cpp 
 	src/input.cpp src/inptport.cpp 
@@ -59,6 +63,10 @@ set(MAME_CORE_SRC
 
 
 	)
+
+
+set(MAME_DRIVERS_SRC
+	)
 set(MAME_CPU_SRC
 
 	)
@@ -66,7 +74,7 @@ set(MAME_CPU_SRC
 set(MAME_SOUND_SRC
 
 	)	
-add_library( mamecore STATIC ${MAME_CORE_SRC} ${MAME_CPU_SRC} ${MAME_SOUND_SRC} )
+add_library( mamecore STATIC ${MAME_CORE_SRC} ${MAME_DRIVERS_SRC} ${MAME_CPU_SRC} ${MAME_SOUND_SRC} )
 set_property(TARGET mamecore PROPERTY C_STANDARD 11)
 set_property(TARGET mamecore PROPERTY CXX_STANDARD 11)
 #no, odx is an arm machine. set(MAME_INCLUDE_DIRS "src" "src/odx" )
