@@ -95,9 +95,10 @@ extern struct Library   *PPCLibBase;
 #endif
 
 verror_t VError;
-
+extern "C" {
 void ASM RemapPixels(UBYTE * REG(a0), UBYTE * REG(a1), UBYTE *REG(a2), LONG REG(d0), LONG REG(d1), LONG REG(d2), LONG REG(d3));
 void ASM c2p(UBYTE * REG(a0), struct BitMap * REG(a1), WORD REG(d0), WORD REG(d1), WORD REG(d2), WORD REG(d3), LONG REG(d4));
+}
 
 #ifndef POWERUP
 static inline APTR memAlloc(ULONG size)

@@ -19,7 +19,7 @@ if(AMIGA)
 	
 endif()
 
-add_subdirectory(../mame037b MameLib)
+add_subdirectory(../mame037b/src MameLib)
 
 
 set(AMIGA_SRC
@@ -47,6 +47,7 @@ set(AMIGA_SRC
 	mame_ver.h
 	mame_msg.h
 
+	../../lib/c2p.s.o ../../lib/gfx.s.o
 #	c2p.s
 	)
 
@@ -61,7 +62,8 @@ target_link_libraries(${PROGNAME} PUBLIC mamecore z)
 # the extra original static libs furnished by triumph,"moo db" is a database used for config:
 target_link_directories(${PROGNAME} PUBLIC "../../lib")
 target_include_directories(${PROGNAME} PUBLIC "../../include" )
-target_link_libraries(${PROGNAME} PUBLIC moo mood cgxhooks)
+target_link_libraries(${PROGNAME} PUBLIC moo mood cgxhooks )
+#add_library(${PROGNAME} PUBLIC OBJECT IMPORTED  ../../c2p.s.o ../../gfx.s.o)
 
 target_include_directories(${PROGNAME} PUBLIC "../mame037b/src")
 
