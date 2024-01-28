@@ -8,7 +8,7 @@ project(AmigaTriumphMame LANGUAGES C CXX VERSION 1.0)
 
 if(AMIGA)
 
-	add_definitions(-O2 -m68060 -mhard-float -ffast-math -save-temps -fno-rtti -fno-exceptions )
+	add_definitions( -m68060 -mhard-float -ffast-math -save-temps -fno-rtti -fno-exceptions -DTRACE=1 )
 	
 endif()
 
@@ -50,7 +50,7 @@ set_property(TARGET ${PROGNAME} PROPERTY C_STANDARD 11)
 target_compile_definitions(${PROGNAME} PUBLIC MAMEVERSION=37 )
 
 # the static libs that are part of this repo: 
-target_link_libraries(${PROGNAME} PUBLIC mamedrivers mamecore  z)
+target_link_libraries(${PROGNAME} PUBLIC mamecore z)
 
 # the extra original static libs furnished by triumph,"moo db" is a database used for config:
 target_link_directories(${PROGNAME} PUBLIC "../../lib")

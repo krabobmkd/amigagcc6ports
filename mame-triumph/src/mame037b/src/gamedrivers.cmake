@@ -9,7 +9,8 @@ option(MGD_NEOMAME "" OFF)
 if(MGD_SEGASYSTEM16)
 	 add_compile_definitions(LINK_SEGASYSTEM16=1)
 	list(APPEND MAME_DRIVERS_SRC
-		drivers/system16.cpp
+		drivers/system16.cpp		
+		#todo drivers/deniam.cpp
 	)
 	list(APPEND MAME_SOUND_SRC
 		sound/upd7759.cpp

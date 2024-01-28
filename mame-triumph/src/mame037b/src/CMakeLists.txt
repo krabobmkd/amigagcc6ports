@@ -8,7 +8,7 @@ set(C_STANDARD 11)
 project(MameLib LANGUAGES C CXX VERSION 1.0)
 
 if(AMIGA)
-	 add_compile_options(-O2 -m68060 -mhard-float -ffast-math -save-temps -fno-rtti )
+	 add_compile_options(-m68060 -mhard-float -ffast-math -save-temps -fno-rtti )
 endif()
 
 include(gamedrivers.cmake)
@@ -50,26 +50,11 @@ set(MAME_CORE_SRC
 
 set(MAME_INCLUDE_DIRS "src" "../../amiga" ".")
 
-add_library( mamecore STATIC ${MAME_CORE_SRC} )
+add_library( mamecore STATIC ${MAME_CORE_SRC}
+							driver_modules.cpp ${MAME_DRIVERS_SRC} ${MAME_SOUND_SRC} ${MAME_CPU_SRC} )
 set_property(TARGET mamecore PROPERTY C_STANDARD 11)
 set_property(TARGET mamecore PROPERTY CXX_STANDARD 11)
 target_include_directories(mamecore PUBLIC ${MAME_INCLUDE_DIRS} ${ZLIBPATH} )
 target_compile_definitions(mamecore PUBLIC INLINE=inline ${CPU_DEFS} )
-
-add_library(mamedrivers STATIC driver_modules.cpp ${MAME_DRIVERS_SRC} ${MAME_SOUND_SRC} ${MAME_CPU_SRC} )
-set_property(TARGET mamedrivers PROPERTY C_STANDARD 11)
-set_property(TARGET mamedrivers PROPERTY CXX_STANDARD 11)
-target_include_directories(mamedrivers PUBLIC ${MAME_INCLUDE_DIRS} ${ZLIBPATH} )
-# -fsingle-precision-constant
-target_compile_options(mamedrivers PUBLIC -fpermissive -Wno-narrowing )
-target_compile_definitions(mamedrivers PUBLIC INLINE=inline ${CPU_DEFS} )
-
-	# add_compile_options( )
-#target_compile_definitions(mamecore PUBLIC INLINE=inline )
-
-
-## generate zconf.h
-#configure_file(	${CMAKE_CURRENT_SOURCE_DIR}/../zlib/zconf.h.cmakein
-#		${CMAKE_CURRENT_BINARY_DIR}/zconf.h @ONLY)
-#include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR})
+target_compile_options(mamecore PUBLIC -fpermissive -Wno-narrowing )
 

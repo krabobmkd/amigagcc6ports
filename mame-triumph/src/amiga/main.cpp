@@ -218,8 +218,11 @@ int main(int argc, char **argv)
 {
   struct Task *task;
   
-  task  = FindTask(NULL);
+  printf("T1\n");
+
+
 /* krb: looks messy to me, original stack should be restored and alloc freed , in an atexit().
+  task  = FindTask(NULL);
   if((task->tc_SPReg - task->tc_SPLower) < (MIN_STACK - 1024))
   {
     StackSwapStruct.stk_Lower = AllocVec(MIN_STACK, MEMF_PUBLIC);
@@ -239,6 +242,9 @@ int main(int argc, char **argv)
   }
   else
   */
+  printf("T2\n");
+
+
    Main(argc, argv);
 
   return(0);
@@ -264,6 +270,9 @@ void Main(int argc, char **argv)
   LONG          ppc_msg_id;
   LONG          reply;
 #endif
+
+  printf("T3\n");
+
   if((DOSBase = (struct DosLibrary *) OpenLibrary("dos.library", 39)))
   {
     if((GfxBase = OpenLibrary("graphics.library", 39)))
@@ -284,6 +293,9 @@ void Main(int argc, char **argv)
               CyberGfxBase  = OpenLibrary("cybergraphics.library", 0);
 
               GadToolsBase  = OpenLibrary("gadtools.library", 0);
+
+              printf("at gadtools open\n");
+
 
               if(GadToolsBase)
               {

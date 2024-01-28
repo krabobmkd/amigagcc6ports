@@ -53,6 +53,7 @@ const struct GameDriver *drivers[] =
 /* step 1: declare all external references */
 #define DRIVER(NAME) extern struct GameDriver driver_##NAME;
 #define TESTDRIVER(NAME) extern struct GameDriver driver_##NAME;
+#define DISDRIVER(N)
 #include "driver_modules.cpp"
 
 /* step 2: define the drivers[] array */
@@ -1734,9 +1735,9 @@ TESTDRIVER( toutruna )	/* (protected) */
 	DRIVER( wrestwar )	/* (c) 1989 */
 	/* Deniam games */
 	/* they run on Sega System 16 video hardware */
-	DRIVER( logicpro )      /* (c) 1996 Deniam */
-	DRIVER( karianx )       /* (c) 1996 Deniam */
-	DRIVER( logicpr2 )      /* (c) 1997 Deniam (Japan) */
+	DISDRIVER( logicpro )      /* (c) 1996 Deniam */
+	DISDRIVER( karianx )       /* (c) 1996 Deniam */
+	DISDRIVER( logicpr2 )      /* (c) 1997 Deniam (Japan) */
 /*
 Deniam is a Korean company (http://deniam.co.kr).
 
