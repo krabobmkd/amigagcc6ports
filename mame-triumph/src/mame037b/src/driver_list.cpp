@@ -1,75 +1,6 @@
-/******************************************************************************
 
-  driver.c
-
-  The list of all available drivers. Drivers have to be included here to be
-  recognized by the executable.
-
-  To save some typing, we use a hack here. This file is recursively #included
-  twice, with different definitions of the DRIVER() macro. The first one
-  declares external references to the drivers; the second one builds an array
-  storing all the drivers.
-
-******************************************************************************/
-
-#include "driver.h"
-
-
-#ifndef DRIVER_RECURSIVE
-
-/* The "root" driver, defined so we can have &driver_##NAME in macros. */
-struct GameDriver driver_0 =
-{
-	__FILE__,
-	0,
-	"",
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	NOT_A_DRIVER
-};
-
-#endif
-
-#ifdef TINY_COMPILE
-extern struct GameDriver TINY_NAME;
-
-const struct GameDriver *drivers[] =
-{
-	&TINY_NAME,
-	0	/* end of array */
-};
-
-#else
-
-#ifndef DRIVER_RECURSIVE
-
-#define DRIVER_RECURSIVE
-
-/* step 1: declare all external references */
-#define DRIVER(NAME) extern struct GameDriver driver_##NAME;
-#define TESTDRIVER(NAME) extern struct GameDriver driver_##NAME;
-#include "driver.cpp"
-
-/* step 2: define the drivers[] array */
-#undef DRIVER
-#undef TESTDRIVER
-#define DRIVER(NAME) &driver_##NAME,
-#define TESTDRIVER(NAME)
-const struct GameDriver *drivers[] =
-{
-#include "driver.cpp"
-	0	/* end of array */
-};
-
-#else	/* DRIVER_RECURSIVE */
-
-#ifndef NEOMAME
-
+#if LINK_OTHER1
+  gogo
 	/* "Pacman hardware" games */
 	DRIVER( pacman )	/* (c) 1980 Namco */
 	DRIVER( pacmanjp )	/* (c) 1980 Namco */
@@ -1548,8 +1479,8 @@ Capcom Bowling - (Strata)
 	/* Sega System 1 / System 2 games */
 	DRIVER( starjack )	/* 834-5191 (c) 1983 (S1) */
 	DRIVER( starjacs )	/* (c) 1983 Stern (S1) */
-	DRIVER( regulus )	/* 834-5328�(c) 1983 (S1) */
-	DRIVER( regulusu )	/* 834-5328�(c) 1983 (S1) */
+	DRIVER( regulus )	/* 834-5328 (c) 1983 (S1) */
+	DRIVER( regulusu )	/* 834-5328 (c) 1983 (S1) */
 	DRIVER( upndown )	/* (c) 1983 (S1) */
 	DRIVER( mrviking )	/* 834-5383 (c) 1984 (S1) */
 	DRIVER( mrvikinj )	/* 834-5383 (c) 1984 (S1) */
@@ -1626,6 +1557,9 @@ TESTDRIVER( kopunch )	/* 834-0103 (c) 1981 Sega */
 	DRIVER( combh )		/* (c) 1984 Sega */
 	DRIVER( dotrikun )	/* cabinet test board */
 	DRIVER( dotriku2 )	/* cabinet test board */
+
+#endif // LINK_OTHER1
+#if LINK_SEGASYSTEM16
 
 	/* Sega System 16 games */
 	// Not working
@@ -1748,7 +1682,8 @@ Logic Pro 2      deniam-16c 1997/06/20
 Propose          deniam-16c 1997/06/21
 BOMULEUL CHAJARA SEGA ST-V  1997/04/11
 */
-
+#endif // LINK_SEGASYSTEM16
+#if LINK_OTHER2
 	/* Data East "Burger Time hardware" games */
 	DRIVER( lnc )		/* (c) 1981 */
 	DRIVER( zoar )		/* (c) 1982 */
@@ -2893,8 +2828,8 @@ TESTDRIVER( dlair )
 TESTDRIVER( astrofl )	/* 834-5803 (c) 1986 */
 	DRIVER( ridleofp )	/* (c) 1986 Sega / Nasco */
 
-#else
-
+#endif // LINK_OTHER2
+#if LINK_NEOMAME
 	/* Neo Geo games */
 	/* the four digits number is the game ID stored at address 0x0108 of the program ROM */
 	DRIVER( nam1975 )	/* 0001 (c) 1990 SNK */
@@ -3057,8 +2992,4 @@ TESTDRIVER( astrofl )	/* 834-5803 (c) 1986 */
 	/* Strikers 1945 Plus */
 	/* Ganryu */
 
-#endif /* NEOMAME */
-
-#endif	/* DRIVER_RECURSIVE */
-
-#endif	/* TINY_COMPILE */
+#endif /* LINK_NEOMAME */

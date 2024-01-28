@@ -53,7 +53,7 @@ const struct GameDriver *drivers[] =
 /* step 1: declare all external references */
 #define DRIVER(NAME) extern struct GameDriver driver_##NAME;
 #define TESTDRIVER(NAME) extern struct GameDriver driver_##NAME;
-#include "driver.cpp"
+#include "driver_modules.cpp"
 
 /* step 2: define the drivers[] array */
 #undef DRIVER
@@ -62,14 +62,14 @@ const struct GameDriver *drivers[] =
 #define TESTDRIVER(NAME)
 const struct GameDriver *drivers[] =
 {
-#include "driver.cpp"
+#include "driver_modules.cpp"
 	0	/* end of array */
 };
 
 #else	/* DRIVER_RECURSIVE */
 
-#ifndef NEOMAME
-
+//#ifndef NEOMAME
+#ifdef LINK_OTHER1
 	/* "Pacman hardware" games */
 	DRIVER( pacman )	/* (c) 1980 Namco */
 	DRIVER( pacmanjp )	/* (c) 1980 Namco */
@@ -1548,8 +1548,8 @@ Capcom Bowling - (Strata)
 	/* Sega System 1 / System 2 games */
 	DRIVER( starjack )	/* 834-5191 (c) 1983 (S1) */
 	DRIVER( starjacs )	/* (c) 1983 Stern (S1) */
-	DRIVER( regulus )	/* 834-5328�(c) 1983 (S1) */
-	DRIVER( regulusu )	/* 834-5328�(c) 1983 (S1) */
+	DRIVER( regulus )	/* 834-5328 (c) 1983 (S1) */
+	DRIVER( regulusu )	/* 834-5328 (c) 1983 (S1) */
 	DRIVER( upndown )	/* (c) 1983 (S1) */
 	DRIVER( mrviking )	/* 834-5383 (c) 1984 (S1) */
 	DRIVER( mrvikinj )	/* 834-5383 (c) 1984 (S1) */
@@ -1626,6 +1626,9 @@ TESTDRIVER( kopunch )	/* 834-0103 (c) 1981 Sega */
 	DRIVER( combh )		/* (c) 1984 Sega */
 	DRIVER( dotrikun )	/* cabinet test board */
 	DRIVER( dotriku2 )	/* cabinet test board */
+
+#endif // LINK_OTHER1
+#ifdef LINK_SEGASYSTEM16
 
 	/* Sega System 16 games */
 	// Not working
@@ -1748,7 +1751,8 @@ Logic Pro 2      deniam-16c 1997/06/20
 Propose          deniam-16c 1997/06/21
 BOMULEUL CHAJARA SEGA ST-V  1997/04/11
 */
-
+#endif // LINK_SEGASYSTEM16
+#ifdef LINK_OTHER2
 	/* Data East "Burger Time hardware" games */
 	DRIVER( lnc )		/* (c) 1981 */
 	DRIVER( zoar )		/* (c) 1982 */
@@ -2893,8 +2897,8 @@ TESTDRIVER( dlair )
 TESTDRIVER( astrofl )	/* 834-5803 (c) 1986 */
 	DRIVER( ridleofp )	/* (c) 1986 Sega / Nasco */
 
-#else
-
+#endif // LINK_OTHER2
+#ifdef LINK_NEOMAME
 	/* Neo Geo games */
 	/* the four digits number is the game ID stored at address 0x0108 of the program ROM */
 	DRIVER( nam1975 )	/* 0001 (c) 1990 SNK */
@@ -3057,7 +3061,7 @@ TESTDRIVER( astrofl )	/* 834-5803 (c) 1986 */
 	/* Strikers 1945 Plus */
 	/* Ganryu */
 
-#endif /* NEOMAME */
+#endif /* LINK_NEOMAME */
 
 #endif	/* DRIVER_RECURSIVE */
 

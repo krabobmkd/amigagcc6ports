@@ -394,7 +394,7 @@ int readroms(void)
 		{
 			printf ("Press any key to continue\n");
 			keyboard_read_sync();
-			if (keyboard_pressed(KeyCode_LCONTROL) && keyboard_pressed(KeyCode_C))
+			if (keyboard_pressed(KEYCODE_LCONTROL) && keyboard_pressed(KEYCODE_C))
 				return 1;
 		}
 	}

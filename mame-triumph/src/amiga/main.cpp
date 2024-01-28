@@ -44,7 +44,7 @@ extern "C" {
 #include <libraries/gadtools.h>
 #include <cybergraphx/cybergraphics.h>
 #include <intuition/intuition.h>
-
+#include "intuiuncollide.h"
 #include <inline/exec.h>
 #include <inline/dos.h>
 #include <inline/graphics.h>

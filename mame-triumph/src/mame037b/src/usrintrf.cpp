@@ -1152,11 +1152,11 @@ static void showcharset(struct osd_bitmap *bitmap)
 
 		update_video_and_audio();
 
-		if (code_pressed(KeyCode_LCONTROL) || code_pressed(KeyCode_RCONTROL))
+		if (code_pressed(KEYCODE_LCONTROL) || code_pressed(KEYCODE_RCONTROL))
 		{
 			skip_chars = cpx;
 		}
-		if (code_pressed(KeyCode_LSHIFT) || code_pressed(KeyCode_RSHIFT))
+		if (code_pressed(KEYCODE_LSHIFT) || code_pressed(KEYCODE_RSHIFT))
 		{
 			skip_chars = 1;
 		}
@@ -1182,7 +1182,7 @@ static void showcharset(struct osd_bitmap *bitmap)
 			}
 		}
 
-		if (code_pressed_memory_repeat(KeyCode_PGDN,4))
+		if (code_pressed_memory_repeat(KEYCODE_PGDN,4))
 		{
 			if (bank >= 0)
 			{
@@ -1202,7 +1202,7 @@ static void showcharset(struct osd_bitmap *bitmap)
 			}
 		}
 
-		if (code_pressed_memory_repeat(KeyCode_PGUP,4))
+		if (code_pressed_memory_repeat(KEYCODE_PGUP,4))
 		{
 			if (bank >= 0)
 			{
@@ -2045,10 +2045,10 @@ int showcopyright(struct osd_bitmap *bitmap)
 			setup_selected = 0;////
 			return 1;
 		}
-		if (keyboard_pressed_memory(KeyCode_O) ||
+		if (keyboard_pressed_memory(KEYCODE_O) ||
 				input_ui_pressed(IPT_UI_LEFT))
 			done = 1;
-		if (done == 1 && (keyboard_pressed_memory(KeyCode_K) ||
+		if (done == 1 && (keyboard_pressed_memory(KEYCODE_K) ||
 				input_ui_pressed(IPT_UI_RIGHT)))
 			done = 2;
 	} while (done < 2);
@@ -2331,10 +2331,10 @@ int showgamewarnings(struct osd_bitmap *bitmap)
 			osd_poll_joysticks();
 			if (input_ui_pressed(IPT_UI_CANCEL))
 				return 1;
-			if (code_pressed_memory(KeyCode_O) ||
+			if (code_pressed_memory(KEYCODE_O) ||
 					input_ui_pressed(IPT_UI_LEFT))
 				done = 1;
-			if (done == 1 && (code_pressed_memory(KeyCode_K) ||
+			if (done == 1 && (code_pressed_memory(KEYCODE_K) ||
 					input_ui_pressed(IPT_UI_RIGHT)))
 				done = 2;
 		} while (done < 2);
@@ -3059,11 +3059,11 @@ static void onscrd_mixervol(struct osd_bitmap *bitmap,int increment,int arg)
 	int proportional = 0;
 
 
-	if (code_pressed(KeyCode_LSHIFT) || code_pressed(KeyCode_RSHIFT))
+	if (code_pressed(KEYCODE_LSHIFT) || code_pressed(KEYCODE_RSHIFT))
 		doallchannels = 1;
-	if (!code_pressed(KeyCode_LCONTROL) && !code_pressed(KeyCode_RCONTROL))
+	if (!code_pressed(KEYCODE_LCONTROL) && !code_pressed(KEYCODE_RCONTROL))
 		increment *= 5;
-	if (code_pressed(KeyCode_LALT) || code_pressed(KeyCode_RALT))
+	if (code_pressed(KEYCODE_LALT) || code_pressed(KEYCODE_RALT))
 		proportional = 1;
 
 	if (increment)
@@ -3202,9 +3202,9 @@ static void onscrd_overclock(struct osd_bitmap *bitmap,int increment,int arg)
 	float overclock;
 	int cpu, doallcpus = 0, oc;
 
-	if (code_pressed(KeyCode_LSHIFT) || code_pressed(KeyCode_RSHIFT))
+	if (code_pressed(KEYCODE_LSHIFT) || code_pressed(KEYCODE_RSHIFT))
 		doallcpus = 1;
-	if (!code_pressed(KeyCode_LCONTROL) && !code_pressed(KeyCode_RCONTROL))
+	if (!code_pressed(KEYCODE_LCONTROL) && !code_pressed(KEYCODE_RCONTROL))
 		increment *= 5;
 	if( increment )
 	{
@@ -3478,7 +3478,7 @@ if (Machine->gamedrv->flags & GAME_COMPUTER)
 
 
 #if 0
-	if (keyboard_pressed_memory(KeyCode_BACKSPACE))
+	if (keyboard_pressed_memory(KEYCODE_BACKSPACE))
 	{
 		if (jukebox_selected != -1)
 		{
@@ -3496,7 +3496,7 @@ if (Machine->gamedrv->flags & GAME_COMPUTER)
 	{
 		char buf[40];
 		watchdog_reset_w(0,0);
-		if (keyboard_pressed_memory(KeyCode_LCONTROL))
+		if (keyboard_pressed_memory(KEYCODE_LCONTROL))
 		{
 #include "cpu/z80/z80.h"
 			soundlatch_w(0,jukebox_selected);
@@ -3595,7 +3595,7 @@ if (Machine->gamedrv->flags & GAME_COMPUTER)
 			osd_poll_joysticks();
 		}
 
-		if (code_pressed(KeyCode_LSHIFT) || code_pressed(KeyCode_RSHIFT))
+		if (code_pressed(KEYCODE_LSHIFT) || code_pressed(KEYCODE_RSHIFT))
 			single_step = 1;
 		else
 		{

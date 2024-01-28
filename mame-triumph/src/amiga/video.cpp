@@ -23,6 +23,7 @@ extern "C" {
 #include <graphics/gfxbase.h>
 #include <graphics/rastport.h>
 #include <intuition/intuition.h>
+#include "intuiuncollide.h"
 #include <intuition/screens.h>
 #include <libraries/iffparse.h>
 #include <libraries/gadtools.h>

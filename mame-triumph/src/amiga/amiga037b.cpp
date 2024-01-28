@@ -1661,32 +1661,43 @@ int osd_get_sample_status(int channel)
 {
   return(-1);
 }
+// v0.35 things
+//void osd_ym2203_write(int n, int r, int v)
+//{
+//}
 
-void osd_ym2203_write(int n, int r, int v)
+//void osd_ym2203_update(void)
+//{
+//}
+
+//int osd_ym3812_status(void)
+//{
+//  return(0);
+//}
+
+//int osd_ym3812_read(void)
+//{
+//  return(0);
+//}
+// v0.35 things
+//void osd_ym3812_control(int reg)
+//{
+//}
+//void osd_ym3812_write(int data)
+//{
+//}
+
+/* direct access to the Sound Blaster OPL chip  LOL */
+void osd_opl_control(int chip,int reg)
 {
+
+}
+void osd_opl_write(int chip,int data)
+{
+
 }
 
-void osd_ym2203_update(void)
-{
-}
 
-int osd_ym3812_status(void)
-{
-  return(0);
-}
-
-int osd_ym3812_read(void)
-{
-  return(0);
-}
-
-void osd_ym3812_control(int reg)
-{
-}
-
-void osd_ym3812_write(int data)
-{
-}
 
 void osd_set_mastervolume(int attenuation)
 {

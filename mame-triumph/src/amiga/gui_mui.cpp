@@ -39,6 +39,7 @@ extern "C" {
 #include <inline/utility.h>
 //#include <clib/keymap_protos.h>
 #include <inline/keymap.h>
+#include "intuiuncollide.h"
 }
 #define CATCOMP_NUMBERS
 #include "messages.h"

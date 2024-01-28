@@ -26,7 +26,7 @@ struct code_info {
 	unsigned type; /* subtype: CODE_TYPE_KEYBOARD or CODE_TYPE_JOYSTICK */
 };
 
-/* Main code table, generic KeyCode_*, JOYCODE_* are indexes in this table */
+/* Main code table, generic KEYCODE_*, JOYCODE_* are indexes in this table */
 static struct code_info* code_map;
 
 /* Size of the table */
@@ -534,10 +534,10 @@ INT8 code_read_hex_async(void)
 	for(i=0;i<code_mac;++i)
 		if (code_pressed_memory(i))
 		{
-			if ((i >= KeyCode_A) && (i <= KeyCode_F))
-				return i - KeyCode_A + 10;
-			else if ((i >= KeyCode_0) && (i <= KeyCode_9))
-				return i - KeyCode_0;
+			if ((i >= KEYCODE_A) && (i <= KEYCODE_F))
+				return i - KEYCODE_A + 10;
+			else if ((i >= KEYCODE_0) && (i <= KEYCODE_9))
+				return i - KEYCODE_0;
 			else
 				return -1;
 		}

@@ -714,7 +714,7 @@ logerror("Machine reset\n");
 
 #if SAVE_STATE_TEST
 		{
-			if( keyboard_pressed_memory(KeyCode_S) )
+			if( keyboard_pressed_memory(KEYCODE_S) )
 			{
 				void *s = state_create(Machine->gamedrv->name);
 				if( s )
@@ -733,7 +733,7 @@ logerror("Machine reset\n");
 				}
 			}
 
-			if( keyboard_pressed_memory(KeyCode_L) )
+			if( keyboard_pressed_memory(KEYCODE_L) )
 			{
 				void *s = state_open(Machine->gamedrv->name);
 				if( s )

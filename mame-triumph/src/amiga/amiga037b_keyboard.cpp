@@ -12,9 +12,16 @@
  *
  *************************************************************************/
 // from amiga
+extern "C" {
 #include <intuition/intuition.h>
+#include "intuiuncollide.h"
+}
+
+
 //#include <devices/keyboard.h>
 //#include <devices/keymap.h>
+
+
 
 // from mame:
 #include "osdepend.h"
@@ -40,8 +47,8 @@ const struct KeyboardInfo *osd_get_key_list(void)
     };
   */
     static struct KeyboardInfo keysinfo[]={
-        {"A",12,KeyCode_A},
-        {"B",13,KeyCode_B},
+        {"A",12,KEYCODE_A},
+        {"B",13,KEYCODE_B},
     };
 
     return keysinfo;

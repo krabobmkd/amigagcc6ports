@@ -10,7 +10,7 @@
  *
  *
  *************************************************************************/
-
+extern "C" {
 #include <clib/alib_protos.h>
 
 #include <exec/types.h>
@@ -20,6 +20,7 @@
 #include <dos/dosextens.h>
 #include <dos/dostags.h>
 #include <intuition/intuition.h>
+#include "intuiuncollide.h"
 #include <libraries/lowlevel.h>
 #include <devices/inputevent.h>
 #include <devices/gameport.h>
@@ -39,7 +40,7 @@
 
 #define LOWLEVEL_BASE_NAME inputs->LowLevelBase
 #include <inline/lowlevel.h>
-
+} // end extern c
 #include <macros.h>
 
 #define INPUTS_PRIVATE
