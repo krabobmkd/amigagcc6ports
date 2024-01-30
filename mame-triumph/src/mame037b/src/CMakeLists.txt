@@ -7,9 +7,10 @@ set(C_STANDARD 11)
 
 project(MameLib LANGUAGES C CXX VERSION 1.0)
 
-if(AMIGA)
-	 add_compile_options(-m68060 -mhard-float -ffast-math -save-temps -fno-rtti )
-endif()
+#if(AMIGA)
+#
+#	 add_compile_options(-m68060 -mhard-float -ffast-math -save-temps )
+#endif()
 
 include(gamedrivers.cmake)
 

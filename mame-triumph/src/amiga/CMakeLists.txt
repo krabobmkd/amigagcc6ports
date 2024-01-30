@@ -5,10 +5,11 @@ cmake_minimum_required (VERSION 3.1)
 set(CXX_STANDARD 11)
 set(C_STANDARD 11)
 project(AmigaTriumphMame LANGUAGES C CXX VERSION 1.0)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 if(AMIGA)
-
-	add_definitions( -m68060 -mhard-float -ffast-math -save-temps -fno-rtti -fno-exceptions -DTRACE=1 )
+#  -fno-rtti -fno-exceptions
+	add_definitions( -O0 -m68060 -mhard-float -ffast-math -save-temps -DTRACE=0 -fno-strict-aliasing )
 	
 endif()
 
@@ -63,9 +64,19 @@ target_include_directories(${PROGNAME} PUBLIC "../mame037b/src")
 # MUI is not provided by gccbebbo6.5 ndk by default, we have it there:
 target_include_directories(${PROGNAME} PUBLIC "../../../extrasdk/MUI/include")
 
-# include_directories(src/mame037b/src)
-## generate zconf.h
-#configure_file(	${CMAKE_CURRENT_SOURCE_DIR}/../zlib/zconf.h.cmakein
-#		${CMAKE_CURRENT_BINARY_DIR}/zconf.h @ONLY)
-#include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR})
+#  - - - - - - - - - - 
+# debug/test phase, no release.
+set(RNAME rmame)
+add_executable(${RNAME} r_main.cpp amiga_locale.cpp config_v37.cpp config_v37.h )
+set_property(TARGET ${RNAME} PROPERTY C_STANDARD 11)
+target_compile_definitions(${RNAME} PUBLIC MAMEVERSION=37 INLINE=inline )
+# the static libs that are part of this repo: 
+#target_link_libraries(${RNAME} PUBLIC mamecore z)
+target_link_directories(${RNAME} PUBLIC "../../lib")
+target_include_directories(${RNAME} PUBLIC "../../include" )
+#target_link_libraries(${RNAME} PUBLIC moo mood cgxhooks )
+#target_link_libraries(${RNAME} PUBLIC moo mood )
+target_include_directories(${RNAME} PUBLIC "../mame037b/src")
 
+# MUI is not provided by gccbebbo6.5 ndk by default, we have it there:
+target_include_directories(${RNAME} PUBLIC "../../../extrasdk/MUI/include")

@@ -20,8 +20,6 @@
  *
  *************************************************************************/
 
-#define TRACE 0
-
 // included by everyone, urge to have less dependencies.
 
 #include <exec/types.h>
