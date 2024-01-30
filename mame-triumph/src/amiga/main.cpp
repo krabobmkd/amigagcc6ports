@@ -72,7 +72,7 @@ extern "C" {
 #include "video.h"
 #include "amiga_inputs.h"
 #include "amiga_locale.h"
-#include "config.h"
+#include "config_v37.h"
 #include "gui.h"
 
 #include "osdepend.h"

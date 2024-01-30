@@ -1,9 +1,7 @@
 
 #include "amiga_locale.h"
 
-extern "C" {
-#include <clib/locale_protos.h>
-}
+#include <proto/locale.h>
 
 // please include that generated horror ony here:
 #define CATCOMP_BLOCK

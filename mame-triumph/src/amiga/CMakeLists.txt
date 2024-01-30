@@ -8,8 +8,8 @@ project(AmigaTriumphMame LANGUAGES C CXX VERSION 1.0)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 if(AMIGA)
-#  -fno-rtti -fno-exceptions
-	add_definitions( -O0 -m68060 -mhard-float -ffast-math -save-temps -DTRACE=0 -fno-strict-aliasing )
+#  -fno-rtti -fno-exceptions -fno-strict-aliasing
+	add_definitions( -m68060 -mhard-float -ffast-math -save-temps )
 	
 endif()
 
@@ -24,14 +24,14 @@ set(AMIGA_SRC
 	amiga037b_filesystem.cpp
 	main.cpp
 	gui_mui.cpp
-	config.cpp
+	config_v37.cpp
 	file.cpp
 	audio.cpp
 	video.cpp
 	amiga_inputs.cpp
 	amiga_locale.cpp
 	main.h
-	config.h
+	config_v37.h
 	file.h
 	audio.h
 	video.h
@@ -68,7 +68,8 @@ target_include_directories(${PROGNAME} PUBLIC "../../../extrasdk/MUI/include")
 #  - - - - - - - - - - 
 # debug/test phase, no release.
 set(RNAME rmame)
-add_executable(${RNAME} r_main.cpp amiga_locale.cpp config_v37.cpp config_v37.h )
+# amiga_locale.cpp config_v37.cpp config_v37.h
+add_executable(${RNAME} r2_main.cpp amiga_locale.cpp config_v37.cpp config_v37.h gui_mui.cpp )
 set_property(TARGET ${RNAME} PROPERTY C_STANDARD 11)
 set_property(TARGET ${RNAME} PROPERTY CXX_STANDARD 11)
 target_compile_definitions(${RNAME} PUBLIC MAMEVERSION=37 INLINE=inline )
@@ -76,8 +77,6 @@ target_compile_definitions(${RNAME} PUBLIC MAMEVERSION=37 INLINE=inline )
 #target_link_libraries(${RNAME} PUBLIC mamecore z)
 target_link_directories(${RNAME} PUBLIC "../../lib")
 target_include_directories(${RNAME} PUBLIC "../../include" )
-#target_link_libraries(${RNAME} PUBLIC moo mood cgxhooks )
-#target_link_libraries(${RNAME} PUBLIC moo mood )
 target_include_directories(${RNAME} PUBLIC "../mame037b/src")
 
 # MUI is not provided by gccbebbo6.5 ndk by default, we have it there:

@@ -1,54 +1,12 @@
-/**************************************************************************
- *
- * Copyright (C) 1999 Mats Eirik Hansen (mats.hansen@triumph.no)
- *
- * $Id: main.c,v 1.1 1999/04/28 18:54:28 meh Exp meh $
- *
- * $Log: main.c,v $
- * Revision 1.1  1999/04/28 18:54:28  meh
- * Initial revision
- *
- *
- *************************************************************************/
-
-/*
- krb note:
- mame's input.h and amiga intuition.h collides because of KEYCODE_XXX defines.
- let's make a point not including both in the same files.
-*/
-
-//#define CATCOMP_BLOCK
-//#include "mame_msg.h" -> called by main.h
-
-#define CATCOMP_NUMBERS
-#include "messages.h"
-
-//#include "main.h"
 
 
-struct Library;
-struct ExecBase;
-struct DosLibrary;
-struct IntuitionBase;
-
-extern struct ExecBase      *SysBase;
-extern struct DosLibrary    *DOSBase;
-extern struct Library       *GfxBase;
-extern struct Library       *CyberGfxBase;
-extern struct IntuitionBase *IntuitionBase;
-extern struct Library       *GadToolsBase;
-extern struct Library       *AslBase;
-extern struct Library       *KeymapBase;
-extern struct Library       *TimerBase;
-
-
+#include <stdio.h>
+#include <stdlib.h>
+#include <strings.h>
 
 
 extern "C" {
 // all C amiga stuffs should be included from C++ in extern "C" paragraph
-#include <stdio.h>
-#include <stdlib.h>
-#include <strings.h>
 
 #include <clib/alib_protos.h>
 
@@ -72,61 +30,11 @@ extern "C" {
 #include <inline/timer.h>
 
 
-#ifdef POWERUP
-#include <powerup/ppclib/interface.h>
-#include <powerup/ppclib/message.h>
-#include <powerup/ppclib/tasks.h>
-#include <powerup/ppclib/memory.h>
-#include <inline/ppc.h>
-#endif
 // end extern "C"
-#include <macros.h>
+//re #include <macros.h>
 }
 
-
-#include "version.h"
-#include "audio.h"
-#include "video.h"
-#include "amiga_inputs.h"
-#include "amiga_locale.h"
-#include "config.h"
-#include "gui.h"
-
-#include "osdepend.h"
-#include "driver.h"
-#include "file.h"
-
-typedef ULONG (*RE_HOOKFUNC)();
-
-#define MIN_STACK (10*1024)
-
-#define ITEM_NEW    0
-#define ITEM_SAVE_ILBM  1
-#define ITEM_ABOUT    3
-#define ITEM_QUIT   5
-#define NUM_ITEMS   6
-
-extern "C" {
-void     Main(int argc, char **argv);
-void ASM RefreshHandler(struct Hook *hook REG(a0));
-void ASM MenuHandler(struct Hook *hook REG(a0), APTR null REG(a2), ULONG *itemnum REG(a1));
-void ASM IDCMPHandler(struct Hook *hook REG(a0), APTR null REG(a2), ULONG *imclass REG(a1));
-void     SaveILBM(void);
-void     ErrorRequest(LONG msg_id, ...);
-
-}
-void     StartGame(void);  /* In amiga/amiga.c. */
-
-#ifdef POWERUP
-struct GameDriver **Drivers;
-#endif
-
-LONG        MenuSelect[NUM_ITEMS];
-UBYTE       Channel[4];
-static LONG NewGame;
-
-UBYTE       ChannelBuffer[8];
-
+/*reextern struct ExecBase      *SysBase;
 struct DosLibrary   *DOSBase    = NULL;
 struct Library      *GfxBase    = NULL;
 struct Library      *CyberGfxBase = NULL;
@@ -137,25 +45,83 @@ struct Library      *KeymapBase   = NULL;
 struct Library      *UtilityBase  = NULL;
 struct Library      *TimerBase    = NULL;
 
-#ifdef POWERUP
-struct Library      *PPCLibBase   = NULL;
-#endif
+#include "version.h"
+#include "audio.h"
+#include "video.h"
+#include "amiga_inputs.h"
+#include "amiga_locale.h"
+#include "config_v37.h"
+#include "gui.h"
+
+#include "osdepend.h"
+#include "driver.h"
+#include "file.h"
+*/
+typedef ULONG (*RE_HOOKFUNC)();
+
+#define MIN_STACK (10*1024)
+
+#define ITEM_NEW    0
+#define ITEM_SAVE_ILBM  1
+#define ITEM_ABOUT    3
+#define ITEM_QUIT   5
+#define NUM_ITEMS   6
+/*re
+extern "C" {
+void     Main(int argc, char **argv);
+void ASM RefreshHandler(struct Hook *hook REG(a0));
+void ASM MenuHandler(struct Hook *hook REG(a0), APTR null REG(a2), ULONG *itemnum REG(a1));
+void ASM IDCMPHandler(struct Hook *hook REG(a0), APTR null REG(a2), ULONG *imclass REG(a1));
+void     SaveILBM(void);
+void     ErrorRequest(LONG msg_id, ...);
+extern struct ExecBase      *SysBase;
+struct DosLibrary   *DOSBase    = NULL;
+struct Library      *GfxBase    = NULL;
+struct Library      *CyberGfxBase = NULL;
+struct IntuitionBase  *IntuitionBase  = NULL;
+struct Library      *GadToolsBase = NULL;
+struct Library      *AslBase    = NULL;
+struct Library      *KeymapBase   = NULL;
+struct Library      *UtilityBase  = NULL;
+struct Library      *TimerBase    = NULL;
+
+}
+void     StartGame(void);
+*/
+
+//LONG        MenuSelect[NUM_ITEMS];
+//UBYTE       Channel[4];
+//static LONG NewGame;
+
+//UBYTE       ChannelBuffer[8];
+
+extern struct ExecBase      *SysBase;
+struct DosLibrary   *DOSBase    = NULL;
+struct Library      *GfxBase    = NULL;
+struct Library      *CyberGfxBase = NULL;
+struct IntuitionBase  *IntuitionBase  = NULL;
+struct Library      *GadToolsBase = NULL;
+struct Library      *AslBase    = NULL;
+struct Library      *KeymapBase   = NULL;
+struct Library      *UtilityBase  = NULL;
+struct Library      *TimerBase    = NULL;
+
 
 struct FileRequester  *FileRequester  = NULL;
 
 LONG          Width;
 LONG          Height;
-struct Audio      *Audio;
-struct Video      *Video;
-struct Inputs     *Inputs;
+struct Audio      *Audio=NULL;
+struct Video      *Video=NULL;
+struct Inputs     *Inputs=NULL;
 struct AChannelArray  *ChannelArray[2];
 struct VPixelArray    *PixelArray[2];
-struct VDirectArray   *DirectArray;
+struct VDirectArray   *DirectArray=NULL;
 LONG          CurrentArray  = 0;
-BYTE          *Keys;
-struct IPort      *Port1;
-struct IPort      *Port2;
-UBYTE         *DirectPixels;
+BYTE          *Keys=NULL;
+struct IPort      *Port1=NULL;
+struct IPort      *Port2=NULL;
+UBYTE         *DirectPixels=NULL;
 ULONG         DirectBytesPerRow;
 
 struct timerequest    *TimerIO=NULL;
@@ -166,7 +132,7 @@ static struct Hook    MenuHook;
 static struct Hook    IDCMPHook;
 
 static struct StackSwapStruct StackSwapStruct;
-
+/*re
 static struct NewMenu NewMenu[] =
 {
   { NM_TITLE, (STRPTR) MSG_MENU_GAME,      NULL, 0,  0,  NULL  },
@@ -178,110 +144,123 @@ static struct NewMenu NewMenu[] =
   { NM_ITEM,  (STRPTR) MSG_MENU_QUIT,      "Q",  0,  0,  NULL  },
   { NM_END,   NULL,                        NULL, 0,  0,  NULL  },
 };
-
+*/
 static struct Menu *g_gtMenu=NULL;
 
 
-//krbtest, fake drivers list
-const struct GameDriver *drivers[] =
-{
-	0	/* end of array */
-};
+////krbtest, fake drivers list
+//const struct GameDriver *drivers[] =
+//{
+//	0	/* end of array */
+//};
 
 
 //
-int libs_init()
-{
-    // mandatory:
-  printf("DOSBase:%08x\n",(int)DOSBase);
+//int libs_init()
+//{
+//    // mandatory:
+////  printf("DOSBase:%08x\n",(int)DOSBase);
 
-    if(!(DOSBase = (struct DosLibrary *) OpenLibrary("dos.library", 39))) return(1);
-  printf("after: DOSBase:%08x\n",(int)DOSBase);
-  printf("IntuitionBase:%08x\n",(int)IntuitionBase);
-    if(!(IntuitionBase = (struct IntuitionBase *) OpenLibrary("intuition.library", 39)))
-    {
-        printf("need at least OS3.0\n");
-        return(1);
-    }
-    if(!(UtilityBase = OpenLibrary("utility.library",0))) return(1);
-    if(!(KeymapBase = OpenLibrary("keymap.library", 36))) return(1);
-    if(!(AslBase = OpenLibrary("asl.library", 36))) return(1);
-#ifdef POWERUP
-    if(!(PPCLibBase = OpenLibrary("ppc.library", 46))) return(1);
-#endif
-    // optional:
-    CyberGfxBase  = OpenLibrary("cybergraphics.library", 0);
-    GadToolsBase  = OpenLibrary("gadtools.library", 0);
+//    if(!(DOSBase = (struct DosLibrary *) OpenLibrary("dos.library", 39))) return(1);
+//  printf("after: DOSBase:%08x\n",(int)DOSBase);
+//  printf("IntuitionBase:%08x\n",(int)IntuitionBase);
+//    if(!(IntuitionBase = (struct IntuitionBase *) OpenLibrary("intuition.library", 39)))
+//    {
+//        printf("need at least OS3.0\n");
+//        return(1);
+//    }
+//    if(!(UtilityBase = OpenLibrary("utility.library",0))) return(1);
+//    if(!(KeymapBase = OpenLibrary("keymap.library", 36))) return(1);
+//    if(!(AslBase = OpenLibrary("asl.library", 36))) return(1);
+//#ifdef POWERUP
+//    if(!(PPCLibBase = OpenLibrary("ppc.library", 46))) return(1);
+//#endifextern struct ExecBase      *SysBase;
+struct DosLibrary   *DOSBase    = NULL;
+struct Library      *GfxBase    = NULL;
+struct Library      *CyberGfxBase = NULL;
+struct IntuitionBase  *IntuitionBase  = NULL;
+struct Library      *GadToolsBase = NULL;
+struct Library      *AslBase    = NULL;
+struct Library      *KeymapBase   = NULL;
+struct Library      *UtilityBase  = NULL;
+struct Library      *TimerBase    = NULL;
 
-    // - - - - - - -
-    if(GadToolsBase)
-    {
-        for(int i = 0; NewMenu[i].nm_Type != NM_END; i++)
-        {
-          if(((NewMenu[i].nm_Type == NM_TITLE) || (NewMenu[i].nm_Type == NM_ITEM))
-          && (NewMenu[i].nm_Label != NM_BARLABEL))
-            NewMenu[i].nm_Label = GetMessage((LONG) NewMenu[i].nm_Label);
-        }
-        g_gtMenu  = CreateMenus(NewMenu, GTMN_FullMenu, TRUE, TAG_END);
-    }
-    else
-        g_gtMenu  = NULL;
-    // - - - - - - - timer init. Most likely to work
-    {
-        TimerMP.mp_Node.ln_Type   = NT_MSGPORT;
-        TimerMP.mp_Flags      = PA_IGNORE;
-        NewList(&TimerMP.mp_MsgList);
+//    // optional:
+//    CyberGfxBase  = OpenLibrary("cybergraphics.library", 0);
+//    GadToolsBase  = OpenLibrary("gadtools.library", 0);
 
-        TimerIO = (struct timerequest*)CreateIORequest(&TimerMP, sizeof(struct timerequest));
-        if(TimerIO)
-        {
-        if(!OpenDevice("timer.device", UNIT_MICROHZ, (struct IORequest *) TimerIO, 0))
-          TimerBase = (struct Library *) TimerIO->tr_node.io_Device;
-        }
-    }
-    return(0);
-}
+//    // - - - - - - -
+//    if(GadToolsBase)
+//    {
+//        //re
+////        for(int i = 0; NewMenu[i].nm_Type != NM_END; i++)
+////        {
+////          if(((NewMenu[i].nm_Type == NM_TITLE) || (NewMenu[i].nm_Type == NM_ITEM))
+////          && (NewMenu[i].nm_Label != NM_BARLABEL))
+////            NewMenu[i].nm_Label = GetMessage((LONG) NewMenu[i].nm_Label);
+////        }
+////        g_gtMenu  = CreateMenus(NewMenu, GTMN_FullMenu, TRUE, TAG_END);
+//    }
+//    else
+//        g_gtMenu  = NULL;
+//    // - - - - - - - timer init. Most likely to work
+//    {
+//        TimerMP.mp_Node.ln_Type   = NT_MSGPORT;
+//        TimerMP.mp_Flags      = PA_IGNORE;
+//        NewList(&TimerMP.mp_MsgList);
 
-// exit code that is executed in all cases:
-// - after main()
-// - when anything call exit()
-// - SIGTERM signal (->to be managed)
-void main_close()
-{
+//        TimerIO = (struct timerequest*)CreateIORequest(&TimerMP, sizeof(struct timerequest));
+//        if(TimerIO)
+//        {
+//        if(!OpenDevice("timer.device", UNIT_MICROHZ, (struct IORequest *) TimerIO, 0))
+//          TimerBase = (struct Library *) TimerIO->tr_node.io_Device;
+//        }
+//    }
+//    return(0);
+//}
 
-    if(TimerIO)
-    {
-        if(TimerBase)
-          CloseDevice((struct IORequest *) TimerIO);
-        DeleteIORequest((struct IORequest *) TimerIO);
-    }
+//// exit code that is executed in all cases:
+//// - after main()
+//// - when anything call exit()
+//// - SIGTERM signal (->to be managed)
+//void main_close()
+//{
 
-    if(g_gtMenu) FreeMenus(g_gtMenu);
+//    if(TimerIO)
+//    {
+//        if(TimerBase)
+//          CloseDevice((struct IORequest *) TimerIO);
+//        DeleteIORequest((struct IORequest *) TimerIO);
+//    }
 
-    if(GadToolsBase) CloseLibrary(GadToolsBase);
-    if(CyberGfxBase) CloseLibrary(CyberGfxBase);
+//    if(g_gtMenu) FreeMenus(g_gtMenu);
 
-#ifdef POWERUP
-    if(PPCLibBase) CloseLibrary(PPCLibBase);
-#endif
-    if(KeymapBase) CloseLibrary(KeymapBase);
-    if(UtilityBase) CloseLibrary(UtilityBase);
-    if(IntuitionBase) CloseLibrary((struct Library *)IntuitionBase);
-    if(GfxBase) CloseLibrary(GfxBase);
-    if(DOSBase) CloseLibrary((struct Library *)DOSBase);
-}
+//    if(GadToolsBase) CloseLibrary(GadToolsBase);
+//    if(CyberGfxBase) CloseLibrary(CyberGfxBase);
+
+//#ifdef POWERUP
+//    if(PPCLibBase) CloseLibrary(PPCLibBase);
+//#endif
+//    if(KeymapBase) CloseLibrary(KeymapBase);
+//    if(UtilityBase) CloseLibrary(UtilityBase);
+//    if(IntuitionBase) CloseLibrary((struct Library *)IntuitionBase);
+//    if(GfxBase) CloseLibrary(GfxBase);
+//    if(DOSBase) CloseLibrary((struct Library *)DOSBase);
+//}
 
 
 int main(int argc, char **argv)
 {
-    atexit(&main_close);
+//re    atexit(&main_close);
 
-    if(libs_init()!=0) exit(1);
+  //re  if(libs_init()!=0) exit(1);
  printf("after libs_init()\n");
 
-    if(AllocConfig(argc, argv)!=0) exit(1);
+    //if(AllocConfig(argc, argv)!=0) exit(1);
 
  printf("after AllocConfig()\n");
+
+//re main_close();
    // AllocGUI();
    // LoadConfig(argc, argv);
 

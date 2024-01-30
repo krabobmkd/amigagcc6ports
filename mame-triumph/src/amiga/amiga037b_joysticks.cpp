@@ -23,7 +23,7 @@
 #include "osdepend.h"
 
 #include "main.h"
-#include "config.h"
+#include "config_v37.h"
 #include "file.h"
 #include "audio.h"
 // from mame since 0.37:

@@ -28,7 +28,7 @@
 #include "driver.h"
 #include "osdepend.h"
 
-#include "config.h"
+#include "config_v37.h"
 #include "video.h"
 #include "amiga_inputs.h"
 

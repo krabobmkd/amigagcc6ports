@@ -48,7 +48,7 @@ extern "C" {
 #include "main.h"
 #include "driver.h"
 #include "gui.h"
-#include "config.h"
+#include "config_v37.h"
 #include "version.h"
 
 #include <vector>
@@ -382,13 +382,16 @@ static struct GameDriver *GetDriver(void)
 static void ScanDrivers(void)
 {
   struct FileInfoBlock *fib;
-  const char           *str;
+  //const char           *str;
+  std::string str;
 
   BPTR locks[4];
   LONG i, j, len;
   char buf[13];    /* 8.3 filename. */
   int  bitmap_lock;
   int  vector_lock;
+
+  const MameConfig &config = Config();
 
   if(DriversFound)
   {
@@ -407,24 +410,23 @@ static void ScanDrivers(void)
 
       locks[j++] = Lock("roms", ACCESS_READ);
 
-      str = GetRomPath(0, 0);
+      str = config.rom_path;  // GetRomPath(0, 0);
 
-      if(str)
+
+    if(!config.rom_path.empty())
+    {
+      locks[j] = Lock((STRPTR) config.rom_path.c_str(), ACCESS_READ);
+
+      if(locks[j])
       {
-        if(str[0])
-        {
-          locks[j] = Lock((STRPTR) str, ACCESS_READ);
-
-          if(locks[j])
-          {
-            if( (SameLock(locks[0], locks[j]) == LOCK_SAME)
-            ||  (SameLock(locks[1], locks[j]) == LOCK_SAME))
-              UnLock(locks[j]);
-            else
-              bitmap_lock = j++;
-          }
-        }
+        if( (SameLock(locks[0], locks[j]) == LOCK_SAME)
+        ||  (SameLock(locks[1], locks[j]) == LOCK_SAME))
+          UnLock(locks[j]);
+        else
+          bitmap_lock = j++;
       }
+    }
+
 
       str = GetRomPath(1, 0);
 
@@ -1043,7 +1045,6 @@ int MainGUI(void)
     {
       if(!MainWin)
       {
-// //#define MUI_NewObject(MUIC_List          MUI_NewObject(MUIC_List
         MainWin =  MUINewObject(MUIC_Window,
           MUIA_Window_Title,(ULONG) APPNAME,
           MUIA_Window_ID   , MAKE_ID('M','A','I','N'),

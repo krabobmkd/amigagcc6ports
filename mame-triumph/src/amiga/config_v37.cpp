@@ -1,6 +1,6 @@
 #include "config_v37.h"
-
-
+#include <memory>
+/*
 class BinWriter : public Serializer {
 public:
     BinWriter();
@@ -61,7 +61,7 @@ protected:
     }
 };
 
-
+*/
 
 MameConfig_Screen::MameConfig_Screen() : Serializable()
  , type(eType::Best) // default values
@@ -122,3 +122,12 @@ void MameConfig::serialize(Serializer& ser)
     ser("sc",screen);
     ser("au",audio);
 }
+
+MameConfig &Config()
+{
+    using namespace std;
+    static unique_ptr<MameConfig> p(new MameConfig()); // alloc once because static local, at first call.
+    return  *p;
+}
+
+
