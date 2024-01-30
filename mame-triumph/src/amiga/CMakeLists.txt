@@ -48,6 +48,7 @@ set(AMIGA_SRC
 set(PROGNAME TriumphMame)
 add_executable(${PROGNAME} ${AMIGA_SRC} )
 set_property(TARGET ${PROGNAME} PROPERTY C_STANDARD 11)
+set_property(TARGET ${PROGNAME} PROPERTY CXX_STANDARD 11)
 target_compile_definitions(${PROGNAME} PUBLIC MAMEVERSION=37 )
 
 # the static libs that are part of this repo: 
@@ -69,6 +70,7 @@ target_include_directories(${PROGNAME} PUBLIC "../../../extrasdk/MUI/include")
 set(RNAME rmame)
 add_executable(${RNAME} r_main.cpp amiga_locale.cpp config_v37.cpp config_v37.h )
 set_property(TARGET ${RNAME} PROPERTY C_STANDARD 11)
+set_property(TARGET ${RNAME} PROPERTY CXX_STANDARD 11)
 target_compile_definitions(${RNAME} PUBLIC MAMEVERSION=37 INLINE=inline )
 # the static libs that are part of this repo: 
 #target_link_libraries(${RNAME} PUBLIC mamecore z)

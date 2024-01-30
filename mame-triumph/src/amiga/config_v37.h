@@ -10,26 +10,27 @@
 struct Serializable;
 
 struct Serializer {
+	virtual int isReading() = 0;
 	virtual void operator()(const char *pName, uint32_t &) = 0;
 	virtual void operator()(const char* pName, uint16_t&) = 0;
 	virtual void operator()(const char* pName, uint8_t&) = 0;
 	virtual void operator()(const char* pName, std::string &) = 0;
 	virtual void operator()(const char* pName, Serializable&) = 0;
 
-//	virtual void operator()(std::vector<Serializable&>, Serializable&) = 0;
-
 };
 
 struct Serializable {
 	virtual void serialize(Serializer &ser)=0;
+
 };
 
 // - - - -- -- --
 class MameConfig_Screen : public Serializable {
+public:
     MameConfig_Screen();
 	void serialize(Serializer& ser) override;
 
-	class enum eType : uint8_t {
+	enum class eType : uint8_t {
         Best,
         WB,
         Custom,
@@ -39,21 +40,21 @@ class MameConfig_Screen : public Serializable {
 	uint32_t modeid;
 
 
-	class enum eDirect : uint8_t {
+	enum class eDirect : uint8_t {
         Off,
         Draw,
         Copy
 	};
     eDirect directMode;
 
-	class enum eBuffering : uint8_t {
+	enum class eBuffering : uint8_t {
         Single,
         Double,
         Triple
 	};
     eBuffering buffering;
 
-	class enum eRotation : uint8_t {
+	enum class eRotation : uint8_t {
         No,
         Left,
         Right
@@ -82,7 +83,7 @@ public:
     MameConfig_Audio();
 	void serialize(Serializer& ser) override;
 
-	class enum eSound : uint8_t {
+	enum class eSound : uint8_t {
         No,
         Paula,
         Ahi
@@ -93,6 +94,7 @@ public:
 
 class MameConfig : public Serializable  {
 public:
+    MameConfig();
 	void serialize(Serializer& ser) override;
 
 	// - - - -
