@@ -1066,10 +1066,13 @@ int MainGUI(void)
             TAG_DONE),
           TAG_DONE),
 
-          WindowContents, UMUINO(MUIC_Group,
+          WindowContents, UMUINO(MUIC_Group, // vertical group because no horiz. specified.
 
-            Child, RE_Options = OMUINO(MUIC_Register,MUIA_Register_Titles,(RegisterTitles),
+            Child,
+              // this is the TAB group:
+              RE_Options = OMUINO(MUIC_Register,MUIA_Register_Titles,(RegisterTitles),
 
+              // Tab1: Drivers
               Child, UMUINO(MUIC_Group,
                 Child, LV_Driver = (Object *)(DriverClass!=NULL)?
 
@@ -1105,14 +1108,17 @@ int MainGUI(void)
                 TAG_DONE),
 #endif
               TAG_DONE),
+
+              // Tab2: Display
               Child, UMUINO(MUIC_Group,
                 Child, HVSpace,
                 Child, UMUINO(MUIC_Group,MUIA_Group_Horiz,TRUE,
                   Child, HSpace(0),
+                  // column group of 4 column, name/checkbox/name/checkbox.
                   Child, UMUINO(MUIC_Group,MUIA_Group_Columns,4,
                     MUIA_HorizWeight, 1000,
                     Child, Label((ULONG)GetMessage(MSG_ALLOW16BIT)),
-                    Child, (ULONG)(CM_Allow16Bit = OCheckMark(Config[CFG_ALLOW16BIT]))),
+                    Child, (ULONG)(CM_Allow16Bit = OCheckMark(Config[CFG_ALLOW16BIT])),
                     Child, Label((ULONG)GetMessage(MSG_AUTO_FRAMESKIP)),
                     Child, (ULONG)(CM_AutoFrameSkip = OCheckMark(Config[CFG_AUTOFRAMESKIP])),
                     Child, Label((ULONG)GetMessage(MSG_FLIPX)),
@@ -1125,11 +1131,11 @@ int MainGUI(void)
                     Child, (ULONG)(CM_Translucency = OCheckMark(Config[CFG_TRANSLUCENCY])),
                     Child, Label((ULONG)GetMessage(MSG_DIRTY_LINES)),
                     Child, (ULONG)(CM_DirtyLines = OCheckMark(Config[CFG_DIRTYLINES])),
-#ifdef POWERUP
+#ifdef POWERU
                     Child, Label((ULONG)GetMessage(MSG_ASYNCPPC)),
                     Child, CM_AsyncPPC = UCheckMark(Config[CFG_ASYNCPPC]),
 #endif
-                  TAG_DONE),
+                  TAG_DONE), // end colgroup 4
                   Child, HSpace(0),
                 TAG_DONE),
                 Child, UMUINO(MUIC_Group,MUIA_Group_Horiz,TRUE,
@@ -1211,6 +1217,11 @@ int MainGUI(void)
                 TAG_DONE),
                 Child, HVSpace,
               TAG_DONE),
+
+
+
+
+              //tab 3: Sound
               Child, UMUINO(MUIC_Group,
                 Child, HVSpace,
                 Child, UMUINO(MUIC_Group,MUIA_Group_Horiz,TRUE,
@@ -1330,12 +1341,13 @@ int MainGUI(void)
                 Child, HVSpace,
               TAG_DONE),
             TAG_DONE),
+
             Child, UMUINO(MUIC_Group,MUIA_Group_Horiz,TRUE,
               Child, BU_Start   = SimpleButton((ULONG)GetMessage(MSG_START)),
               Child, BU_Quit    = SimpleButton((ULONG)GetMessage(MSG_QUIT)),
-            TAG_DONE),
-          TAG_DONE);
-//        TAG_DONE);
+            TAG_DONE), // end WindowContent Group
+          TAG_DONE),
+        TAG_DONE);
 
 
         if(MainWin)

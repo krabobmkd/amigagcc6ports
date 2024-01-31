@@ -5,7 +5,7 @@
 ** File             : mysrc:emu/mame/src/amiga/amiga.c
 ** Created on       : Tirsdag, 10.06.97 14:34:45
 ** Created by       : Mats Eirik Hansen
-** Current revision : V35.12
+** Current revision : v0.37b 2024
 **
 **
 ** Purpose
@@ -456,9 +456,9 @@
 **     --- Initial release ---
 **
 *********************************************************************************/
-#define REVISION "35.12"
-#define REVDATE  "14.05.99"
+#define REVISION "37b5"
+#define REVDATE  "31.01.2024"
 #define REVTIME  "10:37:01"
 #define AUTHOR   "--- Unknown ---"
-#define VERNUM   35
-#define REVNUM   12
+#define VERNUM   37
+#define REVNUM   05
