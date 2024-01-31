@@ -12,11 +12,8 @@
  *
  *************************************************************************/
 // from amiga
-extern "C" {
-#include <intuition/intuition.h>
+#include <proto/intuition.h>
 #include "intuiuncollide.h"
-}
-
 
 //#include <devices/keyboard.h>
 //#include <devices/keymap.h>

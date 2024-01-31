@@ -4,14 +4,14 @@
 #include <stdlib.h>
 #include <strings.h>
 
-// doesn't need extern "C"
+// proto/xxx.h don't need extern "C" {}
 #include <proto/alib.h>
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <proto/graphics.h>
 #include <proto/intuition.h>
 #include <proto/timer.h>
-#include <proto/gadtools.h>
+
 #include <proto/asl.h>
 #include <proto/utility.h>
 #include <proto/keymap.h>
@@ -57,7 +57,8 @@ extern "C" {
 #include "messages.h"
 
 #include "config_v37.h"
-#include "gui.h"
+#include "gui_mui.h"
+#include "gui_gadtools.h"
 /*re
 #include "version.h"
 #include "audio.h"
@@ -85,21 +86,6 @@ struct Library      *GadToolsBase=NULL;
 struct Library      *AslBase=NULL;
 struct Library      *KeymapBase=NULL;
 struct Library      *UtilityBase=NULL;
-
-
-static struct NewMenu NewMenu[] =
-{
-  { NM_TITLE, (STRPTR) MSG_MENU_GAME,      NULL, 0,  0,  NULL  },
-  { NM_ITEM,  (STRPTR) MSG_MENU_NEW,       "N",  0,  0,  NULL  },
-  { NM_ITEM,  (STRPTR) MSG_MENU_SAVE_ILBM, "S",  0,  0,  NULL  },
-  { NM_ITEM,  (STRPTR) NM_BARLABEL,        NULL, 0,  0,  NULL  },
-  { NM_ITEM,  (STRPTR) MSG_MENU_ABOUT,     "?",  0,  0,  NULL  },
-  { NM_ITEM,  (STRPTR) NM_BARLABEL,        NULL, 0,  0,  NULL  },
-  { NM_ITEM,  (STRPTR) MSG_MENU_QUIT,      "Q",  0,  0,  NULL  },
-  { NM_END,   NULL,                        NULL, 0,  0,  NULL  },
-};
-
-static struct Menu *g_gtMenu=NULL;
 
 //struct Library      *TimerBasePrivate=NULL;
 //struct timerequest    *TimerIO=NULL;
@@ -129,7 +115,7 @@ int main(int argc, char **argv)
     printf("c:%d\n",(int)Config().audio.sound);
 
 
-  return(1337);
+  return(0);
 }
 
 
@@ -156,19 +142,8 @@ int libs_init()
     CyberGfxBase  = OpenLibrary("cybergraphics.library", 1);
     GadToolsBase  = OpenLibrary("gadtools.library", 1);
 
-    // - - - - - - -
-    if(GadToolsBase)
-    {
-        for(int i = 0; NewMenu[i].nm_Type != NM_END; i++)
-        {
-          if(((NewMenu[i].nm_Type == NM_TITLE) || (NewMenu[i].nm_Type == NM_ITEM))
-          && (NewMenu[i].nm_Label != NM_BARLABEL))
-            NewMenu[i].nm_Label = GetMessage((LONG) NewMenu[i].nm_Label);
-        }
-        g_gtMenu  = CreateMenus(NewMenu, GTMN_FullMenu, TRUE, TAG_END);
-    }
-    else
-        g_gtMenu  = NULL;
+    if(GadToolsBase) gui_gadtools_init();
+
 //    // - - - - - - - timer init. Most likely to work
 //    {
 //        TimerMP.mp_Node.ln_Type   = NT_MSGPORT;
@@ -199,7 +174,6 @@ void main_close()
 //        DeleteIORequest((struct IORequest *) TimerIO);
 //    }
 
-    if(g_gtMenu) FreeMenus(g_gtMenu);
 
     if(GadToolsBase) CloseLibrary(GadToolsBase);
     if(CyberGfxBase) CloseLibrary(CyberGfxBase);
@@ -211,7 +185,7 @@ void main_close()
     if(UtilityBase) CloseLibrary(UtilityBase);
     if(IntuitionBase) CloseLibrary((struct Library *)IntuitionBase);
     if(GfxBase) CloseLibrary((struct Library *)GfxBase);
-// done by gcc startup
+// done in theory by gcc startup
 //    if(DOSBase) CloseLibrary((struct Library *)DOSBase);
 }
 

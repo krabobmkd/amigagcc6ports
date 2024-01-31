@@ -17,21 +17,12 @@ extern "C" {
 #include <exec/types.h>
 #include <utility/hooks.h>
 #include <utility/tagitem.h>
-#include <graphics/gfx.h>
+//#include <graphics/gfx.h>
 #include <graphics/rastport.h>
 #include <exec/ports.h>
 #include <devices/timer.h>
-#ifdef POWERUP
-#ifdef __PPC
-#include <powerup/gcclib/powerup_protos.h>
-#else
-#include <exec/execbase.h>
-#include <inline/ppc.h>
-extern struct Library *PPCLibBase;
-#endif
-#endif
+
 }
-//? #include <macros.h>
 
 #define VA_UseScreen     (TAG_USER)
 #define VA_UseScreenReq  (TAG_USER+1)
@@ -125,11 +116,11 @@ struct VFrame
 
 typedef enum
 {
-  WritePixelArray,
-  CustomC2P,
-  CGXHook,
-  WriteChunkyPixels,
-  BltBitMapRastPort
+  eWritePixelArray,
+  eCustomC2P,
+  eCGXHook,
+  eWriteChunkyPixels,
+  eBltBitMapRastPort
 } vpixelmode_t;
 
 struct Video

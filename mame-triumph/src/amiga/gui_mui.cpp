@@ -21,25 +21,25 @@
   /opt/amiga/bin/sfdc muimaster_lib.sfd --mode macros >../../../../MUI/include/inline/muimaster.h
 */
 #include <ctype.h>
-extern "C" {
-#include <clib/alib_protos.h>
 
-#include <exec/types.h>
-#include <dos/dosextens.h>
+//
+
+#include <proto/alib.h>
+#include <proto/exec.h>
+#include <proto/dos.h>
+#include <proto/graphics.h>
+#include <proto/intuition.h>
+#include "intuiuncollide.h"
+#include <proto/utility.h>
+#include <proto/keymap.h>
+#include <proto/timer.h>
+
+extern "C" {
 #include <libraries/mui.h>
 #include <libraries/iffparse.h>
 #include <libraries/gadtools.h>
 #include <libraries/asl.h>
-
-#include <inline/exec.h>
-#include <inline/dos.h>
-#include <inline/graphics.h>
-#include <clib/intuition_protos.h>
 #include <inline/muimaster.h>
-#include <inline/utility.h>
-//#include <clib/keymap_protos.h>
-#include <inline/keymap.h>
-#include "intuiuncollide.h"
 }
 #define CATCOMP_NUMBERS
 #include "messages.h"
@@ -47,10 +47,10 @@ extern "C" {
 #include "macros.h"
 #include "main.h"
 #include "driver.h"
-#include "gui.h"
-#include "config_v37.h"
+#include "gui_mui.h"
+#include "config_moo.h"
 #include "version.h"
-
+//#include "romscan.h"
 #include <vector>
 #include <string>
 #include <cstdio>
@@ -391,7 +391,7 @@ static void ScanDrivers(void)
   int  bitmap_lock;
   int  vector_lock;
 
-  const MameConfig &config = Config();
+//  const MameConfig &config = Config();
 
   if(DriversFound)
   {
@@ -410,31 +410,27 @@ static void ScanDrivers(void)
 
       locks[j++] = Lock("roms", ACCESS_READ);
 
-      str = config.rom_path;  // GetRomPath(0, 0);
+      str = GetRomPath(0, 0);
 
-
-    if(!config.rom_path.empty())
-    {
-      locks[j] = Lock((STRPTR) config.rom_path.c_str(), ACCESS_READ);
-
-      if(locks[j])
+      if(!str.empty())
       {
-        if( (SameLock(locks[0], locks[j]) == LOCK_SAME)
-        ||  (SameLock(locks[1], locks[j]) == LOCK_SAME))
-          UnLock(locks[j]);
-        else
-          bitmap_lock = j++;
-      }
-    }
+          locks[j] = Lock( str.c_str(), ACCESS_READ);
 
+          if(locks[j])
+          {
+            if( (SameLock(locks[0], locks[j]) == LOCK_SAME)
+            ||  (SameLock(locks[1], locks[j]) == LOCK_SAME))
+              UnLock(locks[j]);
+            else
+              bitmap_lock = j++;
+          }
+      }
 
       str = GetRomPath(1, 0);
 
-      if(str)
+      if(!str.empty())
       {
-        if(strlen(str))
-        {
-          locks[j] = Lock((STRPTR) str, ACCESS_READ);
+          locks[j] = Lock( str.c_str(), ACCESS_READ);
 
           if(locks[j])
           {
@@ -444,7 +440,6 @@ static void ScanDrivers(void)
             else
               vector_lock = j++;
           }
-        }
       }
 
       for(; --j >= 0;)
@@ -507,9 +502,9 @@ static void ScanDrivers(void)
         {
           str = GetRomPath(GetSortedDriverIndex(DRIVER_OFFSET+i), 0);
 
-          if(str && strlen(str))
+          if(!str.empty())
           {
-            locks[0] = Lock((STRPTR) str, ACCESS_READ);
+            locks[0] = Lock( str.c_str(), ACCESS_READ);
 
             if(locks[0])
             {

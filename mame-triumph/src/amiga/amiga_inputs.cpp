@@ -10,28 +10,24 @@
  *
  *
  *************************************************************************/
-extern "C" {
-#include <clib/alib_protos.h>
 
-#include <exec/types.h>
-#include <exec/io.h>
-#include <exec/memory.h>
-#include <exec/errors.h>
-#include <dos/dosextens.h>
-#include <dos/dostags.h>
-#include <intuition/intuition.h>
+#include <proto/exec.h>
+#include <proto/dos.h>
+#include <proto/intuition.h>
 #include "intuiuncollide.h"
+#include <proto/utility.h>
+#include <proto/keymap.h>
+#include <proto/lowlevel.h>
+#include <proto/alib.h>
+
+
+extern "C" {
 #include <libraries/lowlevel.h>
 #include <devices/inputevent.h>
 #include <devices/gameport.h>
 #include <devices/timer.h>
 #include <devices/input.h>
-
-#include <inline/exec.h>
-#include <inline/dos.h>
-#include <inline/intuition.h>
-#include <inline/utility.h>
-#include <inline/keymap.h>
+#include <exec/errors.h>
 
 #ifdef POWERUP
 #include <powerup/ppclib/memory.h>
@@ -46,9 +42,7 @@ extern "C" {
 #define INPUTS_PRIVATE
 #include "amiga_inputs.h"
 
-extern struct Library *SysBase;
-extern struct Library *DOSBase;
-extern struct Library *IntuitionBase;
+extern struct IntuitionBase *IntuitionBase;
 extern struct Library *UtilityBase;
 extern struct Library *KeymapBase;
 

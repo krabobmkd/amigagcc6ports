@@ -14,10 +14,7 @@
 // from amiga
 //#include <intuition/intuition.h>
 
-extern "C" {
-#include <clib/dos_protos.h>
-}
-
+#include <proto/dos.h>
 
 // from mame:
 #include "osdepend.h"

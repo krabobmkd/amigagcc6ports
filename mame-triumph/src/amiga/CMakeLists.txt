@@ -23,21 +23,24 @@ set(AMIGA_SRC
 	amiga037b_audiostream.cpp
 	amiga037b_filesystem.cpp
 	main.cpp
+#	romscan.cpp
 	gui_mui.cpp
-	config_v37.cpp
+	gui_gadtools.cpp
+	config_moo.cpp
 	file.cpp
 	audio.cpp
 	video.cpp
 	amiga_inputs.cpp
 	amiga_locale.cpp
 	main.h
-	config_v37.h
+	config_moo.h
 	file.h
 	audio.h
 	video.h
 	amiga_inputs.h
 	amiga_locale.h
-	gui.h
+	gui_mui.h
+	gui_gadtools.h
 	mame_ver.h
 	mame_msg.h
 
@@ -66,18 +69,17 @@ target_include_directories(${PROGNAME} PUBLIC "../mame037b/src")
 target_include_directories(${PROGNAME} PUBLIC "../../../extrasdk/MUI/include")
 
 #  - - - - - - - - - - 
-# debug/test phase, no release.
-set(RNAME rmame)
-# amiga_locale.cpp config_v37.cpp config_v37.h
-add_executable(${RNAME} r2_main.cpp amiga_locale.cpp config_v37.cpp config_v37.h gui_mui.cpp )
-set_property(TARGET ${RNAME} PROPERTY C_STANDARD 11)
-set_property(TARGET ${RNAME} PROPERTY CXX_STANDARD 11)
-target_compile_definitions(${RNAME} PUBLIC MAMEVERSION=37 INLINE=inline )
-# the static libs that are part of this repo: 
-#target_link_libraries(${RNAME} PUBLIC mamecore z)
-target_link_directories(${RNAME} PUBLIC "../../lib")
-target_include_directories(${RNAME} PUBLIC "../../include" )
-target_include_directories(${RNAME} PUBLIC "../mame037b/src")
+## debug/test phase, no release.
+#set(RNAME rmame)
+## amiga_locale.cpp config_v37.cpp config_v37.h
+#add_executable(${RNAME} r2_main.cpp amiga_locale.cpp config_v37.cpp config_v37.h romscan.cpp romscan.h gui_mui.cpp gui_gadtools.cpp)
+#set_property(TARGET ${RNAME} PROPERTY C_STANDARD 11)
+#set_property(TARGET ${RNAME} PROPERTY CXX_STANDARD 11)
+#target_compile_definitions(${RNAME} PUBLIC MAMEVERSION=37 INLINE=inline )
+## the static libs that are part of this repo:
+#target_link_directories(${RNAME} PUBLIC "../../lib")
+#target_include_directories(${RNAME} PUBLIC "../../include" )
+#target_include_directories(${RNAME} PUBLIC "../mame037b/src")
 
-# MUI is not provided by gccbebbo6.5 ndk by default, we have it there:
-target_include_directories(${RNAME} PUBLIC "../../../extrasdk/MUI/include")
+## MUI is not provided by gccbebbo6.5 ndk by default, we have it there:
+#target_include_directories(${RNAME} PUBLIC "../../../extrasdk/MUI/include")

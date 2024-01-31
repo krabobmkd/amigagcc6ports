@@ -373,12 +373,12 @@ struct Video *AllocVideo(Tag tags,...)
             depth = 8;
 
           if(GfxBase->LibNode.lib_Version >= 40)
-            video->PixelMode = WriteChunkyPixels;
+            video->PixelMode = eWriteChunkyPixels;
           else
-            video->PixelMode = WritePixelArray;
+            video->PixelMode = eWritePixelArray;
 
           if(!video->CyberMode && (depth <= 8))
-            video->PixelMode = CustomC2P;
+            video->PixelMode = eCustomC2P;
 
           if(video->Width < rect.MaxX - rect.MinX + 1)
             w = rect.MaxX - rect.MinX + 1;
@@ -390,7 +390,7 @@ struct Video *AllocVideo(Tag tags,...)
           else
             h = video->Height;
 
-          if(video->PixelMode == CustomC2P)
+          if(video->PixelMode == eCustomC2P)
             w = ((w + 31) >> 5) << 5;
 
           if((1 << depth) < max_colors)
@@ -524,9 +524,9 @@ struct Video *AllocVideo(Tag tags,...)
       if(win)
       {
         if(GfxBase->LibNode.lib_Version >= 40)
-          video->PixelMode = WriteChunkyPixels;
+          video->PixelMode = eWriteChunkyPixels;
         else
-          video->PixelMode = WritePixelArray;
+          video->PixelMode = eWritePixelArray;
 
         if(CyberGfxBase && win)
           video->CyberMode = GetCyberMapAttr(win->RPort->BitMap, CYBRMATTR_ISCYBERGFX);
@@ -578,14 +578,14 @@ struct Video *AllocVideo(Tag tags,...)
 
           if(video->CGXHook)
           {
-            video->PixelMode = CGXHook;
+            video->PixelMode = eCGXHook;
             video->VectorPen = ObtainPen(win->WScreen->ViewPort.ColorMap, -1, 0, 0, 0, PEN_EXCLUSIVE);
 
             CustomRemapCLUT8RemapHook(video->CGXHook, video->PackedPalette);
           }
         }
         else
-          video->PixelMode = BltBitMapRastPort;
+          video->PixelMode = eBltBitMapRastPort;
       }
 
       if(video->Screen && ((1 << video->Screen->RastPort.BitMap->Depth) < max_colors))
@@ -647,7 +647,7 @@ struct Video *AllocVideo(Tag tags,...)
           video->TimerBase = (struct Library *) video->TimerRequest->tr_node.io_Device;
       }
 
-      if(video->PixelMode == WritePixelArray)
+      if(video->PixelMode == eWritePixelArray)
       {
         CopyMem(win->RPort, &video->TempRastPort, sizeof(struct RastPort));
 
@@ -689,7 +689,7 @@ void FreeVideo(struct Video *video)
 
       CloseWindow(video->Window);
 
-      if(video->PixelMode == WritePixelArray)
+      if(video->PixelMode == eWritePixelArray)
       {
         if(video->TempRastPort.BitMap)
           FreeBitMap(video->TempRastPort.BitMap);
@@ -1013,13 +1013,13 @@ struct VPixelArray *VAllocPixelArray(struct Video *video, LONG width, LONG heigh
   {
     switch(video->PixelMode)
     {
-      case CustomC2P:
+      case eCustomC2P:
         w = ((width + 31) >> 5) << 5;
         break;
 
-      case CGXHook:
-      case BltBitMapRastPort:
-      case WriteChunkyPixels:
+      case eCGXHook:
+      case eBltBitMapRastPort:
+      case eWriteChunkyPixels:
         w = ((width + 3) >> 2) << 2;
         break;
 
@@ -1035,7 +1035,7 @@ struct VPixelArray *VAllocPixelArray(struct Video *video, LONG width, LONG heigh
 
   size = sizeof(struct VPixelArray);
 
-  if(video->PixelMode != BltBitMapRastPort)
+  if(video->PixelMode != eBltBitMapRastPort)
     size += (w * height);
   
   if(dirty)
@@ -1054,7 +1054,7 @@ struct VPixelArray *VAllocPixelArray(struct Video *video, LONG width, LONG heigh
     pa->EndX   = width - 1;
     pa->EndY   = height - 1;
 
-    if(video->PixelMode == BltBitMapRastPort)
+    if(video->PixelMode == eBltBitMapRastPort)
     {
       if(pixel_formats)
       {
@@ -1226,7 +1226,7 @@ void VDrawPixelArray(struct VPixelArray *pa)
 
     switch(video->PixelMode)
     {
-      case CustomC2P:
+      case eCustomC2P:
         x = x & 0xffffffe0;
         w = ((w + 31) >> 5) << 5;
         VSetFrameBox(video, x, y, x + w - 1, y + h - 1);
@@ -1284,7 +1284,7 @@ void VDrawPixelArray(struct VPixelArray *pa)
         }
         break;
 
-      case BltBitMapRastPort:    
+      case eBltBitMapRastPort:
         VSetFrameBox(video, x, y, x + w - 1, y + h - 1);
         pixels = VGetPixelArrayAddr(pa);
         for(iy = 0; iy < h; iy++)
@@ -1305,7 +1305,7 @@ void VDrawPixelArray(struct VPixelArray *pa)
         }
         break;
 
-      case WriteChunkyPixels:   
+      case eWriteChunkyPixels:
         VSetFrameBox(video, x, y, x + w - 1, y + h - 1);
         pixels = VGetPixelArrayAddr(pa);
         for(iy = 0; iy < h; iy++)
@@ -1326,7 +1326,7 @@ void VDrawPixelArray(struct VPixelArray *pa)
         }
         break;
 
-      case CGXHook:
+      case eCGXHook:
         VSetFrameBox(video, x, y, x + w - 1, y + h - 1);
         pixels = VGetPixelArrayAddr(pa);
         for(iy = 0; iy < h; iy++)
@@ -1353,7 +1353,7 @@ void VDrawPixelArray(struct VPixelArray *pa)
   {
     switch(video->PixelMode)
     {
-      case CustomC2P:
+      case eCustomC2P:
         x   = x & 0xffffffe0;
         w   = ((w + 31) >> 5) << 5;
         bpr   = pa->BytesPerRow;
@@ -1373,17 +1373,17 @@ void VDrawPixelArray(struct VPixelArray *pa)
             bpr);
         break;
 
-      case BltBitMapRastPort:    
+      case eBltBitMapRastPort:
         VSetFrameBox(video, x, y, x + w - 1, y + h - 1);
         BltBitMapRastPort(pa->BitMap, pa->StartX, pa->StartY, video->RastPort,
                           x, y, w, h, 0xc0);
         break;
-      case WriteChunkyPixels:   
+      case eWriteChunkyPixels:
         VSetFrameBox(video, x, y, x + w - 1, y + h - 1);
         WriteChunkyPixels(  video->RastPort, x, y, x + w - 1, y + h - 1,
                   VGetPixelArrayAddr(pa), pa->BytesPerRow);
         break;
-      case CGXHook:
+      case eCGXHook:
         VSetFrameBox(video, x, y, x + w - 1, y + h - 1);
         DoCLUT8RemapHook( video->CGXHook,
                   VGetPixelArrayAddr(pa), video->RastPort,

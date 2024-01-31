@@ -82,6 +82,7 @@ public:
     uint8_t frameskip;
 
 };
+// - - - - - -
 class MameConfig_Audio : public Serializable {
 public:
     MameConfig_Audio();
@@ -95,7 +96,7 @@ public:
     eSound sound;
 
 };
-
+// - - - - - -  -
 class MameConfig : public Serializable  {
 public:
     MameConfig();
@@ -120,6 +121,7 @@ public:
 
 };
 
+// get current config object
 MameConfig &Config();
 
 #endif

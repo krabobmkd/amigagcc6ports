@@ -10,25 +10,21 @@
  *
  *
  *************************************************************************/
-extern "C" {
-#include <clib/alib_protos.h>
-#include <clib/intuition_protos.h>
 
-#include <exec/execbase.h>
-#include <exec/memory.h>
-#include <devices/ahi.h>
+#include <proto/exec.h>
+#include <proto/dos.h>
+#include <proto/alib.h>
+#include <proto/intuition.h>
+#include <proto/ahi.h>
+#include <proto/utility.h>
+
+
+extern "C" {
 #include <devices/audio.h>
 
-#include <inline/exec.h>
-#include <inline/dos.h>
-#include <inline/utility.h>
 #define AHI_BASE_NAME audio->AHIBase
-#include <inline/ahi.h>
+//#include <inline/ahi.h>
 
-#ifdef POWERUP
-#include <powerup/ppclib/memory.h>
-#include <inline/ppc.h>
-#endif
 }
 #include <stdlib.h>
 
@@ -45,8 +41,7 @@ extern "C" {
 
 #define INTELULONG(i) (((i)<<24)|((i)>>24)|(((i)<<8)&0x00ff0000)|(((i)>>8)&0x0000ff00))
 
-extern struct Library *SysBase;
-extern struct Library *DOSBase;
+
 extern struct Library *UtilityBase;
 
 #ifdef POWERUP

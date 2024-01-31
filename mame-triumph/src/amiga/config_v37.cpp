@@ -126,7 +126,8 @@ void MameConfig::serialize(Serializer& ser)
 MameConfig &Config()
 {
     using namespace std;
-    static unique_ptr<MameConfig> p(new MameConfig()); // alloc once because static local, at first call.
+     // alloc once because static local, at first call.
+    static unique_ptr<MameConfig> p(new MameConfig());
     return  *p;
 }
 

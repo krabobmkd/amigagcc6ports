@@ -14,26 +14,29 @@
 // shut up clangd.
 #define __stdargs
 #endif
-#include <string>
 
+#include <proto/exec.h>
+#include <proto/dos.h>
+// #include <proto/cybergraphics.h>
 extern "C" {
-#include <exec/memory.h>
-#include <dos/dos.h>
-#include <dos/dosextens.h>
 #include <cybergraphx/cybergraphics.h>
 }
+
+
 #include <stdio.h>
+#include <string>
 
 #include "mame.h"
 #include "driver.h"
 #include "osdepend.h"
 
 #include "main.h"
-#include "config_v37.h"
+#include "config_moo.h"
 #include "file.h"
 #include "audio.h"
 // from mame since 0.37:
 #include "input.h"
+
 
 //#include "zlib.h"
 

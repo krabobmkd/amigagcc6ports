@@ -28,7 +28,7 @@
 #include "driver.h"
 #include "osdepend.h"
 
-#include "config_v37.h"
+#include "config_moo.h"
 #include "video.h"
 #include "amiga_inputs.h"
 
@@ -43,23 +43,29 @@
 #define TRACE_LEAVE(f)
 #endif
 
+extern "C" {
 struct Library;
 struct ExecBase;
 struct DosLibrary;
 struct IntuitionBase;
+struct GfxBase;
+struct Device;
 
+#ifdef USE_OWN_DOSBASE
 extern struct ExecBase      *SysBase;
 extern struct DosLibrary    *DOSBase;
-extern struct Library       *GfxBase;
+#endif
+extern struct GfxBase       *GfxBase;
 extern struct Library       *CyberGfxBase;
 extern struct IntuitionBase *IntuitionBase;
 extern struct Library       *GadToolsBase;
 extern struct Library       *AslBase;
 extern struct Library       *KeymapBase;
-extern struct Library       *TimerBase;
+extern struct Device       *TimerBase;
 #ifdef POWERUP
 extern struct Library       *PPCLibBase;
 #endif
+}
 
 extern LONG                 Width;
 extern LONG                 Height;
