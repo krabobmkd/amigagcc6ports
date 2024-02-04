@@ -5,7 +5,7 @@ typedef unsigned InputCode;
 
 struct KeyboardInfo
 {
-	char *name; /* OS dependant name; 0 terminates the list */
+	const char *name; /* OS dependant name; 0 terminates the list */
 	unsigned code; /* OS dependant code */
 	InputCode standardcode;	/* CODE_xxx equivalent from list below, or CODE_OTHER if n/a */
 };

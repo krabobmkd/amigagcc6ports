@@ -27,7 +27,7 @@
 // for memcpy
 #include <string.h>
 #include <cstdlib>
-
+#include <stdio.h>
 
 
 struct DosLibrary;
@@ -50,10 +50,11 @@ int osd_faccess (const char *filename, int filetype)
 
 void *osd_fopen(const char *gamename,const char *filename,int filetype,int write)
 {
-  struct File *file;
-  std::string *zip_name=NULL;
+  printf("osd_fopen:type:%d:w:%d,%s:%s\n",(int)filetype,write,gamename,filename);
+  printf("ROMZipName:%s\n",ROMZipName.c_str());
 
-  file = NULL;
+  sFile *file=NULL;
+  std::string *zip_name=NULL;
 
   if(!write)
   {
@@ -64,18 +65,18 @@ void *osd_fopen(const char *gamename,const char *filename,int filetype,int write
 
     if(zip_name && !zip_name->empty() )
     {
-      file = (struct File *)calloc(sizeof(struct File), 1);
+      file = new sFile;
 
       if(file)
       {
         if(!load_zipped_file(zip_name->c_str(), filename, &file->Data, &file->Length))
         {
           file->Type  = FILETYPE_CUSTOM;
-          file->CRC = crc32(0, file->Data, file->Length);
+          file->CRC = crc32(0, file->Data,(uint32_t) file->Length);
         }
         else
         {
-          free(file);
+          delete file;
           file = NULL;
         }
       }
@@ -85,6 +86,12 @@ void *osd_fopen(const char *gamename,const char *filename,int filetype,int write
   if(!file)
   {
     file = OpenFileType(gamename, filename, write ? MODE_NEWFILE : MODE_OLDFILE, filetype);
+    // test
+    printf("OpenFileType:%08x\n",(int)file);
+    if(file)
+    {
+        printf("l:%d  crc:%08x\n",(int)file->Length,file->CRC );
+    }
 
     if(file && (file->Type == FILETYPE_ZIP))
     {
@@ -101,9 +108,7 @@ void *osd_fopen(const char *gamename,const char *filename,int filetype,int write
 
       if(load_zipped_file(zip_name->c_str(), filename, &file->Data, &file->Length))
       {
-        file->Data = NULL;
-        osd_fclose(file);
-
+        file->Data = NULL;  
         return(NULL);
       }
 
@@ -116,10 +121,10 @@ void *osd_fopen(const char *gamename,const char *filename,int filetype,int write
 
 int osd_fread(void *file_handle, void *buffer, int length)
 {
-  struct File *file;
+  struct sFile *file;
   LONG len;
 
-  file = (struct File *) file_handle;
+  file = (struct sFile *) file_handle;
 
   switch(file->Type)
   {
@@ -153,22 +158,22 @@ int osd_fread(void *file_handle, void *buffer, int length)
 
 void osd_fclose(void *file)
 {
-  if(((((struct File *) file)->Type == FILETYPE_ZIP) || (((struct File *) file)->Type == FILETYPE_CUSTOM)) && ((struct File *) file)->Data)
-    free(((struct File *) file)->Data);
+  if(((((struct sFile *) file)->Type == FILETYPE_ZIP) || (((struct sFile *) file)->Type == FILETYPE_CUSTOM)) && ((struct sFile *) file)->Data)
+    free(((struct sFile *) file)->Data);
 
-  if(((struct File *) file)->Type == FILETYPE_CUSTOM)
+  if(((struct sFile *) file)->Type == FILETYPE_CUSTOM)
     free(file);
   else
-    CloseFile((struct File *) file);
+    CloseFile((struct sFile *) file);
 }
 
 
 int osd_fwrite(void *void_file_p, const void *buffer_p, int length)
 {
-  struct File *file_p;
+  struct sFile *file_p;
   LONG rc;
 
-  file_p = (struct File *) void_file_p;
+  file_p = (struct sFile *) void_file_p;
 
   switch(file_p->Type)
   {
@@ -219,18 +224,18 @@ int osd_fseek(void *file, int position, int mode)
 {
   LONG  rc = 0;
 
-  if((((struct File *) file)->Type == FILETYPE_ZIP) || (((struct File *) file)->Type == FILETYPE_CUSTOM))
+  if((((struct sFile *) file)->Type == FILETYPE_ZIP) || (((struct sFile *) file)->Type == FILETYPE_CUSTOM))
   {
     switch(mode)
     {
       case SEEK_SET:
-        ((struct File *) file)->Offset = position;
+        ((struct sFile *) file)->Offset = position;
         break;
       case SEEK_CUR:
-        ((struct File *) file)->Offset += position;
+        ((struct sFile *) file)->Offset += position;
         break;
       case SEEK_END:
-        ((struct File *) file)->Offset = ((struct File *) file)->Length + position;
+        ((struct sFile *) file)->Offset = ((struct sFile *) file)->Length + position;
         break;
       default:
         return(-1);
@@ -241,13 +246,13 @@ int osd_fseek(void *file, int position, int mode)
     switch(mode)
     {
       case SEEK_SET:
-        rc = SeekFile(((struct File *) file)->File, position, OFFSET_BEGINNING);
+        rc = SeekFile(((struct sFile *) file)->File, position, OFFSET_BEGINNING);
         break;
       case SEEK_CUR:
-        rc = SeekFile(((struct File *) file)->File, position, OFFSET_CURRENT);
+        rc = SeekFile(((struct sFile *) file)->File, position, OFFSET_CURRENT);
         break;
       case SEEK_END:
-        rc = SeekFile(((struct File *) file)->File, position, OFFSET_END);
+        rc = SeekFile(((struct sFile *) file)->File, position, OFFSET_END);
         break;
       default:
         return(-1);
@@ -340,7 +345,7 @@ char *osd_fgets(char *s, int n, void *file)
 }
 int osd_feof(void *file)
 {
-  struct File *file_p = (struct File *) file;
+  struct sFile *file_p = (struct sFile *) file;
   if(!file_p) return 1;
   // cast bool to int.
   return (int)( (uint32_t)file_p->Offset >= (uint32_t)file_p->Length );
@@ -348,10 +353,103 @@ int osd_feof(void *file)
 // only used by mame datafile.cpp
 int osd_ftell(void *file)
 {
-    struct File *file_p = (struct File *) file;
+    struct sFile *file_p = (struct sFile *) file;
     if(!file_p) return -1;
     return (file_p->Offset);
 }
 
 
 
+int osd_fread_scatter(void *void_file_p, void *buffer_p, int length, int increment)
+{
+  struct sFile *file_p;
+  uint8_t buf[4096];
+  uint8_t *dst_p;
+  uint8_t *src_p;
+  int   remaining_len;
+  int   len;
+
+  file_p = (struct sFile *) void_file_p;
+  dst_p  = (uint8_t*)buffer_p;
+
+  switch(file_p->Type)
+  {
+    case FILETYPE_ZIP:
+    case FILETYPE_CUSTOM:
+      if(file_p->Data)
+      {
+        len = file_p->Length - file_p->Offset;
+
+        if(len > length)
+          len = length;
+
+        length = len;
+
+        src_p = &file_p->Data[file_p->Offset];
+
+        while(len--)
+        {
+          *dst_p = *src_p++;
+
+          dst_p += increment;
+        }
+
+        file_p->Offset += length;
+
+        return(length);
+      }
+
+      break;
+
+    case FILETYPE_NORMAL:
+    case FILETYPE_TMP:
+      remaining_len = length;
+
+      while(remaining_len)
+      {
+        if(remaining_len < sizeof(buf))
+          len = remaining_len;
+        else
+          len = sizeof(buf);
+
+        len = ReadFile(file_p->File, buf, len);
+
+        if(len == 0)
+          break;
+
+        remaining_len -= len;
+
+        src_p = buf;
+
+        while(len--)
+        {
+          *dst_p = *src_p++;
+
+          dst_p += increment;
+        }
+      }
+
+      length = length - remaining_len;
+
+      return(length);
+
+      break;
+  }
+
+  return(0);
+}
+int osd_fsize(void *file)
+{
+  if((((struct sFile *) file)->Type == FILETYPE_ZIP) || (((struct sFile *) file)->Type == FILETYPE_CUSTOM))
+    return(((struct sFile *) file)->Length);
+
+  return(0);
+}
+
+unsigned int osd_fcrc(void *file)
+{
+  if((((struct sFile *) file)->Type == FILETYPE_ZIP) || (((struct sFile *) file)->Type == FILETYPE_CUSTOM))
+    return(((struct sFile *) file)->CRC);
+
+  return(0);
+}

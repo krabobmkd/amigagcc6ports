@@ -25,14 +25,13 @@ extern "C" {
 
 #include <stdio.h>
 #include <string>
-
+#include <vector>
 #include "mame.h"
 #include "driver.h"
 #include "osdepend.h"
 
 #include "main.h"
 #include "config_moo.h"
-#include "file.h"
 #include "audio.h"
 // from mame since 0.37:
 #include "input.h"
@@ -97,15 +96,14 @@ extern int translucency;
 #ifndef ORIENTATION_DEFAULT
 #define ORIENTATION_DEFAULT 0
 #endif
+void unzip_cache_clear();
+void setRomPaths(std::vector<std::string> &extrarompaths,std::vector<std::string> &extrasamplepaths);
 
 void StartGame(void)
 {
-#ifdef MESS
-  int i;
-#endif
-
   throttle = 1;
 
+  printf("StartGame1\n");
     // consider evrything null by default.
     memset(&options, 0,sizeof(struct GameOptions));
 
@@ -207,6 +205,24 @@ void StartGame(void)
     options.cassette_name[i][0] = 0;
 #endif
 
+  // krb2024: set list of search path for rom
+  int path_num=0;
+  const char *path;
+  std::vector<std::string> rompathlist,samplepathlist;
+  for(path_num = 0;
+      (path = GetRomPath(Config[CFG_DRIVER], path_num)) != NULL;
+      path_num++)
+  {
+        if(*path != 0)
+        {
+            rompathlist.push_back(std::string(path));
+            printf("pathtotest:%s:\n",path);
+        }
+  }
+  setRomPaths(rompathlist,samplepathlist);
+
+
+  printf("StartGame2\n");
   /* Clear the zip filename caches. */
 
   ROMZipName.clear();
@@ -216,8 +232,12 @@ void StartGame(void)
   FrameCounter = 0;
 
   osd_set_mastervolume(0);
+  printf("before run_game\n");
 
   run_game(Config[CFG_DRIVER]);
+  printf("after run_game\n");
+
+  unzip_cache_clear();
 
   if(options.playback)
     osd_fclose(options.playback);
@@ -1087,89 +1107,6 @@ void osd_get_pen(int pen, unsigned char *r, unsigned char *g, unsigned char *b)
 }
 
 
-int osd_fchecksum (const char *game, const char *filename, unsigned int *length, unsigned int *sum)
-{
-  return(0);
-}
-
-int osd_fread_scatter(void *void_file_p, void *buffer_p, int length, int increment)
-{
-  struct File *file_p;
-  uint8_t buf[4096];
-  uint8_t *dst_p;
-  uint8_t *src_p;
-  int   remaining_len;
-  int   len;
-
-  file_p = (struct File *) void_file_p;
-  dst_p  = (uint8_t*)buffer_p;
-
-  switch(file_p->Type)
-  {
-    case FILETYPE_ZIP:
-    case FILETYPE_CUSTOM:
-      if(file_p->Data)
-      {
-        len = file_p->Length - file_p->Offset;
-
-        if(len > length)
-          len = length;
-
-        length = len;
-            
-        src_p = &file_p->Data[file_p->Offset];
-
-        while(len--)
-        {
-          *dst_p = *src_p++;
-          
-          dst_p += increment;
-        }
-    
-        file_p->Offset += length;
-
-        return(length);
-      }
-       
-      break;
-
-    case FILETYPE_NORMAL:
-    case FILETYPE_TMP:
-      remaining_len = length;
-    
-      while(remaining_len)
-      {      
-        if(remaining_len < sizeof(buf))
-          len = remaining_len;
-        else
-          len = sizeof(buf);
-
-        len = ReadFile(file_p->File, buf, len);
-
-        if(len == 0)
-          break;
-
-        remaining_len -= len;
-
-        src_p = buf;
-        
-        while(len--)
-        {
-          *dst_p = *src_p++;
-          
-          dst_p += increment;
-        }
-      }
-      
-      length = length - remaining_len;
-      
-      return(length);
-      
-      break;
-  }
-
-  return(0);
-}
 
 void osd_led_w(int led,int on)
 {
@@ -1749,6 +1686,7 @@ void osd_sound_enable(int enable)
   }
 }
 // this fonction takes the place of the mame source one in common.cpp:
+/*re, adapt to new file
 struct GameSamples *readsamples(const char **samplenames,const char *basename)
 {
   struct MameSample *mame_sample;
@@ -1785,15 +1723,15 @@ struct GameSamples *readsamples(const char **samplenames,const char *basename)
 
         for(i = 0; i < samples->total; i++)
         {
-          struct File *file;
+          struct sFile *file;
 
           if(samplenames[i+skipfirst][0])
           {
-            file = (struct File *)
+            file = (struct sFile *)
                     osd_fopen(basename,samplenames[i+skipfirst],OSD_FILETYPE_SAMPLE,0);
             
             if(!file && skipfirst)
-              file = (struct File *)
+              file = (struct sFile *)
                       osd_fopen(samplenames[0]+1,samplenames[i+skipfirst],OSD_FILETYPE_SAMPLE,0);
 
             if(file)
@@ -1827,15 +1765,8 @@ struct GameSamples *readsamples(const char **samplenames,const char *basename)
                   samples->sample[i]->smpfreq   = sound->Frequency;
                   samples->sample[i]->resolution  = 8;
                 }
-/*
-struct GameSample
-{
-	int length;
-	int smpfreq;
-	int resolution;
-	signed char data[1];	// extendable
-};
-*/
+
+
               }
 
               osd_fclose(file);
@@ -1850,7 +1781,7 @@ struct GameSample
   
   return(NULL);
 }
-
+*/
 int osd_skip_this_frame(void)
 {
   if(FrameCounter >= NoFrameSkipCount)
@@ -2019,21 +1950,7 @@ void osd_on_screen_display(const char *text,int percentage)
 #endif
 }
 
-int osd_fsize(void *file)
-{
-  if((((struct File *) file)->Type == FILETYPE_ZIP) || (((struct File *) file)->Type == FILETYPE_CUSTOM))
-    return(((struct File *) file)->Length);
 
-  return(0);
-}
-
-unsigned int osd_fcrc(void *file)
-{
-  if((((struct File *) file)->Type == FILETYPE_ZIP) || (((struct File *) file)->Type == FILETYPE_CUSTOM))
-    return(((struct File *) file)->CRC);
-
-  return(0);
-}
 
 void osd_set_gamma(float gamma)
 {

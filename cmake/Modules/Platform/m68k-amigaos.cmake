@@ -147,6 +147,8 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
 LIST(APPEND CMAKE_SYSTEM_INCLUDE_PATH
     "${M68KAMIGA_ROOT_PATH}/m68k-amigaos/ndk-include"
+	# allow best parsing of C++ types in qtcreator and ides, but else no need.
+	"${M68KAMIGA_ROOT_PATH}/lib/gcc/m68k-amigaos/6.5.0b/include/c++"
     "${M68KAMIGA_ROOT_PATH}/m68k-amigaos/include"
     )
 LIST(APPEND CMAKE_SYSTEM_LIBRARY_PATH

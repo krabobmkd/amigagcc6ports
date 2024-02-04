@@ -21,20 +21,21 @@ set(AMIGA_SRC
 	amiga037b_keyboard.cpp
 	amiga037b_joysticks.cpp
 	amiga037b_audiostream.cpp
-	amiga037b_filesystem.cpp
+#	amiga037b_filesystem.cpp
+	amiga037b_filesystem37.cpp
 	main.cpp
 #	romscan.cpp
 	gui_mui.cpp
 	gui_gadtools.cpp
 	config_moo.cpp
-	file.cpp
+#	file.cpp
 	audio.cpp
 	video.cpp
 	amiga_inputs.cpp
 	amiga_locale.cpp
 	main.h
 	config_moo.h
-	file.h
+#	file.h
 	audio.h
 	video.h
 	amiga_inputs.h
@@ -52,7 +53,7 @@ set(PROGNAME TriumphMame)
 add_executable(${PROGNAME} ${AMIGA_SRC} )
 set_property(TARGET ${PROGNAME} PROPERTY C_STANDARD 11)
 set_property(TARGET ${PROGNAME} PROPERTY CXX_STANDARD 11)
-target_compile_definitions(${PROGNAME} PUBLIC MAMEVERSION=37 )
+target_compile_definitions(${PROGNAME} PUBLIC MAMEVERSION=37 ZIP_CACHE=1 )
 
 # the static libs that are part of this repo: 
 target_link_libraries(${PROGNAME} PUBLIC mamecore z)

@@ -488,6 +488,8 @@ static void ScanDrivers(void)
         if(locks[j])
           UnLock(locks[j]);
       }
+      //KRB2024:
+      FreeDosObject(DOS_FIB,fib);
     }
 
     /* The code above searched in current dir, roms/ and any the rom path specified for

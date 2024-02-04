@@ -15,30 +15,70 @@
 
 #include <string>
 #include <stdint.h>
+#include <memory>
 #ifndef BPTR
 //from dos/dos.h
 typedef long  BPTR;
 #endif
 
-struct File
-{
-  BPTR          File;
-  int          Type;
-  std::string Name;
-  unsigned char *Data;
-  uint32_t      Length;
-  int           Offset;
-  unsigned int  CRC;
+class sFile {
+public:
+    sFile();
+    ~sFile();
+    BPTR          File;
+//    int          Type;
+    std::string Name;
+    unsigned char *Data;
+    uint32_t      Length;
+    int           Offset;
+    unsigned int  CRC;
+protected:
+    virtual void close();
 };
 
-#define FILETYPE_NORMAL 0
-#define FILETYPE_TMP    1
-#define FILETYPE_ZIP    2
-#define FILETYPE_CUSTOM 3
+class sFileNormal : public sFile
+{
+protected:
+    void close() override;
+};
+class sFileTmp : public sFile
+{
+protected:
+    void close() override;
+};
+class sFileZip : public sFile
+{
+protected:
+    void close() override;
+};
+class sFileCustom : public sFile
+{
+protected:
+    void close() override;
+};
+//struct sFile
+//{
+//  sFile();
+// ~sFile();
+//  BPTR          File;
+//  int          Type;
+//  std::string Name;
+//  unsigned char *Data;
+//  uint32_t      Length;
+//  int           Offset;
+//  unsigned int  CRC;
+//};
 
-struct File *OpenFile(const char *dir_name, const char *file_name, int mode);
-struct File *OpenFileType(const char *dir_name, const char *file_name, int mode, int filetype);
-void        CloseFile(struct File *file);
+//#define FILETYPE_NORMAL 0
+//#define FILETYPE_TMP    1
+//#define FILETYPE_ZIP    2
+//#define FILETYPE_CUSTOM 3
+
+// new / delete to this
+sFile *OpenFile(const char *dir_name, const char *file_name, int mode);
+sFile *OpenFileType(const char *dir_name, const char *file_name, int mode, int filetype);
+//done at destructor:
+void CloseFile(sFile *file);
 
 extern "C" {
 #ifdef POWERUP

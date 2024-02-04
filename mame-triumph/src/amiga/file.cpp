@@ -11,6 +11,7 @@
  *
  *************************************************************************/
 #include <sstream>
+#include <string>
 #include <stdio.h>
 
 #include <proto/exec.h>
@@ -22,27 +23,75 @@
 
 using namespace std;
 
-struct File *OpenFile(const char *dir_name, const char *file_name, int mode)
+sFile::sFile()
+    : File(0),Data(NULL),Length(0),Offset(0),CRC(0)
+{}
+sFile::~sFile()
 {
-  struct File *file;
+    close();
+    if(Type != FILETYPE_CUSTOM)
+    {
+        if(Data) free(Data);
+        if(File !=0 && Type != FILETYPE_ZIP)
+            Close(File);
+
+        if(Type == FILETYPE_TMP)
+          DeleteFile(Name.c_str());
+    }
+}
+void sFile::close()
+{
+
+}
+void sFileNormal::close()
+{
+
+}
+void sFileTmp::close()
+{
+
+}
+void sFileZip::close()
+{
+
+}
+void sFileCustom::close()
+{
+
+}
+
+
+sFile *OpenFile(const char *dir_name, const char *file_name, int mode)
+{
   BPTR    lock;
   LONG    i;
 
-  file = (struct File *)calloc(sizeof(struct File),1);
+
+  printf("OpenFile:mode:%d d:%s: f:%s:\n",mode,dir_name,file_name);
+ //olde file = (struct File *)calloc(sizeof(struct File),1);
+  sFile *file = new sFile;
   
-  if(file)
-  {
+  if(!file) return file;
+
+
     i = strlen(dir_name);
 
     if(i)
     {
+
        { stringstream ss;
         ss << dir_name << "/" <<file_name;
         file->Name = ss.str(); }
-
+        printf("try normal open:\n");
       file->File  = (BPTR)Open(file->Name.c_str(), mode);
       file->Type  = FILETYPE_NORMAL;
-      
+
+      if(file->File)
+      {
+         // normal open
+
+
+      } else
       if(!file->File && i && (mode == MODE_OLDFILE))
       {
          { stringstream ss;
@@ -50,7 +99,7 @@ struct File *OpenFile(const char *dir_name, const char *file_name, int mode)
           file->Name = ss.str();}
 
         lock = Lock(file->Name.c_str(), ACCESS_READ);
-  
+
         if(lock)
         {
           file->File  = ~0;
@@ -63,7 +112,7 @@ struct File *OpenFile(const char *dir_name, const char *file_name, int mode)
             file->Name = ss.str();}
 
           lock = Lock(file->Name.c_str(), ACCESS_READ);
-  
+
           if(lock)
           {
               stringstream ss;
@@ -78,7 +127,7 @@ struct File *OpenFile(const char *dir_name, const char *file_name, int mode)
             file->Name = ss.str();}
 
             lock = Lock(file->Name.c_str(), ACCESS_READ);
-  
+
             if(lock) {
                 stringstream ss;
                ss <<  "lzx <>NIL: x "<< dir_name<<".lha "<< file_name<<" T:";
@@ -90,12 +139,12 @@ struct File *OpenFile(const char *dir_name, const char *file_name, int mode)
           if(lock)
           {
             System(file->Name.c_str(), NULL);
-          
+
             { stringstream ss;
             ss << "T:"<<file_name ;
             file->Name = ss.str();}
           //  sprintf(file->Name,"T:%s", file_name);
-          
+
             file->File  = Open(file->Name.c_str(), mode);
             file->Type  = FILETYPE_TMP;
           }
@@ -107,30 +156,30 @@ struct File *OpenFile(const char *dir_name, const char *file_name, int mode)
     }
     else
     {
+      printf("no dir name open\n");
       file->File  = Open((STRPTR) file_name, mode);
       file->Type  = FILETYPE_NORMAL;
     }
-    
+
     if(!file->File)
     {
-      free(file);
+      delete file;
       return(NULL);
     }
-  }
 
   return(file);
 }
 
-struct File *OpenFileType(const char *dir_name, const char *file_name, int mode, int type)
+sFile *OpenFileType(const char *dir_name, const char *file_name, int mode, int type)
 {
-  struct File *file;
+  struct spFile *file;
   const char  *path;
-
-  char name[256];
+  std::string sname;
   int  path_len;
   int  path_num;
   BPTR lock;
 
+  printf("OpenFileType: mode:%d type:%d dir_name:%s file_name:%s\n",mode,type,dir_name,file_name);
   file = NULL;
 
   switch(type)
@@ -148,27 +197,21 @@ struct File *OpenFileType(const char *dir_name, const char *file_name, int mode,
         
         if(path_len)
         {
-          strcpy(name, path);
-
-          if((name[path_len - 1] != ':') && (name[path_len - 1] != '/'))
-            name[path_len++] = '/';
-
-          sprintf(&name[path_len], "%s", dir_name);
-
-          file = OpenFile(name, file_name, mode);
-        
-          if(!file)
-          {
-            name[path_len] = 0;
-            file = OpenFile(name, file_name, mode);
-          }
+            stringstream ss;
+            ss << path;
+            if((path[path_len - 1] != ':') && (path[path_len - 1] != '/')) ss << "/";
+            ss << dir_name;
+            string romgamepath = ss.str();
+          file = OpenFile(romgamepath.c_str(), file_name, mode);
         }
+        if(file) break;
       }
 
       if(!file)
       {
-        sprintf(name, "roms/%s", dir_name);
-        file = OpenFile(name, file_name, mode);
+        stringstream ss;
+        ss << "roms/" << dir_name;
+        file = OpenFile(ss.str().c_str(), file_name, mode);
       }
 
       if(!file)
@@ -185,59 +228,48 @@ struct File *OpenFileType(const char *dir_name, const char *file_name, int mode,
         
         if(path_len)
         {
-          strcpy(name, path);
+            stringstream ss;
+            ss << path;
+            if((path[path_len - 1] != ':') && (path[path_len - 1] != '/')) ss << "/";
+            ss << dir_name;
+            string rompath = ss.str();
 
-          if((name[path_len - 1] != ':') && (name[path_len - 1] != '/'))
-            name[path_len++] = '/';
-
-          sprintf(&name[path_len], "%s", dir_name);
-
-          file = OpenFile(name, file_name, mode);
-        
-          if(!file)
-          {
-            name[path_len] = 0;
-            file = OpenFile(name, file_name, mode);
-          }
+              file = OpenFile(rompath.c_str(), file_name, mode);
         }
+        if(file) break;
       }
 
       if(!file)
       {
-        sprintf(name, "samples/%s", dir_name);
-        file = OpenFile(name, file_name, mode);
+        stringstream ss;
+        ss << "samples/" << dir_name;
+        file = OpenFile(ss.str().c_str(), file_name, mode);
       }
-
+      // also look in rom
+    if(!file)
       for(path_num = 0;
-          (path = GetRomPath(Config[CFG_DRIVER], path_num));
+          (path = GetRomPath(Config[CFG_DRIVER], path_num)) != NULL;
           path_num++)
       {
         path_len = strlen(path);
-        
+
         if(path_len)
         {
-          strcpy(name, path);
-
-          if((name[path_len - 1] != ':') && (name[path_len - 1] != '/'))
-            name[path_len++] = '/';
-
-          sprintf(&name[path_len], "%s", dir_name);
-
-          file = OpenFile(name, file_name, mode);
-        
-          if(!file)
-          {
-            name[path_len] = 0;
-            file = OpenFile(name, file_name, mode);
-          }
+            stringstream ss;
+            ss << path;
+            if((path[path_len - 1] != ':') && (path[path_len - 1] != '/')) ss << "/";
+            ss << dir_name;
+            string romgamepath = ss.str();
+          file = OpenFile(romgamepath.c_str(), file_name, mode);
         }
+        if(file) break;
       }
-
-      if(!file)
-      {
-        sprintf(name, "roms/%s", dir_name);
-        file = OpenFile(name, file_name, mode);
-      }
+    if(!file)
+    {
+      stringstream ss;
+      ss << "roms/" << dir_name;
+      file = OpenFile(ss.str().c_str(), file_name, mode);
+    }
 
       if(!file)
         file = OpenFile(dir_name, file_name, mode);
@@ -261,9 +293,11 @@ struct File *OpenFileType(const char *dir_name, const char *file_name, int mode,
         if(lock)
           UnLock(lock);       
       }
-      sprintf(name, "%s.hi", dir_name);
-      return(OpenFile("hi", name, mode));
-
+    {
+      stringstream ss;
+      ss << dir_name << ".hi";
+      return(OpenFile("hi", ss.str().c_str(), mode));
+    }
     case OSD_FILETYPE_CONFIG:
       if(mode == MODE_NEWFILE)
       {
@@ -275,29 +309,25 @@ struct File *OpenFileType(const char *dir_name, const char *file_name, int mode,
         if(lock)
           UnLock(lock);
       }
-      sprintf(name, "%s.cfg", dir_name);
-      return(OpenFile("cfg", name, mode));
+      {
+        stringstream ss;
+        ss << dir_name << ".cfg";
+        return(OpenFile("cfg", ss.str().c_str(), mode));
+      }
 
     case OSD_FILETYPE_INPUTLOG:
-      sprintf(name, "%s.inp", file_name);
-      return(OpenFile("", name, mode));
-
+      {
+        stringstream ss;
+        ss << file_name << ".inp";
+        return(OpenFile("", ss.str().c_str(), mode));
+      }
     default:
       return(NULL);
   }
 }
 
-void CloseFile(struct File *file)
+void CloseFile(sFile *file)
 {
-    if(!file) return;
-  if(file->Type != FILETYPE_CUSTOM)
-  {
-    if(file->Type != FILETYPE_ZIP)
-      Close(file->File);
-  
-    if(file->Type == FILETYPE_TMP)
-      DeleteFile(file->Name.c_str());
-  
-    free(file);
-  }
+    delete file;
+
 }

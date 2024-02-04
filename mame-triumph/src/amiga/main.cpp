@@ -229,6 +229,7 @@ int libs_init()
     return(0);
 }
 
+void unzip_cache_clear();
 
 // exit code that is executed in all cases:
 // - after main()
@@ -236,6 +237,12 @@ int libs_init()
 // - SIGTERM signal (->to be managed)
 void main_close()
 {
+    unzip_cache_clear();
+    if(Audio)
+    {
+      FreeAudio(Audio);
+      Audio = NULL;
+    }
     printf("does main_close\n");
     if(TimerIO)
     {
@@ -351,11 +358,14 @@ int main(int argc, char **argv)
       }
     }
 
+
     StartGame();
 
     if(Audio)
+    {
       FreeAudio(Audio);
-
+      Audio = NULL;
+    }
     if(NewGame > 0)
       quit = MainGUI();
     else if(!NewGame)

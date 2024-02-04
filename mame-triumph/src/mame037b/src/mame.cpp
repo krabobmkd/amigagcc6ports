@@ -3,6 +3,9 @@
 #include "driver.h"
 #include "ui_text.h" /* LBO 042400 */
 #include "artwork.h"
+
+
+#include <stdio.h>
 #ifdef __ODX__
 // krb note: this is for arm optimisations
 #include "port_wrapper.h"
@@ -45,13 +48,23 @@ int run_game(int game)
 {    
 	int err;
 
+      printf("inside run_game\n");
 	/* copy some settings into easier-to-handle variables */
 	record     = options.record;
 	playback   = options.playback;
 	mame_debug = options.mame_debug;
 
 	Machine->gamedrv = gamedrv = drivers[game];
+
+    printf("driver:%08x\n",(int)gamedrv);
+
+    if(!gamedrv) return 1;
+
 	Machine->drv = drv = gamedrv->drv;
+
+
+    printf("drv:%08x\n",(int)drv);
+
 
 	/* copy configuration */
 	if (options.color_depth == 16 ||
@@ -126,11 +139,18 @@ int run_game(int game)
 		return err;
 	#endif
 
+
+    printf("before osd_init\n");
+
 	if (osd_init() == 0)
 	{
+
+    printf("before init_machine\n");
 		if (init_machine() == 0)
 		{
-		
+            //test
+          // return 1;
+    printf("before run_machine\n");
 			if (run_machine() == 0)
 				err = 0;
 			else if (!bailing)
@@ -168,6 +188,7 @@ int run_game(int game)
 ***************************************************************************/
 int init_machine(void)
 {
+    printf("inside init_machine\n");
 	int i;
 
 	/* LBO 042400 start */
@@ -198,6 +219,9 @@ int init_machine(void)
 			goto out_code;
 		}
 	}
+
+    // ok here
+    //return 1;
 
     #ifdef MESS
 	if (!gamedrv->rom)
