@@ -531,14 +531,14 @@ LONG VideoOpen(LONG width, LONG height, LONG left, LONG top, LONG right, LONG bo
                                               ? IPT_NONE
                                               : Config[CFG_JOY1TYPE],
                       //TODO: to be replaced     IA_KeyMap,         (ULONG) KeyMap,
-                           IA_P1AutoFireRate, (Config[CFG_JOY1TYPE] == CFGJ1_MOUSE1)
-                                              ? Config[CFG_JOY1AUTOFIRERATE]
-                                              : Config[CFG_JOY2AUTOFIRERATE],
-                           IA_P1BlueEmuTime,  (Config[CFG_JOY1TYPE] == CFGJ1_MOUSE1)
-                                              ? Config[CFG_JOY1BUTTONBTIME]
-                                              : Config[CFG_JOY2BUTTONBTIME],
-                           IA_P2AutoFireRate, Config[CFG_JOY1AUTOFIRERATE],
-                           IA_P2BlueEmuTime,  Config[CFG_JOY1BUTTONBTIME],
+//                           IA_P1AutoFireRate, (Config[CFG_JOY1TYPE] == CFGJ1_MOUSE1)
+//                                              ? Config[CFG_JOY1AUTOFIRERATE]
+//                                              : Config[CFG_JOY2AUTOFIRERATE],
+//                           IA_P1BlueEmuTime,  (Config[CFG_JOY1TYPE] == CFGJ1_MOUSE1)
+//                                              ? Config[CFG_JOY1BUTTONBTIME]
+//                                              : Config[CFG_JOY2BUTTONBTIME],
+//                           IA_P2AutoFireRate, Config[CFG_JOY1AUTOFIRERATE],
+//                           IA_P2BlueEmuTime,  Config[CFG_JOY1BUTTONBTIME],
                            IA_Window,         Video->Window,
                            IA_RefreshHook,    (ULONG) &RefreshHook,
                            IA_MenuHook,       (ULONG) &MenuHook,

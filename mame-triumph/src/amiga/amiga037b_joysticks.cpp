@@ -28,6 +28,9 @@
 #include "audio.h"
 // from mame since 0.37:
 #include "input.h"
+
+#include <vector>
+
 // implement parts of osdepend.h
 /******************************************************************************
 
@@ -35,14 +38,45 @@
 
 ******************************************************************************/
 
-struct JoystickInfo joyinfo[4];
 /*
   return a list of all available joystick inputs (see input.h)
 */
 const struct JoystickInfo *osd_get_joy_list(void)
-{
+{   /*
+    struct JoystickInfo
+    {
+        char *name;  OS dependant name; 0 terminates the list
+        unsigned code;  OS dependant code
+        InputCode standardcode;	/CODE_xxx equivalent from list below, or CODE_OTHER if n/a
+    };*/
+    /*
+    	JOYCODE_1_LEFT,JOYCODE_1_RIGHT,JOYCODE_1_UP,JOYCODE_1_DOWN,
+	JOYCODE_1_BUTTON1,JOYCODE_1_BUTTON2,JOYCODE_1_BUTTON3,
+	JOYCODE_1_BUTTON4,JOYCODE_1_BUTTON5,JOYCODE_1_BUTTON6,
+    */
+    static bool listinited=false;
+    static vector<JoystickInfo> joyinfo;
+    if(!listinited)
+    {
+        listinited = true;
+        for(int j=0;j<4;j++)
+        {
+            vector<JoystickInfo> ji=
+            {
+
+            }
 
 
+
+            joyinfo.insert(joyinfo.end(),ji.begin(),ji.end());
+        }
+
+
+        // terminate list
+        joyinfo.push_back({NULL,0,0});
+    }
+
+    return joyinfo.data();
 }
 
 /*
@@ -53,7 +87,7 @@ const struct JoystickInfo *osd_get_joy_list(void)
 int osd_is_joy_pressed(int joycode)
 {
 
-
+    return 0;
 }
 
 /* We support 4 players for each analog control */

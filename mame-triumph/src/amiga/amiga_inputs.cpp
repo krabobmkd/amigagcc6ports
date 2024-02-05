@@ -39,7 +39,6 @@ extern "C" {
 } // end extern c
 #include <macros.h>
 
-#define INPUTS_PRIVATE
 #include "amiga_inputs.h"
 
 extern struct IntuitionBase *IntuitionBase;
@@ -80,37 +79,27 @@ void IUpdateKeys(struct Inputs *inputs);
 struct Inputs *AllocInputs(Tag tags,...)
 {
   struct Inputs *inputs;
-  struct IKeyMap  *keymap;
+//  struct IKeyMap  *keymap;
   struct TagItem  *tag, *tstate;
   UBYTE     buf[2];
-  LONG      i, t;
+  LONG      i, ttv;
   int       use_ticks;
 
-  if((inputs = (struct Inputs *) AllocVec(sizeof(struct Inputs), MEMF_CLEAR)))
-  {
-    tag = FindTagItem(IA_KeyMap, (struct TagItem *) &tags);
+ printf("AllocInputs()\n");
 
-    if(tag)
-      keymap  = (struct IKeyMap *) tag->ti_Data;
-    else
-      keymap  = NULL;
 
-    t = 0;
+    inputs = (struct Inputs *) AllocVec(sizeof(struct Inputs), MEMF_CLEAR);
+    if(!inputs) return NULL;
 
-    if(keymap)
-    {
-      for(i = 0, t = 0; keymap[i].Key; i++)
-      {
-        if(keymap[i].Key > t)
-          t = keymap[i].Key;
-      }
-    }
+//    tag = FindTagItem(IA_KeyMap, (struct TagItem *) &tags);
+//    if(tag)
+//      keymap  = (struct IKeyMap *) tag->ti_Data;
+//    else
+//      keymap  = NULL;
 
-    inputs->Ports[0]  = (struct IPort *) memAlloc(2*sizeof(struct IPort)+t+1);
 
-    if(inputs->Ports[0])
-    {
-      inputs->Ports[1]  = &inputs->Ports[0][1];
+//    inputs->Ports[0]  = (struct IPort *) memAlloc(2*sizeof(struct IPort)+ttv+1);
+//      inputs->Ports[1]  = &inputs->Ports[0][1];
 
       inputs->LowLevelBase  = OpenLibrary("lowlevel.library", 0);
 
@@ -122,27 +111,33 @@ struct Inputs *AllocInputs(Tag tags,...)
         switch(tag->ti_Tag)
         {
           case IA_Port1:
-            inputs->Ports[0]->Type  = tag->ti_Data;
+            inputs->Ports[0].Type  = tag->ti_Data;
             break;
           case IA_Port2:
-            inputs->Ports[1]->Type  = tag->ti_Data;
+            inputs->Ports[1].Type  = tag->ti_Data;
             break;
-          case IA_P1AutoFireRate:
-            if(tag->ti_Data)
-              inputs->Ports[0]->AutoFireTime  = 500000 / tag->ti_Data;
+          case IA_Port3:
+            inputs->Ports[2].Type  = tag->ti_Data;
             break;
-          case IA_P2AutoFireRate:
-            if(tag->ti_Data)
-              inputs->Ports[1]->AutoFireTime  = 500000 / tag->ti_Data;
+          case IA_Port4:
+            inputs->Ports[3].Type  = tag->ti_Data;
             break;
-          case IA_P1BlueEmuTime:
-            if(tag->ti_Data)
-              inputs->Ports[0]->BlueEmuTime = 100000 * tag->ti_Data;
-            break;
-          case IA_P2BlueEmuTime:
-            if(tag->ti_Data)
-              inputs->Ports[1]->BlueEmuTime = 100000 * tag->ti_Data;
-            break;
+//          case IA_AutoFireRate:
+//            if(tag->ti_Data)
+//              inputs->Ports[0].AutoFireTime  = 500000 / tag->ti_Data;
+//            break;
+//          case IA_AutoFireRate:
+//            if(tag->ti_Data)
+//              inputs->Ports[1].AutoFireTime  = 500000 / tag->ti_Data;
+//            break;
+//          case IA_P1BlueEmuTime:
+//            if(tag->ti_Data)
+//              inputs->Ports[0].BlueEmuTime = 100000 * tag->ti_Data;
+//            break;
+//          case IA_P2BlueEmuTime:
+//            if(tag->ti_Data)
+//              inputs->Ports[1].BlueEmuTime = 100000 * tag->ti_Data;
+//            break;
           case IA_Window:
             inputs->Window  = (struct Window *) tag->ti_Data;
             break;
@@ -194,7 +189,7 @@ struct Inputs *AllocInputs(Tag tags,...)
           ModifyIDCMP(inputs->Window, inputs->Window->IDCMPFlags|IDCMP_RAWKEY);
       }
 
-      if(inputs->Ports[0]->Type)
+      if(inputs->Ports[0].Type)
       {
         if(!OpenDevice("input.device", NULL, (struct IORequest *) &inputs->InputRequest, NULL))
         {
@@ -210,35 +205,37 @@ struct Inputs *AllocInputs(Tag tags,...)
         IAllocPort(inputs, 0);
       }
 
-      if(inputs->Ports[1]->Type)
+      if(inputs->Ports[1].Type)
         IAllocPort(inputs, 1);
 
       if(inputs->Window)
         inputs->SignalMask  = 1<<inputs->Window->UserPort->mp_SigBit;
 
-      if(inputs->Ports[0] && inputs->Ports[0]->MsgPort)
-        inputs->SignalMask  |= 1<<inputs->Ports[0]->MsgPort->mp_SigBit;
+      if( inputs->Ports[0].MsgPort)
+        inputs->SignalMask  |= 1<<inputs->Ports[0].MsgPort->mp_SigBit;
 
-      if(inputs->Ports[1] && inputs->Ports[1]->MsgPort)
-        inputs->SignalMask  |= 1<<inputs->Ports[1]->MsgPort->mp_SigBit;
+      if(inputs->Ports[1] && inputs->Ports[1].MsgPort)
+        inputs->SignalMask  |= 1<<inputs->Ports[1].MsgPort->mp_SigBit;
 
       inputs->Enabled = TRUE;
 
       return(inputs);
-    }
 
-    FreeVec(inputs);
-  }
 
-  return(NULL);
+
+
 }
 
 void FreeInputs(struct Inputs *inputs)
 {
-  if(inputs->Ports[0]->Type)
+  if(inputs->Ports[0].Type)
     IFreePort(inputs, 0);
 
-  if(inputs->Ports[1]->Type)
+  if(inputs->Ports[1].Type)
+    IFreePort(inputs, 1);
+
+
+  if(inputs->Ports[1].Type)
     IFreePort(inputs, 1);
 
   if(inputs->LowLevelBase)
@@ -263,7 +260,7 @@ void FreeInputs(struct Inputs *inputs)
 
 void IEnable(struct Inputs *inputs)
 {
-  if(!inputs->Enabled && inputs->Ports[0]->Type)
+  if(!inputs->Enabled && inputs->Ports[0].Type)
   {
     BYTE dummyport = 2;
 
@@ -281,7 +278,7 @@ void IEnable(struct Inputs *inputs)
 
 void IDisable(struct Inputs *inputs)
 {
-  if(inputs->Enabled && inputs->Ports[0]->Type)
+  if(inputs->Enabled && inputs->Ports[0].Type)
   {
     BYTE dummyport = 0;
 
@@ -302,10 +299,10 @@ void IUpdate(struct Inputs *inputs)
   if(inputs->Keys && inputs->Window)
     IUpdateKeys(inputs);
 
-  if(inputs->Ports[0]->Type)
+  if(inputs->Ports[0].Type)
     IUpdatePort(inputs, 0);
 
-  if(inputs->Ports[1]->Type)
+  if(inputs->Ports[1].Type)
     IUpdatePort(inputs, 1);
 }
 

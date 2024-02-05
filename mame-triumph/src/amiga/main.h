@@ -77,8 +77,8 @@ extern struct VPixelArray   *PixelArray[2];
 extern struct VDirectArray  *DirectArray;
 extern LONG                 CurrentArray;
 extern BYTE                 *Keys;
-extern struct IPort         *Port1;
-extern struct IPort         *Port2;
+//extern struct IPort         *Port1;
+//extern struct IPort         *Port2;
 
 LONG  VideoOpen(LONG width, LONG height, LONG left, LONG top, LONG right, LONG bottom, LONG dirty);
 void  VideoClose(void);

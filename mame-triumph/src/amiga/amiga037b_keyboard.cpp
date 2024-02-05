@@ -68,9 +68,21 @@ const struct KeyboardInfo *osd_get_key_list(void)
             {"F9",0x58,KEYCODE_F9},
             {"F10",0x59,KEYCODE_F10},
 
+            {"~",0x00,KEYCODE_TILDE},
+            {"1",0x01,CODE_OTHER},
+            {"2",0x02,CODE_OTHER},
+            {"3",0x03,CODE_OTHER},
+            {"4",0x04,CODE_OTHER},
+            {"5",0x05,CODE_OTHER},
+            {"6",0x06,CODE_OTHER},
+            {"7",0x07,CODE_OTHER},
+            {"8",0x08,CODE_OTHER},
+            {"9",0x09,CODE_OTHER},
+            {"0",0x0A,CODE_OTHER},
+
             {"BACKSPACE",0x41,KEYCODE_BACKSPACE},
             {"DEL",0x46,KEYCODE_DEL},
-            {"HELP",0x5F,KEYCODE_HOME},
+            {"HELP",0x5F,KEYCODE_HOME}, // ... dunno.
 
             {"TAB",0x42,KEYCODE_TAB},
 
@@ -91,6 +103,11 @@ const struct KeyboardInfo *osd_get_key_list(void)
             {"ENTER",0x44,KEYCODE_ENTER},
 
             // whole amiga pad
+            {"[ PAD", 0x5A, KEYCODE_OPENBRACE },
+            {"] PAD", 0x5B, KEYCODE_CLOSEBRACE },
+            {"/ PAD",0x5C,KEYCODE_SLASH_PAD},
+            {"* PAD",0x5D,KEYCODE_ASTERISK},
+
             {"0PAD",0x0F,KEYCODE_0_PAD},
             {"1PAD",0x1D,KEYCODE_1_PAD},
             {"2PAD DOWN",0x1E,KEYCODE_2_PAD},
@@ -103,10 +120,10 @@ const struct KeyboardInfo *osd_get_key_list(void)
             {"9PAD",0x3F,KEYCODE_9_PAD},
             {"- PAD",0x4A,KEYCODE_MINUS_PAD},
             {"+ PAD",0x5E,KEYCODE_PLUS_PAD},
-            {"* PAD",0x5E,KEYCODE_ASTERISK},
-            {"/ PAD",0x5E,KEYCODE_SLASH_PAD},
-            // is missing '.'
+            // is missing keypad '.'
+            {". PAD",0x3C,CODE_OTHER},
             {"ENTER PAD",0x43,KEYCODE_ENTER_PAD}
+
         };
 
 

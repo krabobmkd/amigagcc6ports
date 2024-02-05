@@ -17,6 +17,8 @@
 extern "C" {
 #include <exec/types.h>
 #include <utility/tagitem.h>
+#include <devices/inputevent.h>
+#include <devices/gameport.h>
 }
 #define IKEY_RAW    0x1000
 #define IKEY_RAWMASK  0x7f
@@ -55,11 +57,12 @@ extern "C" {
 #define IKEY_PLUS_PAD  (IKEY_RAW|0x5e)
 #define IKEY_DEL       (IKEY_RAW|0x46)
 
-struct IKeyMap
-{
-  ULONG Code;
-  ULONG Key;
-};
+//olde
+//struct IKeyMap
+//{
+//  ULONG Code;
+//  ULONG Key;
+//};
 
 struct IPort
 {
@@ -91,7 +94,7 @@ struct IPort
     } Mouse;
   } Move;
 
-#ifdef INPUTS_PRIVATE
+    // - - - -  -private
   LONG  RealRed;
 
   ULONG AutoFireTime;
@@ -111,16 +114,18 @@ struct IPort
   UBYTE OldType;
 
   BYTE Enabled;
-#endif
+
 };
 
 struct Inputs
 {
   ULONG        SignalMask;
-  struct IPort *Ports[2];
-  BYTE         *Keys;
+  //struct IPort *Ports[4];
+  struct    IPort Ports[4];
 
-#ifdef INPUTS_PRIVATE
+  BYTE         Keys[128];
+
+    // - - - - -private
   struct Library  *LowLevelBase;
   struct Window   *Window;
   struct Hook     *RefreshHook;
@@ -130,7 +135,7 @@ struct Inputs
   struct IOStdReq InputRequest;
 
   BYTE      Enabled;
-#endif
+
 };
 
 #define IPT_NONE     0
@@ -140,16 +145,18 @@ struct Inputs
 
 #define IA_Port1          (TAG_USER)
 #define IA_Port2          (TAG_USER+1)
-#define IA_KeyMap         (TAG_USER+2)
-#define IA_P1AutoFireRate (TAG_USER+3)
-#define IA_P2AutoFireRate (TAG_USER+4)
-#define IA_P1BlueEmuTime  (TAG_USER+5)
-#define IA_P2BlueEmuTime  (TAG_USER+6)
-#define IA_Window         (TAG_USER+7)
-#define IA_RefreshHook    (TAG_USER+8)
-#define IA_MenuHook       (TAG_USER+9)
-#define IA_UseTicks       (TAG_USER+10)
-#define IA_IDCMPHook      (TAG_USER+11)
+#define IA_Port3          (TAG_USER+2)
+#define IA_Port4          (TAG_USER+3)
+//olde #define IA_KeyMap         (TAG_USER+4)
+#define IA_AutoFireRate (TAG_USER+5)
+//#define IA_P2AutoFireRate (TAG_USER+6)
+#define IA_BlueEmuTime  (TAG_USER+7)
+//#define IA_P2BlueEmuTime  (TAG_USER+8)
+#define IA_Window         (TAG_USER+9)
+#define IA_RefreshHook    (TAG_USER+10)
+#define IA_MenuHook       (TAG_USER+11)
+#define IA_UseTicks       (TAG_USER+12)
+#define IA_IDCMPHook      (TAG_USER+13)
 
 struct Inputs *AllocInputs(Tag tags,...);
 void FreeInputs(struct Inputs *inputs);
