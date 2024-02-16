@@ -11,12 +11,15 @@
  *
  *************************************************************************/
 
-#include <stdio.h>
 
+extern "C" {
 #include <exec/types.h>
 #include <exec/memory.h>
 //#include <dos/dos.h>
 #include <dos/dosextens.h>
+#include <libraries/lowlevel.h>
+}
+
 
 #include "mame.h"
 #include "driver.h"
@@ -29,8 +32,12 @@
 // from mame since 0.37:
 #include "input.h"
 
+#include <stdio.h>
 #include <vector>
+#include <string>
+#include <sstream>
 
+using namespace std;
 // implement parts of osdepend.h
 /******************************************************************************
 
@@ -54,20 +61,150 @@ const struct JoystickInfo *osd_get_joy_list(void)
 	JOYCODE_1_BUTTON1,JOYCODE_1_BUTTON2,JOYCODE_1_BUTTON3,
 	JOYCODE_1_BUTTON4,JOYCODE_1_BUTTON5,JOYCODE_1_BUTTON6,
     */
+
+    /* lewlevel
+    /* Port types
+#define JP_TYPE_NOTAVAIL  (00<<28)	  /* port data unavailable
+#define JP_TYPE_GAMECTLR  (01<<28)	  /* port has game controller
+#define JP_TYPE_MOUSE	  (02<<28)	  /* port has mouse
+#define JP_TYPE_JOYSTK	  (03<<28)	  /* port has joystick
+#define JP_TYPE_UNKNOWN   (04<<28)	  /* port has unknown device
+#define JP_TYPE_MASK	  (15<<28)	  /* controller type
+
+/* Button types, valid for all types except JP_TYPE_NOTAVAIL
+#define JPB_BUTTON_BLUE    23	  /* Blue - Stop; Right Mouse
+#define JPB_BUTTON_RED	   22	  /* Red - Select; Left Mouse; Joystick Fire
+#define JPB_BUTTON_YELLOW  21	  /* Yellow - Repeat
+#define JPB_BUTTON_GREEN   20	  /* Green - Shuffle
+#define JPB_BUTTON_FORWARD 19	  /* Charcoal - Forward
+#define JPB_BUTTON_REVERSE 18	  /* Charcoal - Reverse
+#define JPB_BUTTON_PLAY    17	  /* Grey - Play/Pause; Middle Mouse
+#define JPF_BUTTON_BLUE    (1<<JPB_BUTTON_BLUE)
+#define JPF_BUTTON_RED	   (1<<JPB_BUTTON_RED)
+#define JPF_BUTTON_YELLOW  (1<<JPB_BUTTON_YELLOW)
+#define JPF_BUTTON_GREEN   (1<<JPB_BUTTON_GREEN)
+#define JPF_BUTTON_FORWARD (1<<JPB_BUTTON_FORWARD)
+#define JPF_BUTTON_REVERSE (1<<JPB_BUTTON_REVERSE)
+#define JPF_BUTTON_PLAY    (1<<JPB_BUTTON_PLAY)
+#define JP_BUTTON_MASK	   (JPF_BUTTON_BLUE|JPF_BUTTON_RED|JPF_BUTTON_YELLOW|JPF_BUTTON_GREEN|JPF_BUTTON_FORWARD|JPF_BUTTON_REVERSE|JPF_BUTTON_PLAY)
+
+
+rawkey mode ?
+
+#define RAWKEY_PORT0_BUTTON_BLUE	0x72
+#define RAWKEY_PORT0_BUTTON_RED	0x78
+#define RAWKEY_PORT0_BUTTON_YELLOW	0x77
+#define RAWKEY_PORT0_BUTTON_GREEN	0x76
+#define RAWKEY_PORT0_BUTTON_FORWARD	0x75
+#define RAWKEY_PORT0_BUTTON_REVERSE	0x74
+#define RAWKEY_PORT0_BUTTON_PLAY	0x73
+#define RAWKEY_PORT0_JOY_UP		0x79
+#define RAWKEY_PORT0_JOY_DOWN		0x7A
+#define RAWKEY_PORT0_JOY_LEFT		0x7C
+#define RAWKEY_PORT0_JOY_RIGHT		0x7B
+
+#define RAWKEY_PORT1_BUTTON_BLUE	0x172
+#define RAWKEY_PORT1_BUTTON_RED	0x178
+#define RAWKEY_PORT1_BUTTON_YELLOW	0x177
+#define RAWKEY_PORT1_BUTTON_GREEN	0x176
+#define RAWKEY_PORT1_BUTTON_FORWARD	0x175
+#define RAWKEY_PORT1_BUTTON_REVERSE	0x174
+#define RAWKEY_PORT1_BUTTON_PLAY	0x173
+#define RAWKEY_PORT1_JOY_UP		0x179
+#define RAWKEY_PORT1_JOY_DOWN		0x17A
+#define RAWKEY_PORT1_JOY_LEFT		0x17C
+#define RAWKEY_PORT1_JOY_RIGHT		0x17B
+
+#define RAWKEY_PORT2_BUTTON_BLUE	0x272
+#define RAWKEY_PORT2_BUTTON_RED	0x278
+#define RAWKEY_PORT2_BUTTON_YELLOW	0x277
+#define RAWKEY_PORT2_BUTTON_GREEN	0x276
+#define RAWKEY_PORT2_BUTTON_FORWARD	0x275
+#define RAWKEY_PORT2_BUTTON_REVERSE	0x274
+#define RAWKEY_PORT2_BUTTON_PLAY	0x273
+#define RAWKEY_PORT2_JOY_UP		0x279
+#define RAWKEY_PORT2_JOY_DOWN		0x27A
+#define RAWKEY_PORT2_JOY_LEFT		0x27C
+#define RAWKEY_PORT2_JOY_RIGHT		0x27B
+
+#define RAWKEY_PORT3_BUTTON_BLUE	0x372
+#define RAWKEY_PORT3_BUTTON_RED	0x378
+#define RAWKEY_PORT3_BUTTON_YELLOW	0x377
+#define RAWKEY_PORT3_BUTTON_GREEN	0x376
+#define RAWKEY_PORT3_BUTTON_FORWARD	0x375
+#define RAWKEY_PORT3_BUTTON_REVERSE	0x374
+#define RAWKEY_PORT3_BUTTON_PLAY	0x373
+#define RAWKEY_PORT3_JOY_UP		0x379
+#define RAWKEY_PORT3_JOY_DOWN		0x37A
+#define RAWKEY_PORT3_JOY_LEFT		0x37C
+#define RAWKEY_PORT3_JOY_RIGHT		0x37B
+
+
+
+    */
     static bool listinited=false;
-    static vector<JoystickInfo> joyinfo;
+    static std::vector<JoystickInfo> joyinfo;
+    static std::vector<string> stringtable;
     if(!listinited)
-    {
+    {    
         listinited = true;
+        stringtable.clear();
+        joyinfo.clear();
+
+        size_t stringtable_i = 0;
         for(int j=0;j<4;j++)
         {
-            vector<JoystickInfo> ji=
+            stringstream ss;
+            ss  << "JOYPAD"<< (j+1);
+            string sjp = ss.str();
+
+            // CD32 joypad names
+           // create string names for joypad buttons
+           // equivalent of mame enum order, with amiga lowlevel names.
+           size_t ijoystr = stringtable.size();
+           stringtable.push_back(sjp + " LEFT");
+           stringtable.push_back(sjp + " RIGHT");
+           stringtable.push_back(sjp + " UP");
+           stringtable.push_back(sjp + " DOWN");
+
+        // CD32 pad looking names
+           stringtable.push_back(sjp + " RED");
+           stringtable.push_back(sjp + " BLUE");
+           stringtable.push_back(sjp + " GREEN");
+           stringtable.push_back(sjp + " YELLOW");
+
+           stringtable.push_back(sjp + " REVERSE");
+           stringtable.push_back(sjp + " FORWARD");
+           stringtable.push_back(sjp + " PLAY");
+
+            static const uint32_t mamecodeforjoystart[4] = {
+            JOYCODE_1_LEFT,JOYCODE_2_LEFT,JOYCODE_3_LEFT,JOYCODE_4_LEFT
+            };
+/* we keep order:
+  JOYCODE_1_LEFT,JOYCODE_1_RIGHT,JOYCODE_1_UP,JOYCODE_1_DOWN,
+	JOYCODE_1_BUTTON1,JOYCODE_1_BUTTON2,JOYCODE_1_BUTTON3,
+	JOYCODE_1_BUTTON4,JOYCODE_1_BUTTON5,JOYCODE_1_BUTTON6,
+*/
+            uint32_t mamejoystart = mamecodeforjoystart[j];
+            uint32_t iport=(uint32_t)(j<<8);
+            std::vector<JoystickInfo> ji=
             {
-
-            }
-
-
-
+                // in mame enum order
+                {(char*)stringtable[ijoystr+0].c_str(),iport+RAWKEY_PORT0_JOY_LEFT,mamejoystart+0},
+                {(char*)stringtable[ijoystr+1].c_str(),iport+RAWKEY_PORT0_JOY_RIGHT,mamejoystart+1},
+                {(char*)stringtable[ijoystr+2].c_str(),iport+RAWKEY_PORT0_JOY_UP,mamejoystart+2},
+                {(char*)stringtable[ijoystr+3].c_str(),iport+RAWKEY_PORT0_JOY_DOWN,mamejoystart+3},
+                //mapped to JOYCODE_x_BUTTON1 ... JOYCODE_x_BUTTON6
+                {(char*)stringtable[ijoystr+4].c_str(),iport+RAWKEY_PORT0_BUTTON_RED,mamejoystart+4},
+                {(char*)stringtable[ijoystr+5].c_str(),iport+RAWKEY_PORT0_BUTTON_BLUE,mamejoystart+5},
+                {(char*)stringtable[ijoystr+6].c_str(),iport+RAWKEY_PORT0_BUTTON_GREEN,mamejoystart+6},
+                {(char*)stringtable[ijoystr+7].c_str(),iport+RAWKEY_PORT0_BUTTON_YELLOW,mamejoystart+7},
+                {(char*)stringtable[ijoystr+8].c_str(),iport+RAWKEY_PORT0_BUTTON_REVERSE,mamejoystart+8},
+                {(char*)stringtable[ijoystr+9].c_str(),iport+RAWKEY_PORT0_BUTTON_FORWARD,mamejoystart+9},
+                // +
+                {(char*)stringtable[ijoystr+10].c_str(),iport+RAWKEY_PORT0_BUTTON_PLAY,CODE_OTHER},
+// JOYCODE_1_LEFT
+            };
             joyinfo.insert(joyinfo.end(),ji.begin(),ji.end());
         }
 
@@ -130,6 +267,8 @@ void osd_joystick_end_calibration (void)
 
 void osd_trak_read(int player, int *deltax, int *deltay)
 {
+  IPort *Port2 = &(Inputs->Ports[0]);
+
   if((player == 0) && (Port2->Type == IPT_MOUSE))
   {
     *deltax           = Port2->Move.Mouse.MouseX;
@@ -142,6 +281,8 @@ void osd_trak_read(int player, int *deltax, int *deltay)
     *deltax = 0;
     *deltay = 0;
   }
+
+
 }
 
 /* return values in the range -128 .. 128 (yes, 128, not 127) */

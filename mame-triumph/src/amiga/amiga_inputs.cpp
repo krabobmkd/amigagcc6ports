@@ -39,6 +39,8 @@ extern "C" {
 } // end extern c
 #include <macros.h>
 
+#include <stdio.h>
+
 #include "amiga_inputs.h"
 
 extern struct IntuitionBase *IntuitionBase;
@@ -164,30 +166,30 @@ struct Inputs *AllocInputs(Tag tags,...)
           ModifyIDCMP(inputs->Window, inputs->Window->IDCMPFlags|IDCMP_ACTIVEWINDOW|IDCMP_INACTIVEWINDOW);
       }
       
-      if(keymap)
-      {
-        inputs->Keys    = (BYTE *) &inputs->Ports[0][2];
+      //if(keymap)
+      //{
+      //no more   inputs->Keys    = (BYTE *) &inputs->Ports[0][2];
 
-        for(i = 0; keymap[i].Key; i++)
-        {
-          if(keymap[i].Key & IKEY_RAW)
-            inputs->RawKeys[keymap[i].Key & (~IKEY_RAW)] = keymap[i].Code;
-          else if(keymap[i].Key != IKEY_NONE)
-          {
+//        for(i = 0; keymap[i].Key; i++)
+//        {
+//          if(keymap[i].Key & IKEY_RAW)
+//            inputs->RawKeys[keymap[i].Key & (~IKEY_RAW)] = keymap[i].Code;
+//          else if(keymap[i].Key != IKEY_NONE)
+//          {
 
-// LONG  __stdargs MapANSI( CONST_STRPTR string, LONG count, STRPTR buffer, LONG length, CONST struct KeyMap *keyMap );
+//// LONG  __stdargs MapANSI( CONST_STRPTR string, LONG count, STRPTR buffer, LONG length, CONST struct KeyMap *keyMap );
 
-            if(MapANSI(((const char *) &keymap[i].Key) + 3, 1,(STRPTR)buf, 1, NULL) == 1)
-            {
-              if(!buf[1])
-                inputs->RawKeys[buf[0] & IKEY_RAWMASK] = keymap[i].Code;
-            }
-          }
-        }
+//            if(MapANSI(((const char *) &keymap[i].Key) + 3, 1,(STRPTR)buf, 1, NULL) == 1)
+//            {
+//              if(!buf[1])
+//                inputs->RawKeys[buf[0] & IKEY_RAWMASK] = keymap[i].Code;
+//            }
+//          }
+//        }
 
         if(inputs->Window)
           ModifyIDCMP(inputs->Window, inputs->Window->IDCMPFlags|IDCMP_RAWKEY);
-      }
+      //}
 
       if(inputs->Ports[0].Type)
       {
@@ -214,8 +216,15 @@ struct Inputs *AllocInputs(Tag tags,...)
       if( inputs->Ports[0].MsgPort)
         inputs->SignalMask  |= 1<<inputs->Ports[0].MsgPort->mp_SigBit;
 
-      if(inputs->Ports[1] && inputs->Ports[1].MsgPort)
+      if( inputs->Ports[1].MsgPort)
         inputs->SignalMask  |= 1<<inputs->Ports[1].MsgPort->mp_SigBit;
+
+// v37
+      if( inputs->Ports[2].MsgPort)
+        inputs->SignalMask  |= 1<<inputs->Ports[2].MsgPort->mp_SigBit;
+      if( inputs->Ports[3].MsgPort)
+        inputs->SignalMask  |= 1<<inputs->Ports[3].MsgPort->mp_SigBit;
+
 
       inputs->Enabled = TRUE;
 
@@ -253,7 +262,7 @@ void FreeInputs(struct Inputs *inputs)
     CloseDevice((struct IORequest *) &inputs->InputRequest);
   }
 
-  memFree(inputs->Ports[0]);
+  //memFree(inputs->Ports[0]);
 
   FreeVec(inputs);
 }
@@ -374,7 +383,7 @@ void IAllocPort(struct Inputs *inputs, LONG portnum)
   struct IPort  *port;
   struct IOStdReq *io;
 
-  port  = inputs->Ports[portnum];
+  port  = &inputs->Ports[portnum];
   io    = NULL;
 
   if(inputs->LowLevelBase)
@@ -435,7 +444,7 @@ void IFreePort(struct Inputs *inputs, LONG portnum)
 
   IDisablePort(inputs, portnum);
 
-  port  = inputs->Ports[portnum];
+  port  = &inputs->Ports[portnum];
 
   if(port->PortRequest)
   {
@@ -463,7 +472,7 @@ void IEnablePort(struct Inputs *inputs, LONG portnum)
   struct IPort  *port;
   struct IOStdReq *io;
 
-  port  = inputs->Ports[portnum];
+  port  = &inputs->Ports[portnum];
 
   if(!port->Enabled && port->PortRequest && port->PortRequest->io_Device)
   {
@@ -532,7 +541,7 @@ void IDisablePort(struct Inputs *inputs, LONG portnum)
   struct IOStdReq *io;
   struct Message  *msg;
 
-  port  = inputs->Ports[portnum];
+  port  = &inputs->Ports[portnum];
 
   if(port->Enabled)
   {
@@ -591,7 +600,7 @@ void IUpdatePort(struct Inputs *inputs, LONG portnum)
   LONG        button;
   LONG        red;
 
-  port  = inputs->Ports[portnum];
+  port  = &inputs->Ports[portnum];
   ie    = &port->InputEvent;
   red   = port->RealRed;
 

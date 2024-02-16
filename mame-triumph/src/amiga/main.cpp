@@ -554,8 +554,8 @@ LONG VideoOpen(LONG width, LONG height, LONG left, LONG top, LONG right, LONG bo
         Width  = Video->Width;
         Height = Video->Height;
         Keys   = Inputs->Keys;
-        Port1  = Inputs->Ports[1];
-        Port2  = Inputs->Ports[0];
+        Port1  = &Inputs->Ports[1];
+        Port2  = &Inputs->Ports[0];
         return(1);
       }
       else

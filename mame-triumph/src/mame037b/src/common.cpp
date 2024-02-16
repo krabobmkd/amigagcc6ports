@@ -592,7 +592,7 @@ static struct GameSample *read_wav_sample(void *f)
 	return result;
 }
 //krb: this is overriden by amiga implementation, in amiga_037
-#ifndef AMIGA
+//#ifndef AMIGA
 struct GameSamples *readsamples(const char **samplenames,const char *basename)
 /* V.V - avoids samples duplication */
 /* if first samplename is *dir, looks for samples into "basename" first, then "dir" */
@@ -641,7 +641,7 @@ struct GameSamples *readsamples(const char **samplenames,const char *basename)
 	return samples;
 }
 // krb
-#endif
+//#endif
 
 void freesamples(struct GameSamples *samples)
 {
