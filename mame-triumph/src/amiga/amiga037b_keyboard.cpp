@@ -23,8 +23,10 @@
 // from mame:
 #include "osdepend.h"
 #include "input.h"
-
+#include "amiga_inputs.h"
 #include <stdio.h>
+
+extern struct Inputs     *Inputs;
 
 using namespace std;
 /******************************************************************************
@@ -139,9 +141,9 @@ const struct KeyboardInfo *osd_get_key_list(void)
 */
 int osd_is_key_pressed(int keycode)
 {
-    printf("osd_is_key_pressed:%d\n",keycode);
-
-    return 0;
+//    printf("osd_is_key_pressed:%08x\n",keycode);
+    if(!Inputs) return 0;
+    return (int)Inputs->RawKeys[keycode];
 }
 
 /*

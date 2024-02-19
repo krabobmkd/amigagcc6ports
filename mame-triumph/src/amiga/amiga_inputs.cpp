@@ -334,6 +334,7 @@ void IUpdateKeys(struct Inputs *inputs)
     switch(imclass)
     {
       case IDCMP_RAWKEY:
+        printf("idcmlp rawkey\n");
         if(!(imqual & IEQUALIFIER_REPEAT) && inputs->RawKeys[imcode & IKEY_RAWMASK])
         {
           if(imcode & IECODE_UP_PREFIX)

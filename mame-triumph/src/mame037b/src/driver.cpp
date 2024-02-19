@@ -14,7 +14,7 @@
 
 #include "driver.h"
 
-
+#define DRIVER_RECURSIVE
 #ifndef DRIVER_RECURSIVE
 
 /* The "root" driver, defined so we can have &driver_##NAME in macros. */

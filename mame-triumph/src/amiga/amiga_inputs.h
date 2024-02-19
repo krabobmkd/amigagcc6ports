@@ -131,7 +131,7 @@ struct Inputs
   struct Hook     *RefreshHook;
   struct Hook     *MenuHook;
   struct Hook     *IDCMPHook;
-  UBYTE           RawKeys[128];
+  UBYTE           RawKeys[128]; // 128,  masked with IKEY_RAWMASK
   struct IOStdReq InputRequest;
 
   BYTE      Enabled;

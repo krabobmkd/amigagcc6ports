@@ -69,6 +69,26 @@ const struct GameDriver *drivers[] =
 
 #else	/* DRIVER_RECURSIVE */
 
+
+#ifdef LINK_BEFORE83
+
+GAMEX(1980, radarscp, 0,       radarscp, dkong,    radarscp, ROT90, "Nintendo", "Radar Scope", GAME_IMPERFECT_SOUND )
+GAME( 1981, dkong,    0,       dkong,    dkong,    0,        ROT90, "Nintendo of America", "Donkey Kong (US)" )
+GAME( 1981, dkongjp,  dkong,   dkong,    dkong,    0,        ROT90, "Nintendo", "Donkey Kong (Japan set 1)" )
+GAME( 1981, dkongjpo, dkong,   dkong,    dkong,    0,        ROT90, "Nintendo", "Donkey Kong (Japan set 2)" )
+GAME( 1982, dkongjr,  0,       dkongjr,  dkong,    0,        ROT90, "Nintendo of America", "Donkey Kong Junior (US)" )
+GAME( 1982, dkngjrjp, dkongjr, dkongjr,  dkong,    0,        ROT90, "bootleg?", "Donkey Kong Jr. (Original Japanese)" )
+GAME( 1982, dkjrjp,   dkongjr, dkongjr,  dkong,    0,        ROT90, "Nintendo", "Donkey Kong Junior (Japan)" )
+GAME( 1982, dkjrbl,   dkongjr, dkongjr,  dkong,    0,        ROT90, "Nintendo of America", "Donkey Kong Junior (bootleg?)" )
+GAME( 1983, dkong3,   0,       dkong3,   dkong3,   0,        ROT90, "Nintendo of America", "Donkey Kong 3 (US)" )
+GAME( 1983, dkong3j,  dkong3,  dkong3,   dkong3,   0,        ROT90, "Nintendo", "Donkey Kong 3 (Japan)" )
+
+GAMEX(1983, hunchbkd, 0,       hunchbkd, hunchbdk, 0,        ROT90, "Century", "Hunchback (Donkey Kong conversion)", GAME_WRONG_COLORS )
+GAMEX(1984, herbiedk, 0,       herbiedk, herbiedk, 0,        ROT90, "CVS", "Herbie at the Olympics (DK conversion)", GAME_WRONG_COLORS )	/*"Seatongrove UK Ltd"*/
+GAME(1984, herocast, 0,       dkong,    dkong,    herocast, ROT90, "Seatongrove (Crown license)", "herocast" )
+
+#endif
+
 //#ifndef NEOMAME
 #ifdef LINK_OTHER1
 	/* "Pacman hardware" games */
@@ -484,6 +504,8 @@ TESTDRIVER( suzuk8h2 )
 	DRIVER( kickridr )	/* (c) 1984 */
 
 	/* Nintendo games */
+#endif
+#ifdef LINK_NINTENDO
 	DRIVER( radarscp )	/* (c) 1980 Nintendo */
 	DRIVER( dkong )		/* (c) 1981 Nintendo of America */
 	DRIVER( dkongjp )	/* (c) 1981 Nintendo */
@@ -507,7 +529,8 @@ TESTDRIVER( suzuk8h2 )
 	DRIVER( spnchout )	/* (c) 1984 */
 	DRIVER( spnchotj )	/* (c) 1984 (Japan) */
 	DRIVER( armwrest )	/* (c) 1985 */
-
+#endif
+#ifdef OTHER_DFD
 	/* Midway 8080 b/w games */
 	DRIVER( seawolf )	/* 596 [1976] */
 	DRIVER( gunfight )	/* 597 [1975] */
@@ -1236,7 +1259,8 @@ TESTDRIVER( defndjeu )	/* bootleg */
 	/*  6/1991 Quiz Sangokushi - see below among "Mitchell" games */
 	/* 10/1991 Block Block - see below among "Mitchell" games */
 	/*  6/1995 Street Fighter - the Movie - see below among "Incredible Technologies" games */
-
+#endif
+#ifdef LINK_CAPCOMSYSTEM
 	/* Capcom CPS1 games */
 	DRIVER( forgottn )	/*  7/1988 (c) 1988 (US) */
 	DRIVER( lostwrld )	/*  7/1988 (c) 1988 (Japan) */
@@ -1370,7 +1394,8 @@ TESTDRIVER( mvsc )		/* Marvel Super Heroes vs. Capcom: Clash of Super Heroes (US
 TESTDRIVER( sfa3 )		/* Street Fighter Alpha 3 (USA 980629) */
 						/* 1999 Giga Wing */
 						/* Gulum Pa! */
-
+#endif
+#ifdef LINK_CAPCOMSYSTEM3
 	/* Capcom CPS3 games */
 	/* 10/1996 Warzard */
 	/*  2/1997 Street Fighter III - New Generation */
@@ -1392,7 +1417,8 @@ TESTDRIVER( tgmj )		/*  Tetris The Grand Master (JAPAN 980710) */
 TESTDRIVER( sfex2p )	/*  Street Fighter EX 2 Plus (JAPAN 990611) */
 						/*  Star Gladiator 2 */
 						/*  Rival Schools 2 */
-
+#endif
+#ifdef OTHER_XX
 	/* Mitchell games */
 	DRIVER( mgakuen )	/* (c) 1988 Yuga */
 	DRIVER( mgakuen2 )	/* (c) 1989 Face */

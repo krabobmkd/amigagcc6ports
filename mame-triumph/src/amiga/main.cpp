@@ -308,6 +308,15 @@ int main(int argc, char **argv)
     AllocGUI();
     LoadConfig(argc, argv);
 
+
+    printf("drivers:\n");
+    int idrv=0;
+    while(Drivers[idrv] != NULL)
+    {
+        if(Drivers[idrv] && Drivers[idrv]->name) printf("driver:%s\n",Drivers[idrv]->name);
+        idrv++;
+    }
+
     if(Config[CFG_DRIVER] < 0)
     {
         GetConfig(0, Config);
