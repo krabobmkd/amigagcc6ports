@@ -110,7 +110,29 @@ const struct KeyboardInfo *osd_get_key_list(void)
         // we map RAWKEY codes, their meaning can change
         // according to Amiga keyboard locale settings.
         // here are all the easy constant ones that match all keyboards:
+
+        // note: most code calling this just uglily test all values all along,
+        // so a good optimisation is stupidly to have the most comon key used first.
+
+
         kbi = {
+            {"KEY UP",0x4C,KEYCODE_UP},
+            {"KEY DOWN",0x4D,KEYCODE_DOWN},
+            {"KEY LEFT",0x4F,KEYCODE_LEFT},
+            {"KEY RIGHT",0x4E,KEYCODE_RIGHT},
+
+            {"SPACE",0x40,KEYCODE_SPACE},
+
+            {"LSHIFT",0x60,KEYCODE_LSHIFT},
+            {"RSHIFT",0x61,KEYCODE_RSHIFT},
+            {"LALT",0x64,KEYCODE_LALT},
+            {"RALT",0x65,KEYCODE_RALT},
+            {"LAMIGA",0x66,KEYCODE_LWIN},
+            {"RAMIGA",0x67,KEYCODE_RWIN},
+
+            {"ENTER",0x44,KEYCODE_ENTER},
+
+            {"TAB",0x42,KEYCODE_TAB},
             {"ESC",0x45,KEYCODE_ESC},
             {"F1",0x50,KEYCODE_F1},
             {"F2",0x51,KEYCODE_F2},
@@ -139,23 +161,7 @@ const struct KeyboardInfo *osd_get_key_list(void)
             {"DEL",0x46,KEYCODE_DEL},
             {"HELP",0x5F,KEYCODE_HOME}, // ... dunno.
 
-            {"TAB",0x42,KEYCODE_TAB},
-
-            {"KEY UP",0x4C,KEYCODE_UP},
-            {"KEY DOWN",0x4D,KEYCODE_DOWN},
-            {"KEY LEFT",0x4F,KEYCODE_LEFT},
-            {"KEY RIGHT",0x4E,KEYCODE_RIGHT},
-
-            {"LSHIFT",0x60,KEYCODE_LSHIFT},
-            {"RSHIFT",0x61,KEYCODE_RSHIFT},
-            {"LALT",0x64,KEYCODE_LALT},
-            {"RALT",0x65,KEYCODE_RALT},
-            {"LAMIGA",0x66,KEYCODE_LWIN},
-            {"RAMIGA",0x67,KEYCODE_RWIN},
-
             {"CTRL",0x63,KEYCODE_LCONTROL},
-            {"SPACE",0x40,KEYCODE_SPACE},
-            {"ENTER",0x44,KEYCODE_ENTER},
 
             // whole amiga pad
             {"[ PAD", 0x5A, KEYCODE_OPENBRACE },
@@ -178,6 +184,7 @@ const struct KeyboardInfo *osd_get_key_list(void)
             // mame codes is missing keypad '.'
             {". PAD",0x3C,CODE_OTHER},
             {"ENTER PAD",0x43,KEYCODE_ENTER_PAD}
+
         };
         // then add rawkeys which meanings changes by locale settings
         vector<unsigned char> keystodo={0x0b,0x0c,0x0d};
