@@ -11,6 +11,9 @@
 #include <time.h>
 #include <assert.h>
 
+// krb
+#include <stdio.h>
+
 /***************************************************************************/
 /* Codes */
 
@@ -72,14 +75,19 @@ int code_init(void)
 /* Find the osd record of an oscode */
 INLINE const struct KeyboardInfo* internal_oscode_find_keyboard(unsigned oscode)
 {
+  //  printf("internal_oscode_find_keyboard:%08x\n",oscode);
 	const struct KeyboardInfo *keyinfo;
 	keyinfo = osd_get_key_list();
 	while (keyinfo->name)
 	{
 		if (keyinfo->code == oscode)
+        {
+            if(keyinfo->name) printf(" found :%s\n",keyinfo->name );
 			return keyinfo;
+        }
 		++keyinfo;
 	}
+ //   printf("not found !:\n");
 	return 0;
 }
 
@@ -148,7 +156,11 @@ static int internal_oscode_add(unsigned oscode, unsigned type)
 INLINE const struct KeyboardInfo* internal_code_find_keyboard(InputCode code)
 {
 	const struct KeyboardInfo *keyinfo;
+
+   // printf("internal_code_find_keyboard InputCode:%d\n",(int)code);
+
 	keyinfo = osd_get_key_list();
+
 
 	assert( code < code_mac );
 
@@ -157,17 +169,25 @@ INLINE const struct KeyboardInfo* internal_code_find_keyboard(InputCode code)
 		while (keyinfo->name)
 		{
 			if (keyinfo->standardcode == code)
+            {
+               // printf("found:%s\n",keyinfo->name);
 				return keyinfo;
+            }
 			++keyinfo;
 		}
 	} else {
 		while (keyinfo->name)
 		{
 			if (keyinfo->standardcode == CODE_OTHER && keyinfo->code == code_map[code].oscode)
+            {
+               // printf("found other:%s\n",keyinfo->name);
 				return keyinfo;
+            }
 	      		++keyinfo;
 		}
 	}
+
+
 	return 0;
 }
 
@@ -202,6 +222,8 @@ static int internal_code_pressed(InputCode code)
 {
 	const struct KeyboardInfo *keyinfo;
 	const struct JoystickInfo *joyinfo;
+
+  //  printf("internal_code_pressed:%d \n",code);
 
 	assert( code < code_mac );
 
@@ -238,6 +260,7 @@ static const char* internal_code_name(InputCode code)
 	const struct KeyboardInfo *keyinfo;
 	const struct JoystickInfo *joyinfo;
 
+   //printf("internal_code_name:%d\n",code);
 	assert( code < code_mac );
 
 	switch (code_map[code].type)
@@ -263,6 +286,7 @@ static void internal_code_update(void)
 	const struct JoystickInfo *joyinfo;
 
 	/* add only oscode because all standard codes are already present */
+  //  printf("internal_code_update\n");
 
 	keyinfo = osd_get_key_list();
 	while (keyinfo->name)

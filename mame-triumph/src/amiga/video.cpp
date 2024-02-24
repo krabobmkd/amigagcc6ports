@@ -15,9 +15,9 @@
 
 #include <stdio.h>
 
-extern "C" {
-#include <clib/alib_protos.h>
+#include <proto/alib.h>
 
+extern "C" {
 #include <exec/types.h>
 #include <exec/memory.h>
 #include <graphics/gfxbase.h>
@@ -29,7 +29,7 @@ extern "C" {
 #include <libraries/gadtools.h>
 #include <libraries/asl.h>
 #include <cybergraphx/cybergraphics.h>
-#include <cgxhooks.h>
+#include "cgxhooks_re.h"
 
 #include <inline/exec.h>
 #include <inline/dos.h>
@@ -229,6 +229,8 @@ struct Video *AllocVideo(Tag tags,...)
   ULONG  mode_id;
   BOOL   use_screen, use_screen_req, no_refresh;
 
+    printf("AllocVideo in\n");
+
   if((video = (struct Video *)AllocVec(sizeof(struct Video), MEMF_PUBLIC|MEMF_CLEAR)))
   {
     /* Setup defaults. */
@@ -326,6 +328,9 @@ struct Video *AllocVideo(Tag tags,...)
           break;
       }
     }
+
+    printf("AllocVideo after tags\n");
+
 
     if(use_screen || use_screen_req)
     {
@@ -504,6 +509,9 @@ struct Video *AllocVideo(Tag tags,...)
     }
     else
     {
+        printf("window case\n");
+
+
       win = OpenWindowTags(NULL, WA_InnerWidth,    video->Width,
                                  WA_InnerHeight,   video->Height,
                                  WA_DragBar,       TRUE,
@@ -536,9 +544,12 @@ struct Video *AllocVideo(Tag tags,...)
       else
         VError = OpenWindowFailed;
     }
+    printf("after win init, return shared cases\n");
 
     if((video->Window = win))
     {
+        printf("AllocVideo intui inits1\n");
+
       w = video->Width;
       h = video->Height;
 
@@ -559,6 +570,7 @@ struct Video *AllocVideo(Tag tags,...)
         video->Top     = (win->Height  + win->BorderTop - win->BorderBottom - h) >> 1;
         video->OffsetY = 0;
       }
+      printf("AllocVideo intui inits2\n");
 
       video->FrameBox[0].MinX = video->Left;
       video->FrameBox[0].MinY = video->Top;
@@ -567,15 +579,23 @@ struct Video *AllocVideo(Tag tags,...)
 
       video->FrameBox[1] = video->FrameBox[0];
       video->FrameBox[2] = video->FrameBox[0];
+      printf("AllocVideo intui inits3\n");
 
       if(video->CyberMode)
       {
         video->PixelFormat = GetCyberMapAttr(win->RPort->BitMap, CYBRMATTR_PIXFMT);
-
+     printf("AllocVideo intui inits3a1\n");
         if(video->PixelFormat && (max_colors <= 256))
         {
-          video->CGXHook = AllocCLUT8RemapHook(win->WScreen, NULL);
 
+/*
+struct CGXHook * __saveds AllocCLUT8RemapHook(struct Screen *scr __asm("a0"),
+											  ULONG *palette __asm("a1"));
+*/
+
+     printf("AllocVideo intui inits3aab WSccree,%08x\n",(int)win->WScreen);
+          video->CGXHook = AllocCLUT8RemapHook(win->WScreen, NULL);
+     printf("AllocVideo intui inits3a2\n");
           if(video->CGXHook)
           {
             video->PixelMode = eCGXHook;
@@ -583,16 +603,18 @@ struct Video *AllocVideo(Tag tags,...)
 
             CustomRemapCLUT8RemapHook(video->CGXHook, video->PackedPalette);
           }
+     printf("AllocVideo intui inits3a3\n");
         }
         else
           video->PixelMode = eBltBitMapRastPort;
       }
-
+     printf("AllocVideo intui inits3b\n");
       if(video->Screen && ((1 << video->Screen->RastPort.BitMap->Depth) < max_colors))
       {
         video->RemapBuffer = (UBYTE*) AllocVec((((video->Width + 31) >> 5) << 5) * video->Height,
                                       MEMF_PUBLIC|MEMF_CLEAR);
       }
+      printf("AllocVideo intui inits4\n");
 
       if(video->PixelFormat)
         video->BackFillPen = ObtainBestPenA(video->Window->WScreen->ViewPort.ColorMap, 0, 0, 0, NULL);
@@ -612,11 +634,11 @@ struct Video *AllocVideo(Tag tags,...)
       }
       else
         video->RastPort = win->RPort;
-
+      printf("AllocVideo intui inits5\n");
       EraseRect(win->RPort,
                 win->BorderLeft,                   win->BorderTop,
                 win->Width - win->BorderRight - 1, win->Height - win->BorderBottom - 1);
-
+      printf("AllocVideo intui inits6\n");
       if(GadToolsBase && video->Menu)
       {
         video->VisualInfo = GetVisualInfoA(win->WScreen, NULL);
@@ -627,7 +649,7 @@ struct Video *AllocVideo(Tag tags,...)
             SetMenuStrip(win, video->Menu);
         }
       }
-
+      printf("AllocVideo intui inits7\n");
       video->TimerMsgPort.mp_Node.ln_Type = NT_MSGPORT;
       video->TimerMsgPort.mp_Flags        = PA_SIGNAL;
       video->TimerMsgPort.mp_SigBit       = video->Window->UserPort->mp_SigBit;
@@ -646,7 +668,7 @@ struct Video *AllocVideo(Tag tags,...)
         else
           video->TimerBase = (struct Library *) video->TimerRequest->tr_node.io_Device;
       }
-
+      printf("AllocVideo intui inits8\n");
       if(video->PixelMode == eWritePixelArray)
       {
         CopyMem(win->RPort, &video->TempRastPort, sizeof(struct RastPort));
@@ -656,18 +678,26 @@ struct Video *AllocVideo(Tag tags,...)
         video->TempRastPort.BitMap = AllocBitMap((((video->Width + 15) >> 4) << 4), 1, 8, 0, NULL);
 
         if(video->TempRastPort.BitMap)
+        {
+                      printf("AllocVideo out ok 1\n");
           return(video);
+        }
           
         VError = OutOfMemory;
       }
       else
+      {
+          printf("AllocVideo out ok 2\n");
+
         return(video);
+      }
     }
   }
   else
     VError = OutOfMemory;
 
   FreeVideo(video);
+  printf("AllocVideo out bad\n");
 
   return(NULL);
 }

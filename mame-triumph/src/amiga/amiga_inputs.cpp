@@ -323,6 +323,8 @@ void IUpdateKeys(struct Inputs *inputs)
   UWORD       imcode;
   UWORD       imqual;
 
+
+
   while((im = (struct IntuiMessage *) GetMsg(inputs->Window->UserPort)))
   {
     imclass = im->Class;
@@ -334,13 +336,16 @@ void IUpdateKeys(struct Inputs *inputs)
     switch(imclass)
     {
       case IDCMP_RAWKEY:
-        printf("idcmlp rawkey\n");
-        if(!(imqual & IEQUALIFIER_REPEAT) && inputs->RawKeys[imcode & IKEY_RAWMASK])
+        if(!(imqual & IEQUALIFIER_REPEAT) )
         {
           if(imcode & IECODE_UP_PREFIX)
-            inputs->Keys[inputs->RawKeys[imcode & IKEY_RAWMASK]] = 0;
+          {
+            inputs->Keys[imcode & IKEY_RAWMASK] = 0;
+          }
           else
-            inputs->Keys[inputs->RawKeys[imcode & IKEY_RAWMASK]] = 1;
+          {
+            inputs->Keys[imcode & IKEY_RAWMASK] = 1;
+          }
         }
         break;
 

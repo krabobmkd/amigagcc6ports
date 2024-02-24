@@ -123,7 +123,7 @@ struct Inputs
   //struct IPort *Ports[4];
   struct    IPort Ports[4];
 
-  BYTE         Keys[128];
+  BYTE         Keys[128]; // now actual rawkeys
 
     // - - - - -private
   struct Library  *LowLevelBase;
@@ -131,7 +131,7 @@ struct Inputs
   struct Hook     *RefreshHook;
   struct Hook     *MenuHook;
   struct Hook     *IDCMPHook;
-  UBYTE           RawKeys[128]; // 128,  masked with IKEY_RAWMASK
+  //olde UBYTE           RawKeys[128]; // 128,  masked with IKEY_RAWMASK
   struct IOStdReq InputRequest;
 
   BYTE      Enabled;

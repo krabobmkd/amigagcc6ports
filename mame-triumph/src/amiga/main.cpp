@@ -75,15 +75,15 @@ typedef ULONG (*RE_HOOKFUNC)();
 #define ITEM_QUIT   5
 #define NUM_ITEMS   6
 
-extern "C" {
+//extern "C" {
 void     Main(int argc, char **argv);
-void ASM RefreshHandler(struct Hook *hook REG(a0));
-void ASM MenuHandler(struct Hook *hook REG(a0), APTR null REG(a2), ULONG *itemnum REG(a1));
-void ASM IDCMPHandler(struct Hook *hook REG(a0), APTR null REG(a2), ULONG *imclass REG(a1));
+extern void ASM RefreshHandler(struct Hook *hook REG(a0));
+extern void ASM MenuHandler(struct Hook *hook REG(a0), APTR null REG(a2), ULONG *itemnum REG(a1));
+extern void ASM IDCMPHandler(struct Hook *hook REG(a0), APTR null REG(a2), ULONG *imclass REG(a1));
 void     SaveILBM(void);
 void     ErrorRequest(LONG msg_id, ...);
 
-}
+//}
 void     StartGame(void);  /* In amiga/amiga.c. */
 
 #ifdef POWERUP
@@ -389,7 +389,7 @@ int main(int argc, char **argv)
 
 LONG VideoOpen(LONG width, LONG height, LONG left, LONG top, LONG right, LONG bottom, LONG dirty)
 {
-
+    printf("main VideoOpen\n");
 // #define	GAME_REQUIRES_16BIT			0x0100	/* cannot fit in 256 colors */
   static ULONG pixel_formats[] =
   {
@@ -529,9 +529,9 @@ LONG VideoOpen(LONG width, LONG height, LONG left, LONG top, LONG right, LONG bo
 
     if(!fail)
     {
-      RefreshHook.h_Entry = (RE_HOOKFUNC) RefreshHandler;
-      MenuHook.h_Entry    = (RE_HOOKFUNC) MenuHandler;
-      IDCMPHook.h_Entry   = (RE_HOOKFUNC) IDCMPHandler;
+      RefreshHook.h_Entry = (RE_HOOKFUNC) &RefreshHandler;
+      MenuHook.h_Entry    = (RE_HOOKFUNC) &MenuHandler;
+      IDCMPHook.h_Entry   = (RE_HOOKFUNC) &IDCMPHandler;
 
       Inputs = AllocInputs(IA_Port1,          (Config[CFG_JOY1TYPE] == CFGJ1_MOUSE1)
                                               ? IPT_MOUSE

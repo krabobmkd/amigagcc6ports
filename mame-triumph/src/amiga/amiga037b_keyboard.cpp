@@ -13,6 +13,7 @@
  *************************************************************************/
 // from amiga
 #include <proto/intuition.h>
+#include <proto/keymap.h>
 #include "intuiuncollide.h"
 
 //#include <devices/keyboard.h>
@@ -24,8 +25,10 @@
 #include "osdepend.h"
 #include "input.h"
 #include "amiga_inputs.h"
-#include <stdio.h>
 
+#include <stdio.h>
+#include <string>
+#include <stdlib.h>
 extern struct Inputs     *Inputs;
 
 using namespace std;
@@ -35,12 +38,59 @@ using namespace std;
 
 ******************************************************************************/
 
+extern struct Library *KeymapBase;
+
+struct mapkeymap {
+    std::string _name;
+    unsigned char _rawkeycode;
+};
+
+void mapRawKeyToString(UWORD rawkeycode, std::string &s)
+{
+    char temp[8];
+    struct InputEvent ie={0};
+    ie.ie_Class = IECLASS_RAWKEY;
+//    ie.ie_SubClass = 0;
+    ie.ie_Code = rawkeycode;
+//    ie.ie_Qualifier = 0; // im->Qualifier;
+//    ie.ie_EventAddress
+    WORD actual = MapRawKey(&ie, temp, 7, 0);
+    temp[actual]=0; //
+    if(actual>0)
+    {
+        s = temp;
+    }
+
+}
+inline unsigned int nameToMameKeyEnum(std::string &s)
+{
+    if(s.length()==1)
+    {
+        char c = s[0];
+        if(c>='a' && c<='z')
+        {
+            return KEYCODE_A + (unsigned int)(c-'a');
+        }
+        if(c==',') return KEYCODE_COMMA;
+        if(c==':') return KEYCODE_COLON;
+        if(c=='/') return KEYCODE_SLASH;
+        if(c=='\\') return KEYCODE_BACKSLASH;
+        if(c=='*') return KEYCODE_ASTERISK; // there is another one on pad (?)
+        if(c=='=') return KEYCODE_EQUALS;
+        if(c=='-') return KEYCODE_MINUS;
+        if(c==145) return KEYCODE_QUOTE;
+        if(c==146) return KEYCODE_QUOTE;
+    }
+
+    return CODE_OTHER;
+}
+
 /*
   return a list of all available keys (see input.h)
 */
 const struct KeyboardInfo *osd_get_key_list(void)
 {
-    printf(" * * * ** osd_get_key_list  * * * *  *\n");
+  //  printf(" * * * ** osd_get_key_list  * * * *  *\n");
 
  /* from mame input.h
     struct KeyboardInfo
@@ -52,11 +102,14 @@ const struct KeyboardInfo *osd_get_key_list(void)
   */
 
     static vector<struct KeyboardInfo> kbi;
+    static vector<mapkeymap> km; // keep the instance of strings from keymap libs
     static bool inited=false;
     if(!inited)
     {
         inited = true;
-        // all the easy constant ones
+        // we map RAWKEY codes, their meaning can change
+        // according to Amiga keyboard locale settings.
+        // here are all the easy constant ones that match all keyboards:
         kbi = {
             {"ESC",0x45,KEYCODE_ESC},
             {"F1",0x50,KEYCODE_F1},
@@ -122,13 +175,33 @@ const struct KeyboardInfo *osd_get_key_list(void)
             {"9PAD",0x3F,KEYCODE_9_PAD},
             {"- PAD",0x4A,KEYCODE_MINUS_PAD},
             {"+ PAD",0x5E,KEYCODE_PLUS_PAD},
-            // is missing keypad '.'
+            // mame codes is missing keypad '.'
             {". PAD",0x3C,CODE_OTHER},
             {"ENTER PAD",0x43,KEYCODE_ENTER_PAD}
-
         };
+        // then add rawkeys which meanings changes by locale settings
+        vector<unsigned char> keystodo={0x0b,0x0c,0x0d};
+        {   unsigned char ic=0;
+            while(ic<12) {keystodo.push_back(0x10+ic); ic++; }
+            ic=0;
+            while(ic<12) {keystodo.push_back(0x20+ic); ic++; }
+            ic=0;
+            while(ic<11) {keystodo.push_back(0x30+ic); ic++; }
+        }
+        for(int i=0;i<(int)keystodo.size();i++)
+        {
+            km.push_back(mapkeymap());
+            mapkeymap &mkm = km.back();
+            mapRawKeyToString((UWORD)keystodo[i],mkm._name);
+            // then look if it correspond to something in mame enums...
+            if(mkm._name.length()>0)
+            {
+                unsigned int mamekc = nameToMameKeyEnum(mkm._name);
+                kbi.push_back({mkm._name.c_str(),(UWORD)keystodo[i],mamekc});
+            }
+        }
 
-
+        // end
         kbi.push_back({NULL,0,0});
     }
     return kbi.data();
@@ -139,11 +212,10 @@ const struct KeyboardInfo *osd_get_key_list(void)
   tell whether the specified key is pressed or not. keycode is the OS dependant
   code specified in the list returned by osd_get_key_list().
 */
-int osd_is_key_pressed(int keycode)
+int osd_is_key_pressed(int keycode) // now , always rawkey.
 {
-//    printf("osd_is_key_pressed:%08x\n",keycode);
     if(!Inputs) return 0;
-    return (int)Inputs->RawKeys[keycode];
+    return (int)Inputs->Keys[keycode];
 }
 
 /*
@@ -154,7 +226,7 @@ int osd_is_key_pressed(int keycode)
 */
 int osd_wait_keypress(void)
 {
-    printf("osd_wait_keypress\n");
+   // printf("osd_wait_keypress\n");
 
     return OSD_KEY_NONE;
 }

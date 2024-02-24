@@ -152,13 +152,16 @@ int run_game(int game)
           // return 1;
     printf("before run_machine\n");
 			if (run_machine() == 0)
+            {
 				err = 0;
+
+            }
 			else if (!bailing)
 			{
 				bailing = 1;
 				printf("Unable to start machine emulation\n");
 			}
-
+                printf("after run_machine bef shutdown_machine()\n");
 			shutdown_machine();
 		}
 		else if (!bailing)
@@ -593,14 +596,18 @@ int run_machine(void)
 {
 	int res = 1;
 
-
+    printf("run_machine1\n");
 	if (vh_open() == 0)
 	{
+    printf("bef tilemap_init\n");
 		tilemap_init();
+    printf("bef sprite_init\n");
 		sprite_init();
+    printf("bef gfxobj_init\n");
 		gfxobj_init();
 		if (drv->vh_start == 0 || (*drv->vh_start)() == 0)      /* start the video hardware */
 		{
+        printf("bef sound_start\n");
 			if (sound_start() == 0) /* start the audio hardware */
 			{
 				int	region;
@@ -645,6 +652,7 @@ int run_machine(void)
 					osd_led_w(2,0);
 					osd_led_w(3,0);
 
+                        printf("bef init_user_interface\n");
 					init_user_interface();
 
 					/* disable cheat if no roms */
@@ -660,8 +668,10 @@ int run_machine(void)
 						(*drv->nvram_handler)(f,0);
 						if (f) osd_fclose(f);
 					}
-					cpu_run();      /* run the emulation! */
 
+                    printf("bef cpu_run\n");
+					cpu_run();      /* run the emulation! */
+                    printf("aft cpu_run\n");
 					if (drv->nvram_handler)
 					{
 						void *f;
@@ -700,7 +710,7 @@ userquit:
 			bailing = 1;
 			printf("Unable to start video emulation\n");
 		}
-
+                        printf("mame closes\n");
 		gfxobj_close();
 		sprite_close();
 		tilemap_close();
