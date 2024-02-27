@@ -2,6 +2,9 @@
 
 cmake_minimum_required (VERSION 3.1)
 
+# VASM is an extra asm language configured in our cmake platform,
+# to cross-assemble with vasm assembler installed by bebbo gcc
+enable_language( VASM )
 set(CXX_STANDARD 11)
 set(C_STANDARD 11)
 project(AmigaTriumphMame LANGUAGES C CXX VERSION 1.0)
@@ -28,7 +31,7 @@ set(AMIGA_SRC
 	gui_mui.cpp
 	gui_gadtools.cpp
 	config_moo.cpp
-	cgxhooks_re.c
+#	cgxhooks_re.c
 #	file.cpp
 	audio.cpp
 	video.cpp
@@ -47,7 +50,7 @@ set(AMIGA_SRC
 	mame_msg.h
 
 	../../lib/c2p.s.o ../../lib/gfx.s.o
-#	c2p.s
+	cgxhooks_re.s
 	)
 
 set(PROGNAME TriumphMame)

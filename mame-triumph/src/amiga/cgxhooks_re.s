@@ -1,4 +1,8 @@
-; phxass I=ii: M=68020 cgxhooks_re.s
+; amiga: phxass I=ii: M=68020 cgxhooks_re.s
+
+; cross compile:
+; vasmm68k_mot -devpac -m68020 -Fhunk -I/opt/amiga/m68k-amigaos/ndk-include cgxhooks_re.s -o cgxhooks_re.s.o
+
 	include exec/types.i
 	include utility/hooks.i
 

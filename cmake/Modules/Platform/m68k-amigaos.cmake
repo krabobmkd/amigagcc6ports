@@ -127,7 +127,7 @@ set(CMAKE_SIZE                  "${M68KAMIGAGCC_BIN}/m68k-amigaos-size${EXE_SUFF
 set(CMAKE_STRIP                 "${M68KAMIGAGCC_BIN}/m68k-amigaos-strip${EXE_SUFFIX}")
 
 
-
+# - - - - --  -
 # VF: commented because deprecated CMAKE_ variables.
 # Don't do compiler autodetection, since we are cross-compiling.
 #include(CMakeForceCompiler)
@@ -291,3 +291,15 @@ set(POSITION_INDEPENDENT_CODE OFF CACHE BOOL "Description")
 # complain about unused CMake variable.
 if(CMAKE_CROSSCOMPILING_EMULATOR)
 endif()
+
+
+# - - - add special regular 68k assembler
+set(CMAKE_VASM_COMPILER          "${M68KAMIGAGCC_BIN}/vasmm68k_mot${EXE_SUFFIX}")
+mark_as_advanced( CMAKE_VASM_COMPILER )
+set( CMAKE_VASM_SOURCE_FILE_EXTENSIONS s;asm )
+# Remember this as a potential error
+set( CMAKE_VASM_OUTPUT_EXTENSION .o )
+set( CMAKE_VASM_COMPILER_ENV_VAR "" )
+# Configure variables set in this file for fast reload later on
+configure_file( ${CMAKE_CURRENT_LIST_DIR}/CMakeVASMCompiler.cmake.in
+                ${CMAKE_PLATFORM_INFO_DIR}/CMakeVASMCompiler.cmake )
