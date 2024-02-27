@@ -3,8 +3,26 @@
 ; cross compile:
 ; vasmm68k_mot -devpac -m68020 -Fhunk -I/opt/amiga/m68k-amigaos/ndk-include cgxhooks_re.s -o cgxhooks_re.s.o
 
+;_LVOAllocMem     EQU   -198   -c6
+;_LVOAllocAbs     EQU   -204  -cc
+;_LVOFreeMem     EQU   -210    -d2
+;_LVOOldOpenLibrary     EQU   -408    -$198
+;_LVOCloseLibrary     EQU   -414   -$19e
+;_LVOOpenLibrary   -552    -$228
+
+; graphics
+; -$03B4   -948
+;_LVOReleasePen     EQU   -948
+;_LVOObtainPen     EQU   -954
+
 	include exec/types.i
 	include utility/hooks.i
+
+	include lvo/exec_lib.i
+	include lvo/graphics_lib.i
+
+
+_LVOGetCyberMapAttr equ -$0060
 
 ;struct CGXHook
 ;{
@@ -99,6 +117,8 @@
 
 	XDEF	_AllocCLUT8RemapHook
 	XDEF	_FreeCGXHook
+	XDEF	_CustomRemapCLUT8RemapHook
+	XDEF	_DoCLUT8RemapHook
 
 	; used by _AllocCLUT8RemapHook
 _AllocCGXHook:
@@ -111,95 +131,91 @@ _AllocCGXHook:
 	MOVEQ	#$01,D1
 	SWAP	D1		; memf_clear
 	MOVEA.L	A1,A6
-	JSR	-$00C6(A6)	; alloc, prob. Alloc() not AllocVec()
+	JSR	_LVOAllocMem(A6)	; alloc, prob. Alloc() not AllocVec()
 	MOVEA.L	D0,A3  ; struct in A3
 	MOVE.L	A3,D0
 	BEQ.W	L00000E
+
 	MOVEA.W	#$0004,A0
 	MOVEA.L	(A0),A1
-	MOVE.L	A1,$0018(A3) ; sysbase in struct
-	LEA	L000010(PC),A1	; "graphics.library"
-	MOVEA.L	$0018(A3),A6
+	MOVE.L	A1,cgh_SysBase(A3) ; sysbase in struct
+
+	LEA	graphicsname(PC),A1	; "graphics.library"
+	MOVEA.L	cgh_SysBase(A3),A6
 	MOVEQ	#$27,D0  ; ver 39
-	JSR	-$0228(A6)
-	MOVE.L	D0,$001C(A3)  ; GfxBase in struct
+	JSR	_LVOOpenLibrary(A6)
+	MOVE.L	D0,cgh_GfxBase(A3)  ; GfxBase in struct
 	BEQ.W	L00000D
-	LEA	L000011(PC),A1
-	MOVEA.L	$0018(A3),A6
+
+	LEA	layersname(PC),A1
+	MOVEA.L	cgh_SysBase(A3),A6
 	MOVEQ	#$27,D0
-	JSR	-$0228(A6)
-	MOVE.L	D0,$0020(A3)
+	JSR	_LVOOpenLibrary(A6)
+	MOVE.L	D0,cgh_LayersBase(A3)
 	BEQ.B	L00000C
-	LEA	L000012(PC),A1
-	MOVEA.L	$0018(A3),A6
+
+	LEA	cgxname(PC),A1
+	MOVEA.L	cgh_SysBase(A3),A6
 	MOVEQ	#$28,D0
-	JSR	-$0228(A6)
-	MOVE.L	D0,$0024(A3)
+	JSR	_LVOOpenLibrary(A6)
+	MOVE.L	D0,cgh_CyberGfxBase(A3)
 	BEQ.B	L00000B   ; cybergfx fail
+
 	MOVEA.L	$0004(A5),A0    ; a5 screen rastport or bitmap
 	MOVE.L	#$80000008,D0
-	MOVEA.L	$0024(A3),A6   ; cybergfx base
-	JSR	-$0060(A6)   ; value = GetCyberMapAttr( a0 BitMap, d0 Attribute );
+	MOVEA.L	cgh_CyberGfxBase(A3),A6   ; cybergfx base
+	JSR	_LVOGetCyberMapAttr(A6)   ; value = GetCyberMapAttr( a0 BitMap, d0 Attribute );
 	; #define CYBRMATTR_ISCYBERGFX  (0x80000008) /* returns -1 if supplied bitmap is a cybergfx one */
 	TST.L	D0
 	BEQ.B	L00000A ; error if screen not cgx
+
 	MOVEA.L	$0004(A5),A0
 	MOVE.L	#$80000004,D0  ; CYBRMATTR_PIXFMT return the pixel format
-	JSR	-$0060(A6)
-	MOVE.L	D0,$002C(A3)
+	JSR	_LVOGetCyberMapAttr(A6)
+	MOVE.L	D0,cgh_PixFmt(A3)
+
 	MOVEA.L	$0004(A5),A0
-	MOVEA.L	$0024(A3),A6
+	MOVEA.L	cgh_CyberGfxBase(A3),A6
 	MOVE.L	#$80000002,D0 ; CYBRMATTR_BPPIX    bytes per pixel
-	JSR	-$0060(A6)
-	MOVE.L	D0,$0028(A3)
+	JSR	_LVOGetCyberMapAttr(A6)
+	MOVE.L	D0,cgh_BytesPerPixel(A3)
 	MOVE.L	A3,D0
-	BRA.B	L00000F
+	BRA.B	L00000F  ; ok
 L00000A:
-	MOVEA.L	$0024(A3),A1
-	MOVEA.L	$0018(A3),A6
-	JSR	-$019E(A6)
+	MOVEA.L	cgh_CyberGfxBase(A3),A1
+	MOVEA.L	cgh_SysBase(A3),A6
+	JSR	_LVOCloseLibrary(A6)
 L00000B:   ; cybergraphics fail
-	MOVEA.L	$0020(A3),A1
-	MOVEA.L	$0018(A3),A6
-	JSR	-$019E(A6)
+	MOVEA.L	cgh_LayersBase(A3),A1
+	MOVEA.L	cgh_SysBase(A3),A6
+	JSR	_LVOCloseLibrary(A6)
 L00000C:
-	MOVEA.L	$001C(A3),A1
-	MOVEA.L	$0018(A3),A6
-	JSR	-$019E(A6)
+	MOVEA.L	cgh_GfxBase(A3),A1
+	MOVEA.L	cgh_SysBase(A3),A6
+	JSR	_LVOCloseLibrary(A6)
 L00000D:
 	MOVEA.L	A3,A1
-	MOVEA.L	$0018(A1),A6
+	MOVEA.L	cgh_SysBase(A1),A6
 	MOVE.L	#$00000468,D0
-	JSR	-$00D2(A6)
+	JSR	_LVOFreeMem(A6)
 L00000E:
 	MOVEQ	#$00,D0
 L00000F:
 	MOVEM.L	(A7)+,A3/A5/A6
 	RTS
 
-L000010:
-	dc.l	"grap"
-	dc.l	"hics"
-	dc.l	".lib"
-	dc.l	"rary"
-	dc.w	$0000
-L000011:
-	dc.l	"laye"
-	dc.l	"rs.l"
-	dc.l	"ibra"
-	dc.l	$72790000	;"ry  "
-L000012:
-	dc.l	"cybe"
-	dc.l	"rgra"
-	dc.l	"phic"
-	dc.l	"s.li"
-	dc.l	"brar"
-	dc.w	$7900		;"y "
+graphicsname:
+	dc.b	"graphics.library",0
+layersname:
+	dc.b	"layers.library",0
+cgxname:
+	dc.b	"cybergraphics.library",0
+	even
 
 _FreeCGXHook:
 	MOVEM.L	D7/A3/A5/A6,-(A7)
 	MOVEA.L	A0,A5
-	MOVE.L	$0014(A5),D0
+	MOVE.L	cgh_Type(A5),D0
 	TST.L	D0
 	BNE.B	L000014
 	TST.L	$002C(A5)
@@ -209,25 +225,25 @@ _FreeCGXHook:
 L000013:
 	CMP.L	$0060(A5),D7
 	BGE.B	L000014
-	MOVEA.L	$0030(A5),A0
+	MOVEA.L	cgh_Screen(A5),A0
 	MOVEQ	#$00,D0
 	MOVE.B	(A3)+,D0
 	MOVEA.L	$0030(A0),A0
-	MOVEA.L	$001C(A5),A6
-	JSR	-$03B4(A6)
+	MOVEA.L	cgh_GfxBase(A5),A6
+	JSR	_LVOReleasePen(A6)
 	ADDQ.L	#1,D7
 	BRA.B	L000013
 L000014:
-	MOVEA.L	$0024(A5),A1
-	MOVEA.L	$0018(A5),A6
-	JSR	-$019E(A6)
-	MOVEA.L	$0020(A5),A1
-	JSR	-$019E(A6)
-	MOVEA.L	$001C(A5),A1
-	JSR	-$019E(A6)
+	MOVEA.L	cgh_CyberGfxBase(A5),A1
+	MOVEA.L	cgh_SysBase(A5),A6
+	JSR	_LVOCloseLibrary(A6)
+	MOVEA.L	cgh_LayersBase(A5),A1
+	JSR	_LVOCloseLibrary(A6)
+	MOVEA.L	cgh_GfxBase(A5),A1
+	JSR	_LVOCloseLibrary(A6)
 	MOVEA.L	A5,A1
 	MOVE.L	#$00000468,D0
-	JSR	-$00D2(A6)
+	JSR	_LVOFreeMem(A6)
 	MOVEM.L	(A7)+,D7/A3/A5/A6
 	RTS
 
@@ -316,14 +332,15 @@ _AllocCLUT8RemapHook:
 	MOVEA.L	D0,A2   ; d0: retour struct CGXHooks alloked with lib bases and bitmap infos.
 	MOVE.L	A2,D0
 	BEQ.W	L00001E  ; null if cgx not supported or screen not cgx.
-	CLR.L	$0014(A2) ; Type
-	MOVE.L	A5,$0030(A2) ; *Screen
+	CLR.L	cgh_Type(A2)
+	MOVE.L	A5,cgh_Screen(A2)
 	LEA	_WriteCLUT8Hook(PC),A0
-	MOVE.L	A0,$0008(A2)  ; struct Hook h_Entry function pointer
-	; palette start at $50 ?
+	MOVE.L	A0,h_Entry(A2)  ; struct Hook h_Entry function pointer
+	; palette start at $50 ? at $68 ?
 	LEA	$0068(A2),A0 ; oO palette start at $50 -> no.
 	MOVE.L	A0,$0064(A2)
-	MOVE.L	$0028(A2),D0 ; BytesPerPixel (1,2,3,4)
+
+	MOVE.L	cgh_BytesPerPixel(A2),D0 ; BytesPerPixel (1,2,3,4)
 	SUBQ.L	#1,D0
 	BEQ.B	L000017
 	SUBQ.L	#1,D0
@@ -336,36 +353,46 @@ L000016:
 	BRA.B	L00001B
 L000017:	; one byte per pixel case
 	;FOIREUX LEA	L00005B(PC),A0
-	MOVE.L	A0,$000C(A2)  ; hook h_SubEntry
+	lea	mapclut8b(pc),a0
+	MOVE.L	A0,h_SubEntry(A2)  ; hook h_SubEntry
+
 	BRA.B	L00001B
 L000018:	; 2 bytes per pixel case
-	LEA	L000054(PC),A0
-	MOVE.L	A0,$000C(A2) ; hook h_SubEntry
+	;LEA	L000054(PC),A0
+
+	lea	mapclut16b(pc),a0
+	MOVE.L	A0,h_SubEntry(A2) ; hook h_SubEntry
+
 	BRA.B	L00001B
-L000019: ; 3 bytes ppixel ??? no way.
-	LEA	L00004C(PC),A0
-	MOVE.L	A0,$000C(A2) ; hook h_SubEntry
+L000019: ; 3 bytes pixel ??? cgx modes doesn't get that.
+
+	LEA	mapclut24b(PC),A0
+	MOVE.L	A0,h_SubEntry(A2) ; hook h_SubEntry
+
 	BRA.B	L00001B
 L00001A: ; 4 bytes per pixel
-	LEA	L000047(PC),A0
-	MOVE.L	A0,$000C(A2) ; hook h_SubEntry
+
+	LEA	mapclut32b(PC),A0
+	MOVE.L	A0,h_SubEntry(A2) ; hook h_SubEntry
+
 L00001B: ; more then 4 bytes per pixels (???) -> no
-	TST.L	$000C(A2)
+	TST.L	h_SubEntry(A2)
 	BEQ.B	L00001D
-	MOVE.L	A3,D0
+	MOVE.L	A3,D0		; Palette pointer second arg.
 	BEQ.B	L00001C
+
 	LEA	$0068(A2),A0
 	MOVE.L	A2,-(A7)
-	MOVEA.L	A0,A1
-	MOVE.L	$002C(A2),D0
-	MOVEA.L	A3,A0
-	MOVEA.L	$001C(A2),A6
-	MOVEA.L	$0030(A5),A2
-	BSR.W	L00002F
+		MOVEA.L	A0,A1
+		MOVE.L	cgh_PixFmt(A2),D0
+		MOVEA.L	A3,A0 ; palette ptr
+		MOVEA.L	cgh_GfxBase(A2),A6
+		MOVEA.L	$0030(A5),A2   ; a5 screen -> a2 rastport ?
+		BSR.W		IDONTKNOWWHERE
 	MOVEA.L	(A7)+,A2
 	MOVE.L	D0,$0060(A2)
 	BLT.B	L00001D
-L00001C:
+L00001C: ; when palette pointer NULL.
 	MOVE.L	A2,D0
 	BRA.B	L00001F
 L00001D:
@@ -376,3 +403,22 @@ L00001E:
 L00001F:
 	MOVEM.L	(A7)+,A2/A3/A5/A6
 	RTS
+
+
+IDONTKNOWWHERE:
+	rts
+
+mapclut8b:
+mapclut16b:
+mapclut24b:
+mapclut32b:
+	rts
+
+
+_CustomRemapCLUT8RemapHook:
+	rts
+
+_DoCLUT8RemapHook:
+	rts
+
+

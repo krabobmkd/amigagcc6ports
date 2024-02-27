@@ -49,7 +49,9 @@ set(AMIGA_SRC
 	mame_ver.h
 	mame_msg.h
 
-	../../lib/c2p.s.o ../../lib/gfx.s.o
+	c2p.s
+	gfx.s
+#	../../lib/c2p.s.o ../../lib/gfx.s.o
 	cgxhooks_re.s
 	)
 
