@@ -24,28 +24,13 @@
 
 _LVOGetCyberMapAttr equ -$0060
 
-;struct CGXHook
-;{
-;	struct Hook			Hook;
-;	ULONG				Type;
-;	struct Library		*SysBase;
-;	struct Library		*GfxBase;
-;	struct Library		*LayersBase;
-;	struct Library		*CyberGfxBase;
-;	ULONG				BytesPerPixel;
-;	ULONG				PixFmt;
-;	struct Screen		*Screen;
-;	UBYTE				*Source;
-;	ULONG				Data;
-;	ULONG				SrcMod;
-;	ULONG				SrcX;
-;	ULONG				SrcY;
-;	ULONG				DstX;
-;	ULONG				DstY;
-;	ULONG				Remap[256];
-;};
+;STRUCTURE HOOK,MLN_SIZE
+; APTR h_Entry		; assembler entry point
+; APTR h_SubEntry		; optional HLL entry point
+; APTR h_Data		; owner specific
+;LABEL h_SIZEOF
 
-; "corrected " version
+; corrected " version
 ;struct CGXHook
 ;{
 ;	struct Hook			Hook;  // sizeof=20=$14
@@ -82,11 +67,6 @@ _LVOGetCyberMapAttr equ -$0060
 ;};
 
 
-;STRUCTURE HOOK,MLN_SIZE
-; APTR h_Entry		; assembler entry point
-; APTR h_SubEntry		; optional HLL entry point
-; APTR h_Data		; owner specific
-;LABEL h_SIZEOF
 
  STRUCTURE CGXHook,h_SIZEOF ; extends Hooks
 	ULONG	cgh_Type			; $14
@@ -107,10 +87,10 @@ _LVOGetCyberMapAttr equ -$0060
 	ULONG	cgh_DstY
 	; absolutely wrong on the C header side...
 	STRUCT	cgh_xxxxx,20
-	APTR	cgh_guessme
+	APTR	cgh_guessme ; ptr filled with cgh_Remap.
 	STRUCT	cgh_Remap,4*256
 
- ; should be #$00000468
+ ; should be #$00000468 -> verified
  LABEL	cgh_SIZEOF
 
 	SECTION "",CODE
@@ -119,6 +99,12 @@ _LVOGetCyberMapAttr equ -$0060
 	XDEF	_FreeCGXHook
 	XDEF	_CustomRemapCLUT8RemapHook
 	XDEF	_DoCLUT8RemapHook
+
+
+; test to check real values of defines...
+;    XDEF v_cgh_SIZEOF
+;v_cgh_SIZEOF:
+;    dc.l cgh_SIZEOF
 
 	; used by _AllocCLUT8RemapHook
 _AllocCGXHook:
