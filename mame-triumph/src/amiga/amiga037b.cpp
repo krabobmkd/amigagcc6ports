@@ -22,13 +22,18 @@ extern "C" {
 #include <cybergraphx/cybergraphics.h>
 }
 
+// mame includes
+extern "C" {
+    #include "mamecore.h"
+    #include "mame.h"
+    #include "driver.h"
+    #include "osdepend.h"
+}
 
 #include <stdio.h>
 #include <string>
 #include <vector>
-#include "mame.h"
-#include "driver.h"
-#include "osdepend.h"
+
 
 #include "main.h"
 #include "config_moo.h"
@@ -52,7 +57,7 @@ extern LONG FPS;
 #define VSetLimitSpeed(video,limitspeed)
 #endif
 
-struct osd_bitmap *BitMap=NULL;
+mame_bitmap *BitMap=NULL;
 LONG ClearBitMap;
 
 static LONG  UserInterface;
@@ -105,8 +110,11 @@ void StartGame(void)
 
   printf("StartGame1\n");
     // consider evrything null by default.
+#if OLDE
     memset(&options, 0,sizeof(struct GameOptions));
-
+#else
+    memset(&options, 0,sizeof(global_options));
+#endif
   // options.record=NULL;
   // options.playback=NULL;
   // options.language_file=NULL; /* LBO 042400 */
@@ -255,10 +263,10 @@ void osd_exit()
 {
 }
 
-//struct osd_bitmap *osd_new_bitmap(int width, int height, int depth)
-struct osd_bitmap *osd_alloc_bitmap(int width,int height,int depth)
+//mame_bitmap *osd_new_bitmap(int width, int height, int depth)
+mame_bitmap *osd_alloc_bitmap(int width,int height,int depth)
 {
-  struct osd_bitmap *bitmap;
+  mame_bitmap *bitmap;
   unsigned char   *line;
   LONG        safety;
   LONG        i, w;
@@ -285,7 +293,7 @@ struct osd_bitmap *osd_alloc_bitmap(int width,int height,int depth)
   else
     w = ((2 * (width + 2 * safety) + 3) >> 2) << 2;
 
-  bitmap = (struct osd_bitmap *) calloc(  sizeof(struct osd_bitmap)
+  bitmap = (mame_bitmap *) calloc(  sizeof(mame_bitmap)
                       + height*sizeof(unsigned char *)
                       + w*(height+2*safety)*sizeof(unsigned char), 1);
 
@@ -311,7 +319,7 @@ struct osd_bitmap *osd_alloc_bitmap(int width,int height,int depth)
   return(bitmap);
 }
 
-void osd_free_bitmap(struct osd_bitmap *bitmap)
+void osd_free_bitmap(mame_bitmap *bitmap)
 {
   TRACE_ENTER("osd_free_bitmap");
 
@@ -321,7 +329,7 @@ void osd_free_bitmap(struct osd_bitmap *bitmap)
   TRACE_LEAVE("osd_free_bitmap");
 }
 
-void osd_clearbitmap(struct osd_bitmap *bitmap)
+void osd_clearbitmap(mame_bitmap *bitmap)
 {
   int i;
 
@@ -514,7 +522,7 @@ int osd_allocate_colors(unsigned int total_colors,const unsigned char *palette,u
   return 0;
 }
 //krbtest
-//struct osd_bitmap *_globalBitmap = NULL;
+//mame_bitmap *_globalBitmap = NULL;
 /* 0.37:
   Create a display screen, or window, of the given dimensions (or larger). It is
   acceptable to create a smaller display if necessary, in that case the user must
@@ -533,7 +541,7 @@ int osd_allocate_colors(unsigned int total_colors,const unsigned char *palette,u
 */
 
 int osd_create_display(int width,int height,int depth,int fps,int attributes,int orientation)
-//old struct osd_bitmap *osd_create_display(int width, int height, int attributes)
+//old mame_bitmap *osd_create_display(int width, int height, int attributes)
 {
   unsigned char *line;
   
@@ -628,9 +636,9 @@ int osd_create_display(int width,int height,int depth,int fps,int attributes,int
         }
       }
 #ifdef POWERUP
-      BitMap  = (struct osd_bitmap *) malloc( sizeof(struct osd_bitmap) + 2*height*sizeof(unsigned char *));
+      BitMap  = (mame_bitmap *) malloc( sizeof(mame_bitmap) + 2*height*sizeof(unsigned char *));
 #else
-      BitMap  = (struct osd_bitmap *) malloc( sizeof(struct osd_bitmap) + height*sizeof(unsigned char *));
+      BitMap  = (mame_bitmap *) malloc( sizeof(mame_bitmap) + height*sizeof(unsigned char *));
 #endif
     }
     
@@ -737,7 +745,7 @@ void osd_close_display(void)
 
   VideoClose();
 }
-void osd_update_video_and_audio(struct osd_bitmap *bitmap)
+void osd_update_video_and_audio(mame_bitmap *bitmap)
 //old void osd_update_video_and_audio(void)
 {
   unsigned char *line;
@@ -1973,7 +1981,7 @@ int osd_get_brightness(void)
 void osd_profiler(int type)
 {
 }
-void osd_save_snapshot(struct osd_bitmap *bitmap)
+void osd_save_snapshot(mame_bitmap *bitmap)
 {
 
 }

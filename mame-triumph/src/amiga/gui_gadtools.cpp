@@ -24,7 +24,7 @@ struct Menu *g_gtMenu=NULL;
 int gui_gadtools_init()
 {
     if(!GadToolsBase) return 1;
-    if(g_gtMenu) return;
+    if(g_gtMenu) return 1;
 
     for(int i = 0; NewMenu[i].nm_Type != NM_END; i++)
     {
@@ -34,6 +34,7 @@ int gui_gadtools_init()
     }
     g_gtMenu  = CreateMenus(NewMenu, GTMN_FullMenu, TRUE, TAG_END);
 
+    return 0;
 }
 void gui_gadtools_close()
 {

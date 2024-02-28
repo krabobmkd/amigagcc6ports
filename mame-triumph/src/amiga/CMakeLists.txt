@@ -16,8 +16,8 @@ if(AMIGA)
 	
 endif()
 
-add_subdirectory(../mame037b/src MameLib)
-
+#add_subdirectory(../mame037b/src MameLib)
+add_subdirectory(../mame106 MameLib)
 
 set(AMIGA_SRC
 	amiga037b.cpp
@@ -70,7 +70,8 @@ target_include_directories(${PROGNAME} PUBLIC "../../include" )
 target_link_libraries(${PROGNAME} PUBLIC moo mood )
 #add_library(${PROGNAME} PUBLIC OBJECT IMPORTED  ../../c2p.s.o ../../gfx.s.o)
 
-target_include_directories(${PROGNAME} PUBLIC "../mame037b/src")
+# target_include_directories(${PROGNAME} PUBLIC "../mame037b/src")
+target_include_directories(${PROGNAME} PUBLIC "../mame106")
 
 # MUI is not provided by gccbebbo6.5 ndk by default, we have it there:
 target_include_directories(${PROGNAME} PUBLIC "../../../extrasdk/MUI/include")

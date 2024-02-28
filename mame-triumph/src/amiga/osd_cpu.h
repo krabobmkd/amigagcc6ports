@@ -66,15 +66,21 @@ typedef signed long long	 INT64;
  * thus PAIR.d can be used to pass arguments to the memory system
  * which expects 'int' really.
  ******************************************************************************/
-typedef union {
-#ifdef LSB_FIRST
-	struct { UINT8 l,h,h2,h3; } b;
-	struct { UINT16 l,h; } w;
-#else
-	struct { UINT8 h3,h2,h,l; } b;
-	struct { UINT16 h,l; } w;
-#endif
-	UINT32 d;
-}	PAIR;
+//#ifndef PAIR
+//typedef union {
+//#ifdef LSB_FIRST
+//	struct { UINT8 l,h,h2,h3; } b;
+//	struct { UINT16 l,h; } w;
+//#else
+//	struct { UINT8 h3,h2,h,l; } b;
+//	struct { UINT16 h,l; } w;
+//#endif
+//	UINT32 d;
+//}	PAIR;
+//#endif
+
+#define DECL_NORETURN
+#define CLIB_DECL
+
 
 #endif
