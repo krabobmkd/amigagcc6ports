@@ -18,8 +18,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "osd_cpu.h"
-
-
+#include "mameenums.h"
 
 /***************************************************************************
 

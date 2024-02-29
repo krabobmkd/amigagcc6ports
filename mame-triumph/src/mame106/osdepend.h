@@ -16,7 +16,7 @@
 
 #include "mamecore.h"
 #include <stdarg.h>
-
+#include "mameenums.h"
 int osd_init(void);
 
 #ifdef NEW_DEBUGGER
@@ -249,18 +249,6 @@ enum
 	PATH_NOT_FOUND,
 	PATH_IS_FILE,
 	PATH_IS_DIRECTORY
-};
-
-/* These values are returned as error codes by osd_fopen() */
-enum _osd_file_error
-{
-	FILEERR_SUCCESS,
-	FILEERR_FAILURE,
-	FILEERR_OUT_OF_MEMORY,
-	FILEERR_NOT_FOUND,
-	FILEERR_ACCESS_DENIED,
-	FILEERR_ALREADY_OPEN,
-	FILEERR_TOO_MANY_FILES
 };
 
 typedef struct _osd_file osd_file;

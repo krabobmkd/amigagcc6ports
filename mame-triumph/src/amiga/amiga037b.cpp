@@ -104,48 +104,82 @@ extern int translucency;
 void unzip_cache_clear();
 void setRomPaths(std::vector<std::string> &extrarompaths,std::vector<std::string> &extrasamplepaths);
 
+#if (MAMEVERSION > 78 )
+inline void initOptions()
+{
+
+    // consider everything null by default.
+    memset(&options, 0,sizeof(global_options));
+
+   options.cheat=1;
+   options.gui_host=1;
+
+   options.samplerate=(Config[CFG_SOUND] == CFGS_NO)?0:22050;
+    Machine->sample_rate = options.samplerate;
+
+//re?   options.use_samples=1; //TODO ?
+
+//   options.ror        = (Config[CFG_ROTATION] == CFGR_RIGHT);
+//   options.rol        = (Config[CFG_ROTATION] == CFGR_RIGHT);
+//   options.flipx      = Config[CFG_FLIPX];
+//   options.flipy      = Config[CFG_FLIPY];
+
+
+
+}
+#else
+inline void initOptions()
+{   // mame versions 037,078,... ...
+
+    // consider everything null by default.
+    memset(&options, 0,sizeof(struct GameOptions));
+   options.cheat=1;
+//   options.gui_host=0; //? not done.
+
+    options.skip_disclaimer = 1; /* 1 to skip the disclaimer screen at startup */
+    options.skip_gameinfo = 1;  /* 1 to skip the game info screen at startup */
+    options.skip_warnings = 0; /* 1 to skip the warnings screen at startup */
+
+   options.samplerate=(Config[CFG_SOUND] == CFGS_NO)?0:22050;
+    Machine->sample_rate = options.samplerate;
+
+   options.use_samples=1; //TODO ?
+
+//   options.color_depth=0;	/* 8 or 16, any other value means auto */
+//   options.vector_width=0;	/* requested width for vector games=0; 0 means default (640) */
+//   options.vector_height=0;	/* requested height for vector games=0; 0 means default (480) */
+//   options.norotate=0; //OK
+
+//   options.ror        = (Config[CFG_ROTATION] == CFGR_RIGHT);
+//   options.rol        = (Config[CFG_ROTATION] == CFGR_RIGHT);
+//   options.flipx      = Config[CFG_FLIPX];
+//   options.flipy      = Config[CFG_FLIPY];
+
+
+//   options.beam=0;
+//   options.flicker=0;
+//   options.translucency=0;
+//   options.antialias=0;
+//   options.use_artwork=0;
+
+}
+#endif
+
 void StartGame(void)
 {
   throttle = 1;
 
   printf("StartGame1\n");
-    // consider evrything null by default.
-#if OLDE
-    memset(&options, 0,sizeof(struct GameOptions));
-#else
-    memset(&options, 0,sizeof(global_options));
-#endif
+
+  initOptions();
+
+
   // options.record=NULL;
   // options.playback=NULL;
   // options.language_file=NULL; /* LBO 042400 */
 
 // all are "int"
 //   options.mame_debug=0;
-   options.cheat=1;
-   options.gui_host=0; //? not done.
-
-   options.samplerate=(Config[CFG_SOUND] == CFGS_NO)?0:22050;
-    Machine->sample_rate = options.samplerate;
-
-   options.use_samples=1; //TODO ?
-   options.use_emulated_ym3812=0;
-
-   options.color_depth=0;	/* 8 or 16, any other value means auto */
-   options.vector_width=0;	/* requested width for vector games=0; 0 means default (640) */
-   options.vector_height=0;	/* requested height for vector games=0; 0 means default (480) */
-   options.norotate=0; //OK
-
-   options.ror        = (Config[CFG_ROTATION] == CFGR_RIGHT);
-   options.rol        = (Config[CFG_ROTATION] == CFGR_RIGHT);
-   options.flipx      = Config[CFG_FLIPX];
-   options.flipy      = Config[CFG_FLIPY];
-
-
-   options.beam=0;
-   options.flicker=0;
-   options.translucency=0;
-   options.antialias=0;
-   options.use_artwork=0;
 
  // options.errorlog = NULL;
 
@@ -247,11 +281,12 @@ void StartGame(void)
 
   unzip_cache_clear();
 
-  if(options.playback)
-    osd_fclose(options.playback);
+//todo ?
+//  if(options.playback)
+//    osd_fclose(options.playback);
   
-  if(options.record)
-    osd_fclose(options.record);
+//  if(options.record)
+//    osd_fclose(options.record);
 }
 
 int osd_init()
@@ -264,6 +299,7 @@ void osd_exit()
 }
 
 //mame_bitmap *osd_new_bitmap(int width, int height, int depth)
+/*
 mame_bitmap *osd_alloc_bitmap(int width,int height,int depth)
 {
   mame_bitmap *bitmap;
@@ -273,12 +309,12 @@ mame_bitmap *osd_alloc_bitmap(int width,int height,int depth)
 
   TRACE_ENTER("osd_new_bitmap");
 
-  if(Machine->orientation & ORIENTATION_SWAP_XY)
-  {
-    w   = width;
-    width = height;
-    height  = w;
-  }
+//  if(Machine->orientation & ORIENTATION_SWAP_XY)
+//  {
+//    w   = width;
+//    width = height;
+//    height  = w;
+//  }
 
   if(width > 32)
     safety = 8;
@@ -302,7 +338,7 @@ mame_bitmap *osd_alloc_bitmap(int width,int height,int depth)
     bitmap->width    = width;
     bitmap->height   = height;
     bitmap->depth    = depth;
-    bitmap->_private = (void *) w;
+//    bitmap->_private = (void *) w;
     bitmap->line     = (unsigned char **) &bitmap[1]; 
 
     line = ((unsigned char *) &bitmap->line[height]) + safety * w;
@@ -364,7 +400,7 @@ void osd_mark_dirty(int x1, int y1, int x2, int y2, int ui)
   if(ui)
     UserInterface = TRUE;
 }
-
+*/
 /* palette is an array of 'totalcolors' R,G,B triplets. The function returns */
 /* in *pens the pen values corresponding to the requested colors. */
 /* If 'totalcolors' is 32768, 'palette' is ignored and the *pens array is filled */
@@ -422,6 +458,7 @@ static inline short makecol(int r, int g, int b)
   white-on-black and black-on-white text.
   Return 0 for success.
 */
+/*
 int osd_allocate_colors(unsigned int total_colors,const unsigned char *palette,unsigned short *pens,int modifiable)
 //olde void osd_allocate_colors(unsigned int total_colors,const unsigned char *palette,unsigned short *pens)
 {
@@ -521,8 +558,8 @@ int osd_allocate_colors(unsigned int total_colors,const unsigned char *palette,u
   TRACE_LEAVE("osd_allocate_colors");
   return 0;
 }
-//krbtest
-//mame_bitmap *_globalBitmap = NULL;
+*/
+
 /* 0.37:
   Create a display screen, or window, of the given dimensions (or larger). It is
   acceptable to create a smaller display if necessary, in that case the user must
@@ -539,9 +576,20 @@ int osd_allocate_colors(unsigned int total_colors,const unsigned char *palette,u
   this is done entirely in the core.
   Returns 0 on success.
 */
+/*
+struct _osd_create_params
+{
+	int width, height;			 width and height
+	int aspect_x, aspect_y;		 aspect ratio X:Y
+	int depth;					 depth, either 16(palette), 15(RGB) or 32(RGB)
+	int colors;				colors in the palette (including UI)
+	float fps;					 frame rate
+	int video_attributes;		 video flags from driver
+};
 
-int osd_create_display(int width,int height,int depth,int fps,int attributes,int orientation)
-//old mame_bitmap *osd_create_display(int width, int height, int attributes)
+
+*/
+int osd_create_display(const osd_create_params *params, UINT32 *rgb_components)
 {
   unsigned char *line;
   
@@ -550,7 +598,7 @@ int osd_create_display(int width,int height,int depth,int fps,int attributes,int
 
   TRACE_ENTER("osd_create_display");
 
-  if(Machine->orientation & ORIENTATION_SWAP_XY)
+  /*if(Machine->orientation & ORIENTATION_SWAP_XY)
   {
     t      = width;
     width  = height;
@@ -561,7 +609,7 @@ int osd_create_display(int width,int height,int depth,int fps,int attributes,int
     right  = Machine->drv->default_visible_area.max_y;
     bottom = Machine->drv->default_visible_area.max_x;
   }
-  else
+  else*/
   {
     left   = Machine->drv->default_visible_area.min_x;
     top    = Machine->drv->default_visible_area.min_y;
@@ -569,7 +617,7 @@ int osd_create_display(int width,int height,int depth,int fps,int attributes,int
     bottom = Machine->drv->default_visible_area.max_y;
   }
 
-  if(attributes & VIDEO_TYPE_VECTOR)
+ /* if(attributes & VIDEO_TYPE_VECTOR)
   {
     if(Config[CFG_WIDTH] > width)
       width = Config[CFG_WIDTH];
@@ -597,7 +645,7 @@ int osd_create_display(int width,int height,int depth,int fps,int attributes,int
       top    = height - bottom - 1;
       bottom = t;
     }
-  }
+  }*/
 
   Machine->uiwidth  = right - left + 1;
   Machine->uiheight = bottom - top + 1;

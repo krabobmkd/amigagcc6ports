@@ -59,7 +59,7 @@ set(PROGNAME TriumphMame)
 add_executable(${PROGNAME} ${AMIGA_SRC} )
 set_property(TARGET ${PROGNAME} PROPERTY C_STANDARD 11)
 set_property(TARGET ${PROGNAME} PROPERTY CXX_STANDARD 11)
-target_compile_definitions(${PROGNAME} PUBLIC MAMEVERSION=37 ZIP_CACHE=1 )
+target_compile_definitions(${PROGNAME} PUBLIC MAMEVERSION=106 ZIP_CACHE=1 )
 
 # the static libs that are part of this repo: 
 target_link_libraries(${PROGNAME} PUBLIC mamecore z)
