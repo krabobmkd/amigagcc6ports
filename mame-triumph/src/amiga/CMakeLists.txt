@@ -20,12 +20,12 @@ endif()
 add_subdirectory(../mame106 MameLib)
 
 set(AMIGA_SRC
-	amiga037b.cpp
-	amiga037b_keyboard.cpp
-	amiga037b_joysticks.cpp
-	amiga037b_audiostream.cpp
+	amiga106.cpp
+	amiga106_keyboard.cpp
+	amiga106_joysticks.cpp
+	amiga106_audiostream.cpp
 #	amiga037b_filesystem.cpp
-	amiga037b_filesystem37.cpp
+	amiga106_filesystem.cpp
 	main.cpp
 #	romscan.cpp
 	gui_mui.cpp
