@@ -598,6 +598,10 @@ int osd_create_display(const osd_create_params *params, UINT32 *rgb_components)
 
   TRACE_ENTER("osd_create_display");
 
+ LONG width = params->width;
+ LONG height = params->height;
+
+
   /*if(Machine->orientation & ORIENTATION_SWAP_XY)
   {
     t      = width;
@@ -645,20 +649,20 @@ int osd_create_display(const osd_create_params *params, UINT32 *rgb_components)
       top    = height - bottom - 1;
       bottom = t;
     }
-  }*/
+  }
 
   Machine->uiwidth  = right - left + 1;
   Machine->uiheight = bottom - top + 1;
   Machine->uixmin   = left;
   Machine->uiymin   = top;
-
-  if(VideoOpen(width, height, left, top, right, bottom, attributes & VIDEO_SUPPORTS_DIRTY))
+*/
+  if(VideoOpen(width, height, left, top, right, bottom, /*attributes & VIDEO_SUPPORTS_DIRTY*/0))
   {
     DirtyLines[0] = NULL;
 
     if(DirectArray)
     {
-      BitMap = osd_alloc_bitmap(width, height, 8);
+      BitMap = /*osd_alloc_bitmap*/bitmap_alloc_depth(width, height,/*8*/ Machine->color_depth);
       
       if((Config[CFG_DIRECTMODE] == CFGDM_COPY) && Config[CFG_DIRTYLINES] && !Config[CFG_BUFFERING])
       {
@@ -712,7 +716,7 @@ int osd_create_display(const osd_create_params *params, UINT32 *rgb_components)
       {
         BitMap->width  = width;
         BitMap->height = height;
-        BitMap->line   = (unsigned char **) &BitMap[1];
+        BitMap->line   = (void **) &BitMap[1];
 
         if(PixelArray[0]->PixelFormat)
           BitMap->depth = 16;
@@ -866,29 +870,29 @@ void osd_update_video_and_audio(mame_bitmap *bitmap)
       need_to_clear_bitmap = 1;
   }
 
-  if(ShowFPS || showfpstemp)
-  {
-    trueorientation = Machine->orientation;
-    Machine->orientation = ORIENTATION_DEFAULT;
+//  if(ShowFPS || showfpstemp)
+//  {
+//    trueorientation = Machine->orientation;
+//    Machine->orientation = ORIENTATION_DEFAULT;
 
-    fps = VGetFPS(Video);
-    sprintf(buf," %3d%%(%3d/%d fps)",(int)(100*fps/Machine->drv->frames_per_second),fps,
-            (int)(Machine->drv->frames_per_second));
-    l = strlen(buf);
+//    fps = VGetFPS(Video);
+//    sprintf(buf," %3d%%(%3d/%d fps)",(int)(100*fps/Machine->drv->frames_per_second),fps,
+//            (int)(Machine->drv->frames_per_second));
+//    l = strlen(buf);
 
-//krb, verify
-#ifndef DT_COLOR_WHITE
-#define DT_COLOR_WHITE 0
-#endif
-    for (i = 0;i < l;i++)
-    {
-      drawgfx(Machine->scrbitmap,Machine->uifont,buf[i], DT_COLOR_WHITE, 0, 0,
-              Machine->uixmin + Machine->uiwidth - (l-i)*Machine->uifont->width,
-              Machine->uiymin, 0, TRANSPARENCY_NONE, 0);
-    }
+////krb, verify
+//#ifndef DT_COLOR_WHITE
+//#define DT_COLOR_WHITE 0
+//#endif
+//    for (i = 0;i < l;i++)
+//    {
+//      drawgfx(Machine->scrbitmap,Machine->uifont,buf[i], DT_COLOR_WHITE, 0, 0,
+//              Machine->uixmin + Machine->uiwidth - (l-i)*Machine->uifont->width,
+//              Machine->uiymin, 0, TRANSPARENCY_NONE, 0);
+//    }
 
-    Machine->orientation = trueorientation;
-  }
+//    Machine->orientation = trueorientation;
+//  }
 
   if(on_screen_display_timer > 0)
   {
@@ -915,7 +919,7 @@ void osd_update_video_and_audio(mame_bitmap *bitmap)
         h   = /*BitMap*/bitmap->height;
         bpr   = DirectArray->BytesPerRow;
         line  = DirectArray->Pixels + 8 + (8 * bpr);
-        lines = /*BitMap*/bitmap->line;
+        lines = /*BitMap*/(uint8_t **)bitmap->line;
   
         for(i = 0; i < h; i++)
         {
@@ -932,7 +936,7 @@ void osd_update_video_and_audio(mame_bitmap *bitmap)
       {
         if(DirtyLines[0])
         {
-          lines = bitmap->line;
+          lines = (uint8_t **)bitmap->line;
           h   = bitmap->height;
           w   = bitmap->width >> 2;
           pix   = (uint32_t *) DirectArray->Pixels;
@@ -1025,14 +1029,14 @@ void osd_update_video_and_audio(mame_bitmap *bitmap)
         }
         else
         {
-          lines = bitmap->line;
+          lines = (uint8_t **)bitmap->line;
           h   = bitmap->height;
           w   = bitmap->width >> 2;
           pix   = (uint32_t *) DirectArray->Pixels;
           bpr   = DirectArray->BytesPerRow >> 2;
           mod   = bpr - w;
           src   = (uint32_t *) lines[0];
-          srcmod  = (((uint32_t) bitmap->_private) >> 2) - w;
+          srcmod  = (((uint32_t) bitmap->rowpixels) >> 2) - w;
 
           for(i = 0; i < h; i++)
           {
@@ -1112,7 +1116,9 @@ void osd_update_video_and_audio(mame_bitmap *bitmap)
   frameskip = VGetFrameSkip(Video);
 
   if(need_to_clear_bitmap)
-    osd_clearbitmap(bitmap);
+  {
+    //todo osd_clearbitmap(bitmap);
+  }
 
   input_update_counter = 0;
   InputUpdate(FALSE);

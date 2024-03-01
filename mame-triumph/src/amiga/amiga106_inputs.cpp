@@ -22,8 +22,11 @@
 
 #include <vector>
 // from mame:
+extern "C" {
 #include "osdepend.h"
 #include "input.h"
+}
+
 #include "amiga_inputs.h"
 
 #include <stdio.h>
@@ -82,13 +85,14 @@ inline unsigned int nameToMameKeyEnum(std::string &s)
         if(c==146) return KEYCODE_QUOTE;
     }
 
-    return CODE_OTHER;
+    return CODE_OTHER_DIGITAL;
 }
 
 /*
   return a list of all available keys (see input.h)
 */
-const struct KeyboardInfo *osd_get_key_list(void)
+const os_code_info *osd_get_code_list(void)
+//const struct KeyboardInfo *osd_get_key_list(void)
 {
   //  printf(" * * * ** osd_get_key_list  * * * *  *\n");
 
@@ -97,11 +101,11 @@ const struct KeyboardInfo *osd_get_key_list(void)
     {
         char *name;  OS dependant name;; 0 terminates the list
         unsigned code;  OS dependant code
-        InputCode standardcode;	 CODE_xxx equivalent; from list below, or CODE_OTHER if n/a
+        InputCode standardcode;	 CODE_xxx equivalent; from list below, or CODE_OTHER_DIGITAL if n/a
     };
   */
 
-    static vector<struct KeyboardInfo> kbi;
+    static vector<os_code_info> kbi;
     static vector<mapkeymap> km; // keep the instance of strings from keymap libs
     static bool inited=false;
     if(!inited)
@@ -146,16 +150,16 @@ const struct KeyboardInfo *osd_get_key_list(void)
             {"F10",0x59,KEYCODE_F10},
 
             {"~",0x00,KEYCODE_TILDE},
-            {"1",0x01,CODE_OTHER},
-            {"2",0x02,CODE_OTHER},
-            {"3",0x03,CODE_OTHER},
-            {"4",0x04,CODE_OTHER},
-            {"5",0x05,CODE_OTHER},
-            {"6",0x06,CODE_OTHER},
-            {"7",0x07,CODE_OTHER},
-            {"8",0x08,CODE_OTHER},
-            {"9",0x09,CODE_OTHER},
-            {"0",0x0A,CODE_OTHER},
+            {"1",0x01,CODE_OTHER_DIGITAL},
+            {"2",0x02,CODE_OTHER_DIGITAL},
+            {"3",0x03,CODE_OTHER_DIGITAL},
+            {"4",0x04,CODE_OTHER_DIGITAL},
+            {"5",0x05,CODE_OTHER_DIGITAL},
+            {"6",0x06,CODE_OTHER_DIGITAL},
+            {"7",0x07,CODE_OTHER_DIGITAL},
+            {"8",0x08,CODE_OTHER_DIGITAL},
+            {"9",0x09,CODE_OTHER_DIGITAL},
+            {"0",0x0A,CODE_OTHER_DIGITAL},
 
             {"BACKSPACE",0x41,KEYCODE_BACKSPACE},
             {"DEL",0x46,KEYCODE_DEL},
@@ -182,7 +186,7 @@ const struct KeyboardInfo *osd_get_key_list(void)
             {"- PAD",0x4A,KEYCODE_MINUS_PAD},
             {"+ PAD",0x5E,KEYCODE_PLUS_PAD},
             // mame codes is missing keypad '.'
-            {". PAD",0x3C,CODE_OTHER},
+            {". PAD",0x3C,CODE_OTHER_DIGITAL},
             {"ENTER PAD",0x43,KEYCODE_ENTER_PAD}
 
         };
@@ -204,7 +208,12 @@ const struct KeyboardInfo *osd_get_key_list(void)
             if(mkm._name.length()>0)
             {
                 unsigned int mamekc = nameToMameKeyEnum(mkm._name);
-                kbi.push_back({mkm._name.c_str(),(UWORD)keystodo[i],mamekc});
+                os_code_info oci = {
+                    mkm._name.c_str(),
+                    (os_code)keystodo[i],
+                    (input_code)mamekc
+                    };
+                kbi.push_back(oci);
             }
         }
 
@@ -231,12 +240,12 @@ int osd_is_key_pressed(int keycode) // now , always rawkey.
   systems while using the debugger. If you don't want to or can't support this
   function you can just return OSD_KEY_NONE.
 */
-int osd_wait_keypress(void)
-{
-   // printf("osd_wait_keypress\n");
+//int osd_wait_keypress(void)
+//{
+//   // printf("osd_wait_keypress\n");
 
-    return OSD_KEY_NONE;
-}
+//    return OSD_KEY_NONE;
+//}
 
 /*
   Return the Unicode value of the most recently pressed key. This

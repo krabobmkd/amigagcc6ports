@@ -21,10 +21,8 @@ add_subdirectory(../mame106 MameLib)
 
 set(AMIGA_SRC
 	amiga106.cpp
-	amiga106_keyboard.cpp
-	amiga106_joysticks.cpp
+	amiga106_inputs.cpp
 	amiga106_audiostream.cpp
-#	amiga037b_filesystem.cpp
 	amiga106_filesystem.cpp
 	main.cpp
 #	romscan.cpp
