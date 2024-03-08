@@ -1,5 +1,4 @@
-// Vic Krb Ferry, Feb 2024
-// from amiga
+// Vic Krb Ferry, Mar 2024
 
 #ifndef __stdargs
 #define __stdargs
@@ -9,7 +8,11 @@
 #include <proto/dos.h>
 
 // from mame:
+extern "C" {
 #include "osdepend.h"
+#include "fileio.h"
+#include "unzip.h"
+}
 //from this project
 //#include "file.h"
 // from project from this repos, static zlib:
@@ -22,23 +25,22 @@
 #include <stdio.h>
 #include <vector>
 #include <sstream>
-//#include <memory>
 
-#include "unzip.h"
+
 
 using namespace std;
 
-// api tracing tools
-const vector<string> filetypenames={
-    "none","ROM","SAMPLE","NVRAM","HIGHSCORE",
-    "HIGHSCORE_DB","CONFIG","INPUTLOG","STATE","ARTWORK",
-    "MEMCARD","SCREENSHOT","HISTORY","CHEAT","LANGUAGE"
-    "messr","messrw","end"
-};
-const char *osdfiletypeName(int itype) {
-    if(itype<0 || itype>= (int)filetypenames.size()) return "errortype";
-    return filetypenames[itype].c_str();
-}
+// for api tracing tools
+//const vector<string> filetypenames={
+//    "none","ROM","SAMPLE","NVRAM","HIGHSCORE",
+//    "HIGHSCORE_DB","CONFIG","INPUTLOG","STATE","ARTWORK",
+//    "MEMCARD","SCREENSHOT","HISTORY","CHEAT","LANGUAGE"
+//    "messr","messrw","end"
+//};
+//const char *osdfiletypeName(int itype) {
+//    if(itype<0 || itype>= (int)filetypenames.size()) return "errortype";
+//    return filetypenames[itype].c_str();
+//}
 
 
 extern struct DosLibrary    *DOSBase;
@@ -84,6 +86,7 @@ public:
         _offset +=l;
         return l;
     }
+    /*
     inline int readScatter(void *buffer, int l, int increment) {
         if(!_pData) return 0;
         if(_Length==_offset) return 0;
@@ -97,13 +100,14 @@ public:
             pwr += increment;
         }
         return l;
-    }
+    }*/
 
     inline int write(const void *buffer,int length)
     {
         if(!_writeHdl) return 0;
         return (int)Write(_writeHdl,buffer,length);
     }
+    /*
     inline int readswap(void *buffer,int length)
     {
         if(!_pData) return 0;
@@ -158,7 +162,7 @@ public:
         }
         if(l<maxlength) *pw++ = 0;
         return s;
-    }
+    }*/
     inline int eof() {
         if(!_pData) return 0;
         return (int)(_offset>=_Length);
@@ -297,46 +301,8 @@ public:
     ~ArchiveDir();
     std::string _dirpath;
 };
-// - - - - - - - -
-//class sFile_fromZip : public sFile {
-//public:
-//    std::shared_ptr<ArchiveDir> _dir;
-//};
-//std::shared_ptr<ArchiveDir> amiga_openArchive(const char *gamename)
-//{
-
-//}
 
 
-/* gamename holds the driver name, filename is only used for ROMs and    */
-/* samples. If 'write' is not 0, the file is opened for write. Otherwise */
-/* it is opened for read. */
-
-
-/*
-enum
-{
-	OSD_FILETYPE_ROM = 1,
-	OSD_FILETYPE_SAMPLE,
-	OSD_FILETYPE_NVRAM,
-	OSD_FILETYPE_HIGHSCORE,
-	OSD_FILETYPE_HIGHSCORE_DB,  LBO 040400
-	OSD_FILETYPE_CONFIG,
-	OSD_FILETYPE_INPUTLOG,
-	OSD_FILETYPE_STATE,
-	OSD_FILETYPE_ARTWORK,
-	OSD_FILETYPE_MEMCARD,
-	OSD_FILETYPE_SCREENSHOT,
-	OSD_FILETYPE_HISTORY,   LBO 040400
-	OSD_FILETYPE_CHEAT,   LBO 040400
-	OSD_FILETYPE_LANGUAGE,  LBO 042400
-#ifdef MESS
-	OSD_FILETYPE_IMAGE_R,
-	OSD_FILETYPE_IMAGE_RW,
-#endif
-	OSD_FILETYPE_end // dummy last entry
-};
-*/
 std::vector<std::string>
             _rompathlist({"PROGDIR:roms"}), // default values.
             _samplepathlist({"PROGDIR:samples"});
@@ -378,7 +344,7 @@ void *fopen_archive_or_disk(const char *gamename,const char *filename,int filety
     sFile *pfile = new sFile();
     if(!pfile) return NULL;
 
-    vector<string> &pathlistToSearch= (filetype==OSD_FILETYPE_SAMPLE)?_samplepathlist:_rompathlist;
+    vector<string> &pathlistToSearch= (filetype==FILETYPE_SAMPLE)?_samplepathlist:_rompathlist;
 
     // some popular packages uses this:
     string subdir;
@@ -432,10 +398,10 @@ void *fopen_userdir(const char *gamename,const char *filename,int filetype,int w
     string typedirname;
     switch(filetype)
     {
-        case OSD_FILETYPE_HIGHSCORE:
-        case OSD_FILETYPE_HIGHSCORE_DB:
+        case FILETYPE_HIGHSCORE:
+        case FILETYPE_HIGHSCORE_DB:
             typedirname="hiscores"; break;
-        case OSD_FILETYPE_SCREENSHOT:
+        case FILETYPE_SCREENSHOT:
             typedirname = "screenshots"; break;
         default: //
             typedirname="configs"; break;
@@ -443,15 +409,15 @@ void *fopen_userdir(const char *gamename,const char *filename,int filetype,int w
     string fileext;
     switch(filetype)
     {
-        case OSD_FILETYPE_HIGHSCORE: fileext="hi"; break;
-        case OSD_FILETYPE_HIGHSCORE_DB: fileext="hidb"; break;
-        case OSD_FILETYPE_SCREENSHOT: fileext="png"; break; // verify that
-        case OSD_FILETYPE_CONFIG: fileext="cfg"; break;
-        case OSD_FILETYPE_INPUTLOG: fileext="inp"; break;
-        case OSD_FILETYPE_STATE: fileext="state"; break; // verify
-        case OSD_FILETYPE_HISTORY: fileext="hist"; break; // really dunno
-        case OSD_FILETYPE_CHEAT: fileext="cheat"; break; // really dunno
-        case OSD_FILETYPE_LANGUAGE: fileext="lang"; break; // really dunno
+        case FILETYPE_HIGHSCORE: fileext="hi"; break;
+        case FILETYPE_HIGHSCORE_DB: fileext="hidb"; break;
+        case FILETYPE_SCREENSHOT: fileext="png"; break; // verify that
+        case FILETYPE_CONFIG: fileext="cfg"; break;
+        case FILETYPE_INPUTLOG: fileext="inp"; break;
+        case FILETYPE_STATE: fileext="state"; break; // verify
+        case FILETYPE_HISTORY: fileext="hist"; break; // really dunno
+        case FILETYPE_CHEAT: fileext="cheat"; break; // really dunno
+        case FILETYPE_LANGUAGE: fileext="lang"; break; // really dunno
         default: //
             fileext="setmyextpls"; break;
     }
@@ -496,26 +462,27 @@ void *fopen_userdir(const char *gamename,const char *filename,int filetype,int w
 
     return (void *)pfile;
 }
-
-void *osd_fopen(const char *gamename,const char *filename,int filetype,int write)
+osd_file *osd_fopen(int pathtype, int pathindex, const char *filename, const char *mode, osd_file_error *error);
+//void *osd_fopen(const char *gamename,const char *filename,int filetype,int write)
 {
+    TODO
 #ifdef PRINTOSDFILESYSTEMCALLS
     printf("osd_fopen:type:%s:w:%d,%s:%s\n",osdfiletypeName(filetype),write,gamename,filename);
 #endif
     // - - - - -reading a file from disk or zip searching with possible paths.
-    if(filetype == OSD_FILETYPE_HIGHSCORE ||
-       filetype == OSD_FILETYPE_HIGHSCORE_DB ||
-       filetype == OSD_FILETYPE_CONFIG ||
-       filetype == OSD_FILETYPE_INPUTLOG ||
-       filetype == OSD_FILETYPE_STATE ||
-       filetype == OSD_FILETYPE_SCREENSHOT
+    if(filetype == FILETYPE_HIGHSCORE ||
+       filetype == FILETYPE_HIGHSCORE_DB ||
+       filetype == FILETYPE_CONFIG ||
+       filetype == FILETYPE_INPUTLOG ||
+       filetype == FILETYPE_STATE ||
+       filetype == FILETYPE_SCREENSHOT
             )
     {
         return fopen_userdir(gamename,filename,filetype,write);
     } else
     {
-        // OSD_FILETYPE_ROM
-        // OSD_FILETYPE_SAMPLE        
+        // FILETYPE_ROM
+        // FILETYPE_SAMPLE
         return fopen_archive_or_disk(gamename,filename,filetype,write);
     }
 }
@@ -530,7 +497,8 @@ int osd_faccess(const char *filename, int filetype)
 }
 
 // return bytes read.
-int osd_fread(void *file,void *buffer,int length)
+UINT32 osd_fread(osd_file *file, void *buffer, UINT32 length)
+//int osd_fread(void *file,void *buffer,int length)
 {
     if(!file) return 0;
     sFile &f = *((sFile *)file);
@@ -540,7 +508,8 @@ int osd_fread(void *file,void *buffer,int length)
 
     return f.read(buffer,length);
 }
-int osd_fwrite(void *file,const void *buffer,int length)
+UINT32 osd_fwrite(osd_file *file, const void *buffer, UINT32 length)
+//int osd_fwrite(void *file,const void *buffer,int length)
 {
     if(!file) return 0;
     sFile &f = *((sFile *)file);
@@ -550,38 +519,39 @@ int osd_fwrite(void *file,const void *buffer,int length)
 
     return f.write(buffer,length);
 }
-int osd_fread_swap(void *file,void *buffer,int length)
-{
-    if(!file) return 0;
-    sFile &f = *((sFile *)file);
-#ifdef PRINTOSDFILESYSTEMCALLS
-    printf("osd_fread_swap: l:%d %s\n",length,f.cname());
-#endif
+//int osd_fread_swap(void *file,void *buffer,int length)
+//{
+//    if(!file) return 0;
+//    sFile &f = *((sFile *)file);
+//#ifdef PRINTOSDFILESYSTEMCALLS
+//    printf("osd_fread_swap: l:%d %s\n",length,f.cname());
+//#endif
 
-    return f.readswap(buffer,length);
-}
-int osd_fwrite_swap(void *file,const void *buffer,int length)
-{
-    if(!file) return 0;
-    sFile &f = *((sFile *)file);
-#ifdef PRINTOSDFILESYSTEMCALLS
-    printf("osd_fwrite_swap: l:%d %s\n",length,f.cname());
-#endif
+//    return f.readswap(buffer,length);
+//}
+//int osd_fwrite_swap(void *file,const void *buffer,int length)
+//{
+//    if(!file) return 0;
+//    sFile &f = *((sFile *)file);
+//#ifdef PRINTOSDFILESYSTEMCALLS
+//    printf("osd_fwrite_swap: l:%d %s\n",length,f.cname());
+//#endif
 
-    return f.writeswap(buffer,length);
-}
+//    return f.writeswap(buffer,length);
+//}
 
-int osd_fread_scatter(void *file,void *buffer,int length,int increment)
-{
-    if(!file) return 0;
-    sFile &f = *((sFile *)file);
-#ifdef PRINTOSDFILESYSTEMCALLS
-    printf("osd_fread_scatter: l:%d i:%d %s\n",length,increment,f.cname());
-#endif
+//int osd_fread_scatter(void *file,void *buffer,int length,int increment)
+//{
+//    if(!file) return 0;
+//    sFile &f = *((sFile *)file);
+//#ifdef PRINTOSDFILESYSTEMCALLS
+//    printf("osd_fread_scatter: l:%d i:%d %s\n",length,increment,f.cname());
+//#endif
 
-    return f.readScatter(buffer,length,increment);
-}
-int osd_fseek(void *file,int offset,int whence)
+//    return f.readScatter(buffer,length,increment);
+//}
+int osd_fseek(osd_file *file, INT64 offset, int whence)
+//int osd_fseek(void *file,int offset,int whence)
 {
     if(!file) return -1;
     sFile &f = *((sFile *)file);
@@ -591,7 +561,8 @@ int osd_fseek(void *file,int offset,int whence)
 
     return f.seek(offset,whence);
 }
-void osd_fclose(void *file)
+void osd_fclose(osd_file *file)
+//void osd_fclose(void *file)
 {
     sFile *f = (sFile *)file;
     if(!f) return;
@@ -601,31 +572,31 @@ void osd_fclose(void *file)
 
     delete f;
 }
-int osd_fchecksum(const char *gamename, const char *filename, unsigned int *length, unsigned int *sum)
-{
-    // note: other implementations (mame4all odx) just use CRC for checksum...
-    // let's just do that. This is a re-read thing and can reach roms apparently...
-    // really need to be optimized, that is a full re-read at init it seems...
+//int osd_fchecksum(const char *gamename, const char *filename, unsigned int *length, unsigned int *sum)
+//{
+//    // note: other implementations (mame4all odx) just use CRC for checksum...
+//    // let's just do that. This is a re-read thing and can reach roms apparently...
+//    // really need to be optimized, that is a full re-read at init it seems...
 
-    // in mame code, this is only used to detect "rom clones"
-     // default values
-    if(length) *length=0;
-    if(sum) *sum=0;
-#ifdef PRINTOSDFILESYSTEMCALLS
-    printf("osd_fchecksum: gamename:%s filename:%s\n",gamename,filename);
-#endif
+//    // in mame code, this is only used to detect "rom clones"
+//     // default values
+//    if(length) *length=0;
+//    if(sum) *sum=0;
+//#ifdef PRINTOSDFILESYSTEMCALLS
+//    printf("osd_fchecksum: gamename:%s filename:%s\n",gamename,filename);
+//#endif
 
-    sFile *f = (sFile *)osd_fopen(gamename,filename,OSD_FILETYPE_ROM,0);
-    if(!f) return -1;
-    if(length) *length=f->size();
-    if(sum) *sum=f->crc();
-    delete f;
+//    sFile *f = (sFile *)osd_fopen(gamename,filename,FILETYPE_ROM,0);
+//    if(!f) return -1;
+//    if(length) *length=f->size();
+//    if(sum) *sum=f->crc();
+//    delete f;
 
-    if(length) *length=0;
-    if(sum) *sum=0;
-    return 0; // ok for that one.
+//    if(length) *length=0;
+//    if(sum) *sum=0;
+//    return 0; // ok for that one.
 
-}
+//}
 int osd_fsize(void *file)
 {
     if(!file) return 0;
@@ -636,16 +607,16 @@ int osd_fsize(void *file)
 
     return (int)f.size();
 }
-unsigned int osd_fcrc(void *file)
-{
-    if(!file) return 0;
-    sFile &f = *((sFile *)file);
-#ifdef PRINTOSDFILESYSTEMCALLS
-    printf("osd_fcrc:%s\n",f.cname());
-#endif
+//unsigned int osd_fcrc(void *file)
+//{
+//    if(!file) return 0;
+//    sFile &f = *((sFile *)file);
+//#ifdef PRINTOSDFILESYSTEMCALLS
+//    printf("osd_fcrc:%s\n",f.cname());
+//#endif
 
-    return f.crc();
-}
+//    return f.crc();
+//}
 
 int osd_fgetc(void *file)
 {
@@ -679,7 +650,8 @@ char *osd_fgets(char *s, int n, void *file)
 
     return f.getstring(s,n);
 }
-int osd_feof(void *file)
+int osd_feof(osd_file *file)
+//int osd_feof(void *file)
 {
     if(!file) return 0;
     sFile &f = *((sFile *)file);
@@ -689,7 +661,8 @@ int osd_feof(void *file)
 
     return f.eof();
 }
-int osd_ftell(void *file)
+UINT64 osd_ftell(osd_file *file)
+//int osd_ftell(void *file)
 {
     if(!file) return 0;
     sFile &f = *((sFile *)file);
@@ -698,4 +671,32 @@ int osd_ftell(void *file)
 #endif
 
     return f.tell();
+}
+
+
+/* Return the number of paths for a given type */
+int osd_get_path_count(int pathtype)
+{
+    //TODO
+}
+
+/* Get information on the existence of a file */
+int osd_get_path_info(int pathtype, int pathindex, const char *filename)
+{
+    //TODO
+    /*
+    enum
+{
+	PATH_NOT_FOUND,
+	PATH_IS_FILE,
+	PATH_IS_DIRECTORY
+};
+    */
+
+}
+
+/* Create a directory if it doesn't already exist */
+int osd_create_directory(int pathtype, int pathindex, const char *dirname)
+{
+    //TODO
 }
