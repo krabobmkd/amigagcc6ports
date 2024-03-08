@@ -48,7 +48,11 @@ extern "C" {
 // end extern "C"
 }
 
-
+// from mame
+extern "C" {
+    #include "osdepend.h"
+    #include "driver.h"
+}
 #include "version.h"
 #include "audio.h"
 #include "video.h"
@@ -58,8 +62,6 @@ extern "C" {
 #include "gui_mui.h"
 #include "gui_gadtools.h"
 
-#include "osdepend.h"
-#include "driver.h"
 #include "file.h"
 
 

@@ -20,6 +20,7 @@ add_subdirectory(${EXPATPATH} expat)
 
 set(MAME_CORE_SRC
 # artwork.c x86drc.c profiler.c tiny.c
+# fileio.c finally not, implemented on amiga side.
    cpuint.c    inptport.c  palette.c   streams.c   video.c
 	audit.c    cpuintrf.c  input.c     png.c       tilemap.c
 	cdrom.c    drawgfx.c   jedparse.c  timer.c     xml2info.c

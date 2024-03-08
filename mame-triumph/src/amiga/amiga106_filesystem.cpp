@@ -1,4 +1,5 @@
-// Vic Krb Ferry, Mar 2024
+// Vic Krb Ferry, Feb 2024
+// from amiga
 
 #ifndef __stdargs
 #define __stdargs
@@ -9,9 +10,10 @@
 
 // from mame:
 extern "C" {
-#include "osdepend.h"
-#include "fileio.h"
-#include "unzip.h"
+    #include "osdepend.h"
+    #include "fileio.h"
+    #include "unzip.h"
+    #include "hash.h"
 }
 //from this project
 //#include "file.h"
@@ -25,22 +27,49 @@ extern "C" {
 #include <stdio.h>
 #include <vector>
 #include <sstream>
-
+//#include <memory>
 
 
 using namespace std;
 
-// for api tracing tools
-//const vector<string> filetypenames={
-//    "none","ROM","SAMPLE","NVRAM","HIGHSCORE",
-//    "HIGHSCORE_DB","CONFIG","INPUTLOG","STATE","ARTWORK",
-//    "MEMCARD","SCREENSHOT","HISTORY","CHEAT","LANGUAGE"
-//    "messr","messrw","end"
-//};
-//const char *osdfiletypeName(int itype) {
-//    if(itype<0 || itype>= (int)filetypenames.size()) return "errortype";
-//    return filetypenames[itype].c_str();
-//}
+
+//TODO
+
+//int mame_fseek(mame_file *file, INT64 offset, int whence);
+//void mame_fclose(mame_file *file);
+//int mame_fchecksum(const char *gamename, const char *filename, unsigned int *length, char *hash);
+//UINT64 mame_fsize(mame_file *file);
+//const char *mame_fhash(mame_file *file);
+//int mame_fgetc(mame_file *file);
+//int mame_ungetc(int c, mame_file *file);
+//char *mame_fgets(char *s, int n, mame_file *file);
+//int mame_feof(mame_file *file);
+//UINT64 mame_ftell(mame_file *file);
+
+//int mame_fputs(mame_file *f, const char *s);
+//int CLIB_DECL mame_fprintf(mame_file *f, const char *fmt, ...) ATTR_PRINTF(2,3);
+
+
+// - - --  -- -
+
+void fileio_init(void)
+{
+}
+void fileio_exit(void)
+{
+}
+
+// api tracing tools
+const vector<string> filetypenames={
+    "none","ROM","SAMPLE","NVRAM","HIGHSCORE",
+    "HIGHSCORE_DB","CONFIG","INPUTLOG","STATE","ARTWORK",
+    "MEMCARD","SCREENSHOT","HISTORY","CHEAT","LANGUAGE"
+    "messr","messrw","end"
+};
+const char *osdfiletypeName(int itype) {
+    if(itype<0 || itype>= (int)filetypenames.size()) return "errortype";
+    return filetypenames[itype].c_str();
+}
 
 
 extern struct DosLibrary    *DOSBase;
@@ -64,10 +93,10 @@ int load_zipped_file(const char *zipfile, const char *filename, unsigned char **
  *   use internal offset to fullfill osd_xxx api.
  *   manage DOS reading and inside zip.
 */
-class sFile {
+struct _mame_file {
 public:
-    sFile();
-    ~sFile();
+    _mame_file();
+    ~_mame_file();
     // for roms dirs:
     int openread(const char *pFilepath);
     int openreadinzip(const char *pZipFile,const char *pFileName);
@@ -77,6 +106,8 @@ public:
 #ifdef FILE_IMPLEMENT_NAME
     inline const char *cname() { return _path.c_str(); }    
 #endif
+    inline const unsigned char *data() const { return _pData; }
+    inline char *hash() { return _hash; }
     inline int size() { return _Length; }
     inline int read(void *buffer, int l) {
         if(!_pData) return 0;
@@ -100,14 +131,13 @@ public:
             pwr += increment;
         }
         return l;
-    }*/
-
+    }
+    */
     inline int write(const void *buffer,int length)
     {
         if(!_writeHdl) return 0;
         return (int)Write(_writeHdl,buffer,length);
     }
-    /*
     inline int readswap(void *buffer,int length)
     {
         if(!_pData) return 0;
@@ -162,7 +192,7 @@ public:
         }
         if(l<maxlength) *pw++ = 0;
         return s;
-    }*/
+    }
     inline int eof() {
         if(!_pData) return 0;
         return (int)(_offset>=_Length);
@@ -194,14 +224,15 @@ public:
     inline int tell() {
         return _offset;
     }
-    inline uint32_t crc() {
-        if(!_pData && _writeHdl)
-        {
-            glog() << "error: ASK CRC FOR WRITE, NOt IMPLEMENTED FILE:"<< cname() << "\n";
-        }
-        if(!_pData) return 0;
-        return crc32(0,_pData,(uint32_t)_Length );
-    }
+//    inline uint32_t crc() {
+//        if(!_pData && _writeHdl)
+//        {
+//            glog() << "error: ASK CRC FOR WRITE, NOt IMPLEMENTED FILE:"<< cname() << "\n";
+//        }
+//        if(!_pData) return 0;
+//        return crc32(0,_pData,(uint32_t)_Length );
+//    }
+
 protected:
 #ifdef FILE_IMPLEMENT_NAME
     std::string _path;
@@ -212,21 +243,23 @@ protected:
     int _offset;
     BPTR _writeHdl;
 
+	char		_hash[HASH_BUF_SIZE];
+
     void close();
 };
-//typedef std::shared_ptr<sFile> spFile;
+//typedef std::shared_ptr<_mame_file> spFile;
 
-sFile::sFile()
+_mame_file::_mame_file()
     : _pData(NULL),_Length(0),_offset(0),_writeHdl(0L)
 {
 
 }
-sFile::~sFile()
+_mame_file::~_mame_file()
 {
     close();
 
 }
-void sFile::close()
+void _mame_file::close()
 {
     if(_pData) free(_pData);
     _pData = NULL;
@@ -234,7 +267,7 @@ void sFile::close()
     if(_writeHdl) Close(_writeHdl);
     _writeHdl = 0L;
 }
-int sFile::openread(const char *pFilepath)
+int _mame_file::openread(const char *pFilepath)
 {    
     if(_pData || _writeHdl) close();
 
@@ -271,7 +304,7 @@ int sFile::openread(const char *pFilepath)
     Close(hdl);
     return (int)(_Length>0);
 }
-int sFile::openwrite(const char *pFilepath)
+int _mame_file::openwrite(const char *pFilepath)
 {
     if(_pData || _writeHdl) close();
 #ifdef FILE_IMPLEMENT_NAME
@@ -281,7 +314,7 @@ int sFile::openwrite(const char *pFilepath)
     if(!_writeHdl) return 0;
     return 1;
 }
-int sFile::openreadinzip(const char *pZipFile,const char *pFileName)
+int _mame_file::openreadinzip(const char *pZipFile,const char *pFileName)
 {
     if(_pData || _writeHdl) close();
 
@@ -295,14 +328,52 @@ int sFile::openreadinzip(const char *pZipFile,const char *pFileName)
     return (int)(_Length>0);
 }
 // - - - - - -
-class ArchiveDir {
-public:
-    ArchiveDir();
-    ~ArchiveDir();
-    std::string _dirpath;
+//class ArchiveDir {
+//public:
+//    ArchiveDir();
+//    ~ArchiveDir();
+//    std::string _dirpath;
+//};
+// - - - - - - - -
+//class _mame_file_fromZip : public _mame_file {
+//public:
+//    std::shared_ptr<ArchiveDir> _dir;
+//};
+//std::shared_ptr<ArchiveDir> amiga_openArchive(const char *gamename)
+//{
+
+//}
+
+
+/* gamename holds the driver name, filename is only used for ROMs and    */
+/* samples. If 'write' is not 0, the file is opened for write. Otherwise */
+/* it is opened for read. */
+
+
+/*
+enum
+{
+	FILETYPE_ROM = 1,
+	FILETYPE_SAMPLE,
+	FILETYPE_NVRAM,
+	FILETYPE_HIGHSCORE,
+	FILETYPE_HIGHSCORE_DB,  LBO 040400
+	FILETYPE_CONFIG,
+	FILETYPE_INPUTLOG,
+	FILETYPE_STATE,
+	FILETYPE_ARTWORK,
+	FILETYPE_MEMCARD,
+	FILETYPE_SCREENSHOT,
+	FILETYPE_HISTORY,   LBO 040400
+	FILETYPE_CHEAT,   LBO 040400
+	FILETYPE_LANGUAGE,  LBO 042400
+#ifdef MESS
+	FILETYPE_IMAGE_R,
+	FILETYPE_IMAGE_RW,
+#endif
+	FILETYPE_end // dummy last entry
 };
-
-
+*/
 std::vector<std::string>
             _rompathlist({"PROGDIR:roms"}), // default values.
             _samplepathlist({"PROGDIR:samples"});
@@ -336,12 +407,12 @@ void setRomPaths(std::vector<std::string> &extrarompaths,std::vector<std::string
 }
 
 
-
-void *fopen_archive_or_disk(const char *gamename,const char *filename,int filetype,int read_or_write)
+// note: only read
+mame_file *fopen_archive_or_disk(const char *gamename,const char *filename,int filetype, osd_file_error *error)
 {
+    if(error) *error = FILEERR_FAILURE;
     if(!gamename || !filename) return NULL;
-    if(read_or_write !=0) return NULL; // only read we manage here.
-    sFile *pfile = new sFile();
+    _mame_file *pfile = new _mame_file();
     if(!pfile) return NULL;
 
     vector<string> &pathlistToSearch= (filetype==FILETYPE_SAMPLE)?_samplepathlist:_rompathlist;
@@ -386,14 +457,26 @@ void *fopen_archive_or_disk(const char *gamename,const char *filename,int filety
     if(pfile->size()==0)
     {
         delete pfile;
+        if(error) *error = FILEERR_FAILURE;
         return NULL;
     }
-    return (void *)pfile;
+
+//	unsigned int functions = hash_data_used_functions(hash);
+//	hash_compute(f->hash, f->data(), f->size(), functions);
+
+
+
+    if(error) *error = FILEERR_SUCCESS;
+    return pfile;
 }
-void *fopen_userdir(const char *gamename,const char *filename,int filetype,int write)
+mame_file *fopen_userdir(const char *gamename,const char *filename,int filetype,int write, osd_file_error *error)
 {
-    sFile *pfile = new sFile();
-    if(!pfile) return NULL;
+    _mame_file *pfile = new _mame_file();
+    if(!pfile)
+    {
+        if(error) *error = FILEERR_OUT_OF_MEMORY;
+        return NULL;
+    }
 
     string typedirname;
     switch(filetype)
@@ -428,18 +511,20 @@ void *fopen_userdir(const char *gamename,const char *filename,int filetype,int w
         if(!lock) {
             lock = CreateDir(typedirname.c_str());
             if(!lock) { glog() << "error: can't create dir:"<<typedirname<<".\n";
+                if(error) *error = FILEERR_ACCESS_DENIED;
                 return 0;
             }
             UnLock(lock);
         }
         stringstream ss;
         ss << typedirname << "/" << gamename<< "."<< fileext ;
-        sFile *pfile = new sFile();
+        _mame_file *pfile = new _mame_file();
         if(!pfile) return NULL;
         string fpath = ss.str();
         if(!pfile->openwrite(fpath.c_str()))  {
             glog() << "error: can't write file:"<<fpath<<".\n";
             delete pfile;
+            if(error) *error = FILEERR_FAILURE;
             return NULL;
         }
         return pfile;
@@ -448,47 +533,77 @@ void *fopen_userdir(const char *gamename,const char *filename,int filetype,int w
         // read
         stringstream ss;
         ss << typedirname << "/" << gamename<< "."<< fileext ;
-        sFile *pfile = new sFile();
+        _mame_file *pfile = new _mame_file();
         if(!pfile) return NULL;
         string fpath = ss.str();
         if(!pfile->openread(fpath.c_str()))  {
             // actually not an error if file not created yet.
             delete pfile;
+            if(error) *error = FILEERR_FAILURE;
             return NULL;
         }
         return pfile;
     }
 
-
-    return (void *)pfile;
+    if(error) *error = FILEERR_SUCCESS;
+    return pfile;
 }
-osd_file *osd_fopen(int pathtype, int pathindex, const char *filename, const char *mode, osd_file_error *error);
-//void *osd_fopen(const char *gamename,const char *filename,int filetype,int write)
+/*
+enum _osd_file_error
 {
-    TODO
+	FILEERR_SUCCESS,
+	FILEERR_FAILURE,
+	FILEERR_OUT_OF_MEMORY,
+	FILEERR_NOT_FOUND,
+	FILEERR_ACCESS_DENIED,
+	FILEERR_ALREADY_OPEN,
+	FILEERR_TOO_MANY_FILES
+};
+
+*/
+//mame_file *mame_fopen(const char *gamename, const char *filename, int filetype, int openforwrite);
+mame_file *mame_fopen(const char *gamename, const char *filename, int filetype, int openforwrite)
+{
+    return mame_fopen_error(gamename,filename,filetype,openforwrite,NULL);
+}
+
+mame_file *mame_fopen_rom(const char *gamename, const char *filename, const char *exphash)
+{
+    mame_file *f = fopen_archive_or_disk(gamename,filename,FILETYPE_ROM, NULL);
+    if(f && exphash)
+    {
+        unsigned int functions = hash_data_used_functions(exphash);
+        hash_compute(f->hash(), f->data(), f->size(), functions);
+    }
+    return f;
+}
+mame_file *mame_fopen_error(const char *gamename, const char *filename, int filetype, int openforwrite, osd_file_error *error)
+{
+    if(error) *error = FILEERR_NOT_FOUND;
 #ifdef PRINTOSDFILESYSTEMCALLS
     printf("osd_fopen:type:%s:w:%d,%s:%s\n",osdfiletypeName(filetype),write,gamename,filename);
 #endif
     // - - - - -reading a file from disk or zip searching with possible paths.
-    if(filetype == FILETYPE_HIGHSCORE ||
-       filetype == FILETYPE_HIGHSCORE_DB ||
-       filetype == FILETYPE_CONFIG ||
-       filetype == FILETYPE_INPUTLOG ||
-       filetype == FILETYPE_STATE ||
-       filetype == FILETYPE_SCREENSHOT
-            )
+    if( filetype == FILETYPE_ROM ||
+        filetype == FILETYPE_SAMPLE ||
+        filetype == FILETYPE_ARTWORK ||
+          filetype == FILETYPE_MOVIE // add dunnowhat
+        )
     {
-        return fopen_userdir(gamename,filename,filetype,write);
+        if(openforwrite) {
+            if(error) *error = FILEERR_FAILURE;
+            return NULL;
+        }
+        return fopen_archive_or_disk(gamename,filename,filetype, error);
     } else
     {
-        // FILETYPE_ROM
-        // FILETYPE_SAMPLE
-        return fopen_archive_or_disk(gamename,filename,filetype,write);
+        return fopen_userdir(gamename,filename,filetype,openforwrite, error);
     }
 }
 // actually just test file existence for reading, must be parralel to osd_fopen()
 // -> because not used for zipped ROMS it seems...
-int osd_faccess(const char *filename, int filetype)
+int mame_faccess(const char *filename, int filetype)
+//int osd_faccess(const char *filename, int filetype)
 {
     if(!filename || *filename ==0) return 0;
     BPTR hdl = Open(filename,MODE_OLDFILE);
@@ -497,110 +612,120 @@ int osd_faccess(const char *filename, int filetype)
 }
 
 // return bytes read.
-UINT32 osd_fread(osd_file *file, void *buffer, UINT32 length)
-//int osd_fread(void *file,void *buffer,int length)
+
+
+UINT32 mame_fread(mame_file *file, void *buffer, UINT32 length)
 {
     if(!file) return 0;
-    sFile &f = *((sFile *)file);
 #ifdef PRINTOSDFILESYSTEMCALLS
     printf("osd_fread: l:%d %s\n",length,f.cname());
 #endif
-
-    return f.read(buffer,length);
+    return file->read(buffer,length);
 }
-UINT32 osd_fwrite(osd_file *file, const void *buffer, UINT32 length)
-//int osd_fwrite(void *file,const void *buffer,int length)
+UINT32 mame_fwrite(mame_file *file, const void *buffer, UINT32 length)
 {
     if(!file) return 0;
-    sFile &f = *((sFile *)file);
 #ifdef PRINTOSDFILESYSTEMCALLS
     printf("osd_fwrite: l:%d %s\n",length,f.cname());
 #endif
-
-    return f.write(buffer,length);
+    return file->write(buffer,length);
 }
-//int osd_fread_swap(void *file,void *buffer,int length)
-//{
-//    if(!file) return 0;
-//    sFile &f = *((sFile *)file);
-//#ifdef PRINTOSDFILESYSTEMCALLS
-//    printf("osd_fread_swap: l:%d %s\n",length,f.cname());
-//#endif
+UINT32 mame_fread_swap(mame_file *file, void *buffer, UINT32 length)
+{
+    if(!file) return 0;
+#ifdef PRINTOSDFILESYSTEMCALLS
+    printf("osd_fread_swap: l:%d %s\n",length,f.cname());
+#endif
 
-//    return f.readswap(buffer,length);
-//}
-//int osd_fwrite_swap(void *file,const void *buffer,int length)
-//{
-//    if(!file) return 0;
-//    sFile &f = *((sFile *)file);
-//#ifdef PRINTOSDFILESYSTEMCALLS
-//    printf("osd_fwrite_swap: l:%d %s\n",length,f.cname());
-//#endif
+    return file->readswap(buffer,length);
+}
 
-//    return f.writeswap(buffer,length);
-//}
+UINT32 mame_fwrite_swap(mame_file *file, const void *buffer, UINT32 length)
+{
+    if(!file) return 0;
+#ifdef PRINTOSDFILESYSTEMCALLS
+    printf("osd_fwrite_swap: l:%d %s\n",length,f.cname());
+#endif
+    return file->writeswap(buffer,length);
+}
+/*
+int osd_fread_scatter(void *file,void *buffer,int length,int increment)
+{
+    if(!file) return 0;
+    _mame_file &f = *((_mame_file *)file);
+#ifdef PRINTOSDFILESYSTEMCALLS
+    printf("osd_fread_scatter: l:%d i:%d %s\n",length,increment,f.cname());
+#endif
 
-//int osd_fread_scatter(void *file,void *buffer,int length,int increment)
-//{
-//    if(!file) return 0;
-//    sFile &f = *((sFile *)file);
-//#ifdef PRINTOSDFILESYSTEMCALLS
-//    printf("osd_fread_scatter: l:%d i:%d %s\n",length,increment,f.cname());
-//#endif
+    return f.readScatter(buffer,length,increment);
+}
+*/
 
-//    return f.readScatter(buffer,length,increment);
-//}
-int osd_fseek(osd_file *file, INT64 offset, int whence)
-//int osd_fseek(void *file,int offset,int whence)
+
+int mame_fseek(mame_file *file, INT64 offset, int whence)
 {
     if(!file) return -1;
-    sFile &f = *((sFile *)file);
 #ifdef PRINTOSDFILESYSTEMCALLS
     printf("osd_fseek: ofs:%d t:%d %s\n",offset,whence,f.cname());
 #endif
 
-    return f.seek(offset,whence);
+    return file->seek(offset,whence);
 }
-void osd_fclose(osd_file *file)
-//void osd_fclose(void *file)
+void mame_fclose(mame_file *file)
 {
-    sFile *f = (sFile *)file;
-    if(!f) return;
+    if(!file) return;
 #ifdef PRINTOSDFILESYSTEMCALLS
-    printf("osd_fclose: %s\n",f->cname());
+    printf("osd_fclose: %s\n",file->cname());
+#endif
+    delete file; // destructor does the job.
+}
+
+
+
+int mame_fchecksum(const char *gamename, const char *filename, unsigned int *length, char *hash)
+{
+    // note: other implementations (mame4all odx) just use CRC for checksum...
+    // let's just do that. This is a re-read thing and can reach roms apparently...
+    // really need to be optimized, that is a full re-read at init it seems...
+
+    // in mame code, this is only used to detect "rom clones"
+     // default values
+    if(length) *length=0;
+//    if(sum) *sum=0;
+#ifdef PRINTOSDFILESYSTEMCALLS
+    printf("osd_fchecksum: gamename:%s filename:%s\n",gamename,filename);
 #endif
 
-    delete f;
-}
-//int osd_fchecksum(const char *gamename, const char *filename, unsigned int *length, unsigned int *sum)
-//{
-//    // note: other implementations (mame4all odx) just use CRC for checksum...
-//    // let's just do that. This is a re-read thing and can reach roms apparently...
-//    // really need to be optimized, that is a full re-read at init it seems...
+    _mame_file *f = mame_fopen_rom(gamename,filename,hash);
 
-//    // in mame code, this is only used to detect "rom clones"
-//     // default values
-//    if(length) *length=0;
-//    if(sum) *sum=0;
-//#ifdef PRINTOSDFILESYSTEMCALLS
-//    printf("osd_fchecksum: gamename:%s filename:%s\n",gamename,filename);
-//#endif
+  	hash_data_copy(hash, f->hash());
+	if(length) *length = (int) f->size();
 
-//    sFile *f = (sFile *)osd_fopen(gamename,filename,FILETYPE_ROM,0);
+    if(!f) return -1;
+
+	/* compute the checksums (only the functions for which we have an expected
+       checksum). Take also care of crconly: if the user asked, we will calculate
+       only the CRC, but only if there is an expected CRC for this file. */
+//	unsigned int functions = hash_data_used_functions(hash);
+//	hash_compute(f->hash, f->data(), f->size(), functions);
+
+
+
+
 //    if(!f) return -1;
 //    if(length) *length=f->size();
 //    if(sum) *sum=f->crc();
-//    delete f;
+    delete f;
 
 //    if(length) *length=0;
 //    if(sum) *sum=0;
-//    return 0; // ok for that one.
+    return 0; // ok for that one.
 
-//}
+}
 int osd_fsize(void *file)
 {
     if(!file) return 0;
-    sFile &f = *((sFile *)file);
+    _mame_file &f = *((_mame_file *)file);
 #ifdef PRINTOSDFILESYSTEMCALLS
     printf("osd_fsize:%s\n",f.cname());
 #endif
@@ -610,7 +735,7 @@ int osd_fsize(void *file)
 //unsigned int osd_fcrc(void *file)
 //{
 //    if(!file) return 0;
-//    sFile &f = *((sFile *)file);
+//    _mame_file &f = *((_mame_file *)file);
 //#ifdef PRINTOSDFILESYSTEMCALLS
 //    printf("osd_fcrc:%s\n",f.cname());
 //#endif
@@ -621,7 +746,7 @@ int osd_fsize(void *file)
 int osd_fgetc(void *file)
 {
     if(!file) return 0;
-    sFile &f = *((sFile *)file);
+    _mame_file &f = *((_mame_file *)file);
 #ifdef PRINTOSDFILESYSTEMCALLS
     printf("osd_fgetc:%s\n",f.cname());
 #endif
@@ -632,7 +757,7 @@ int osd_ungetc(int c, void *file)
 {
     // this is just used to rewind one byte.
     if(!file) return 0;
-    sFile &f = *((sFile *)file);
+    _mame_file &f = *((_mame_file *)file);
 #ifdef PRINTOSDFILESYSTEMCALLS
     printf("osd_ungetc:%s\n",f.cname());
 #endif
@@ -643,60 +768,30 @@ int osd_ungetc(int c, void *file)
 char *osd_fgets(char *s, int n, void *file)
 {
     if(!file) return NULL;
-    sFile &f = *((sFile *)file);
+    _mame_file &f = *((_mame_file *)file);
 #ifdef PRINTOSDFILESYSTEMCALLS
     printf("osd_fgets:%s\n",f.cname());
 #endif
 
     return f.getstring(s,n);
 }
-int osd_feof(osd_file *file)
-//int osd_feof(void *file)
+int osd_feof(void *file)
 {
     if(!file) return 0;
-    sFile &f = *((sFile *)file);
+    _mame_file &f = *((_mame_file *)file);
 #ifdef PRINTOSDFILESYSTEMCALLS
     printf("osd_feof:%s\n",f.cname());
 #endif
 
     return f.eof();
 }
-UINT64 osd_ftell(osd_file *file)
-//int osd_ftell(void *file)
+int osd_ftell(void *file)
 {
     if(!file) return 0;
-    sFile &f = *((sFile *)file);
+    _mame_file &f = *((_mame_file *)file);
 #ifdef PRINTOSDFILESYSTEMCALLS
      printf("osd_ftell:%s\n",f.cname());
 #endif
 
     return f.tell();
-}
-
-
-/* Return the number of paths for a given type */
-int osd_get_path_count(int pathtype)
-{
-    //TODO
-}
-
-/* Get information on the existence of a file */
-int osd_get_path_info(int pathtype, int pathindex, const char *filename)
-{
-    //TODO
-    /*
-    enum
-{
-	PATH_NOT_FOUND,
-	PATH_IS_FILE,
-	PATH_IS_DIRECTORY
-};
-    */
-
-}
-
-/* Create a directory if it doesn't already exist */
-int osd_create_directory(int pathtype, int pathindex, const char *dirname)
-{
-    //TODO
 }
