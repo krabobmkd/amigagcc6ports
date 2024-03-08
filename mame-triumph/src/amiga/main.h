@@ -85,7 +85,7 @@ void  VideoClose(void);
 void  InputUpdate(LONG wait);
 
 #ifdef POWERUP
-extern struct GameDriver **Drivers;
+extern struct _game_driver **Drivers;
 
 #define M68k_MSG_STARTUP   0
 #define M68k_MSG_CONFIG    1

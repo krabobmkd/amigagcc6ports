@@ -89,7 +89,7 @@ void     ErrorRequest(LONG msg_id, ...);
 void     StartGame(void);  /* In amiga/amiga.c. */
 
 #ifdef POWERUP
-struct GameDriver **Drivers;
+struct _game_driver **Drivers;
 #endif
 
 LONG        MenuSelect[NUM_ITEMS];
@@ -336,13 +336,16 @@ int main(int argc, char **argv)
         #else
         GetConfig(Config[CFG_DRIVER]+2, Config);
 
-        if(Config[CFG_USEDEFAULTS])
+        GetConfig(0, Config);
+
+       /* if(Config[CFG_USEDEFAULTS])
         {
+
           if(Drivers[Config[CFG_DRIVER]]->drv->video_attributes & VIDEO_TYPE_VECTOR)
             GetConfig(1, Config);
           else
             GetConfig(0, Config);
-        }
+        }*/
         #endif
 
         NewGame     = 1;
@@ -423,6 +426,11 @@ LONG VideoOpen(LONG width, LONG height, LONG left, LONG top, LONG right, LONG bo
     visible_height = bottom - top + 1;
   }
 
+
+    machine_config machine;
+    memset(&machine,0,sizeof(machine));
+    Drivers[Config[CFG_DRIVER]]->drv(&machine);
+
   /* Disable dirty line support if requested by user. */
 
   if(!Config[CFG_DIRTYLINES])
@@ -445,11 +453,11 @@ LONG VideoOpen(LONG width, LONG height, LONG left, LONG top, LONG right, LONG bo
                      VA_Buffers,       Config[CFG_BUFFERING]+1,
                      VA_Title,         APPNAME,
                      VA_Menu,          g_gtMenu,
-                     VA_FPS,           Drivers[Config[CFG_DRIVER]]->drv->frames_per_second,
+                     VA_FPS,           (int)machine.frames_per_second,
                      VA_MaxColors,     // we only manage 8b or 16b
                                         // yet VIDEO_NEEDS_6BITS_PER_GUN would mean better in 24b
-                                        (Drivers[Config[CFG_DRIVER]]->drv->total_colors <= 256)
-                                        ?(Drivers[Config[CFG_DRIVER]]->drv->total_colors):(1<<16)
+                                        (machine.total_colors <= 256)
+                                        ?(machine.total_colors):(1<<16)
 
                                         /*(Drivers[Config[CFG_DRIVER]]->drv->total_colors <= 256)
                                        ? Drivers[Config[CFG_DRIVER]]->drv->total_colors
@@ -490,7 +498,7 @@ LONG VideoOpen(LONG width, LONG height, LONG left, LONG top, LONG right, LONG bo
     {
       /*old0.35: if((Drivers[Config[CFG_DRIVER]]->drv->video_attributes & VIDEO_SUPPORTS_16BIT)
          && Config[CFG_ALLOW16BIT])*/
-      if(Drivers[Config[CFG_DRIVER]]->drv->total_colors >256)
+      if(machine.total_colors >256)
       {
         PixelArray[0] = VAllocPixelArray(Video, width+16, height+16, dirty, pixel_formats);
       }

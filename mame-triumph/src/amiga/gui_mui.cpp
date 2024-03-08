@@ -46,7 +46,11 @@ extern "C" {
 
 #include "macros.h"
 #include "main.h"
-#include "driver.h"
+
+extern "C" {
+    #include "driver.h"
+}
+
 #include "gui_mui.h"
 #include "config_moo.h"
 #include "version.h"
@@ -117,7 +121,7 @@ extern struct Library *KeymapBase;
 
 struct Library *MUIMasterBase = NULL;
 
-static struct GameDriver ***SortedDrivers = NULL;
+static struct _game_driver ***SortedDrivers = NULL;
 
 static char  *DriversFound = NULL;
 static ULONG NumDrivers;
@@ -316,7 +320,7 @@ static inline int GetSortedDriverIndex(int sorted_index)
   if(sorted_index < DRIVER_OFFSET)
     index = sorted_index - DRIVER_OFFSET;
   else
-    index = (((ULONG) SortedDrivers[sorted_index]) - ((ULONG) &Drivers[0])) / sizeof(struct GameDriver *);
+    index = (((ULONG) SortedDrivers[sorted_index]) - ((ULONG) &Drivers[0])) / sizeof(struct _game_driver *);
 
   return(index);
 }
@@ -325,7 +329,7 @@ static inline int GetEntryDriverIndex(ULONG entry)
 {
   int index;
 
-  index = (entry - ((ULONG) &Drivers[0])) / sizeof(struct GameDriver *);
+  index = (entry - ((ULONG) &Drivers[0])) / sizeof(struct _game_driver *);
 
   return(index);
 }
@@ -356,9 +360,9 @@ static int GetDriverIndex(void)
   return(index);
 }
 
-static struct GameDriver *GetDriver(void)
+static struct _game_driver *GetDriver(void)
 {
-  struct GameDriver *drv;
+  struct _game_driver *drv;
 
   ULONG entry;
   ULONG list_index;
@@ -373,7 +377,7 @@ static struct GameDriver *GetDriver(void)
   if(!entry)
     return(NULL);
 
-  drv = *((struct GameDriver **) entry);
+  drv = *((struct _game_driver **) entry);
 
   return(drv);
 }
@@ -451,14 +455,18 @@ static void ScanDrivers(void)
             while(ExNext(locks[j], fib))
             {
               for(i = 0; i < NumDrivers; i++)
-              {
+              {              
+                machine_config machine;
+                memset(&machine,0,sizeof(machine));
+                (*SortedDrivers[i+DRIVER_OFFSET])->drv(&machine);
+
                 if( !DriversFound[i]
-                &&  ((j != bitmap_lock) || !((*SortedDrivers[i+DRIVER_OFFSET])->drv->video_attributes & VIDEO_TYPE_VECTOR))
-                &&  ((j != vector_lock) || ((*SortedDrivers[i+DRIVER_OFFSET])->drv->video_attributes & VIDEO_TYPE_VECTOR)))
+                &&  ((j != bitmap_lock) || !(machine.video_attributes & VIDEO_TYPE_VECTOR))
+                &&  ((j != vector_lock) || (machine.video_attributes & VIDEO_TYPE_VECTOR)))
                 {
                   len = strlen((*SortedDrivers[i+DRIVER_OFFSET])->name);
 
-                  if(!strnicmp(fib->fib_FileName, (*SortedDrivers[i+DRIVER_OFFSET])->name, len))
+                  if(!mame_strnicmp(fib->fib_FileName, (*SortedDrivers[i+DRIVER_OFFSET])->name, len))
                   {
                     if(!fib->fib_FileName[len])
                     {
@@ -581,35 +589,42 @@ static void ShowFound(void)
 }
 #endif
 
-static int DriverCompare(struct GameDriver ***drv1, struct GameDriver ***drv2)
+static int DriverCompare(struct _game_driver ***drv1, struct _game_driver ***drv2)
 {
   return(stricmp((**drv1)->description, (**drv2)->description));
 }
 
-static ULONG ASM DriverDisplay(struct Hook *hook REG(a0), char **array REG(a2), struct GameDriver **drv_indirect REG(a1))
+static ULONG ASM DriverDisplay(struct Hook *hook REG(a0), char **array REG(a2), struct _game_driver **drv_indirect REG(a1))
 {
-  struct GameDriver *drv;
+  struct _game_driver *drv;
 
 #ifdef MESS
   *array++ = (char *) drv->description;
 #else
-  static char driver[55];
-  static char directory[55];
-  static char type[55];
-  static char width[55];
-  static char height[55];
-  static char colors[55];
-  static char comment[105];
+  static char driver[64];
+  static char directory[64];
+  static char type[64];
+  static char width[64];
+  static char height[64];
+  static char colors[64];
+  static char comment[128];
 
   if(!drv_indirect)
   {
-    sprintf(driver,   "\033b\033u%s", DriverString);
-    sprintf(directory,  "\033b\033u%s", DirectoryString);
-    sprintf(type,   "\033b\033u%s", TypeString);
-    sprintf(width,    "\033b\033u%s", WidthString);
-    sprintf(height,   "\033b\033u%s", HeightString);
-    sprintf(colors,   "\033b\033u%s", ColorsString);
-    sprintf(comment,  "\033b\033u%s", CommentString);
+    snprintf(driver,63,   "\033b\033u%s", DriverString);
+    driver[63]=0;
+    snprintf(directory,63,  "\033b\033u%s", DirectoryString);
+        directory[63]=0;
+    snprintf(type,63,   "\033b\033u%s", TypeString);
+    type[63]=0;
+    snprintf(width,63,    "\033b\033u%s", WidthString);
+    width[63]=0;
+    snprintf(height,63,   "\033b\033u%s", HeightString);
+    height[63]=0;
+    snprintf(colors,63,   "\033b\033u%s", ColorsString);
+    colors[63]=0;
+    snprintf(comment,127,  "\033b\033u%s", CommentString);
+    comment[127]=0;
 
     *array++  = driver;
     *array++  = directory;
@@ -622,10 +637,10 @@ static ULONG ASM DriverDisplay(struct Hook *hook REG(a0), char **array REG(a2), 
     return(0);
   }
 
-  if(drv_indirect == (struct GameDriver **) 1)
+  if(drv_indirect == (struct _game_driver **) 1)
   {
-    sprintf(driver, "\0338%s", BitmapGameDefaultsString);
-
+    snprintf(driver,63, "\0338%s", BitmapGameDefaultsString);
+    driver[63]=0;
     *array++  = driver;
     *array++  = "";
     *array++  = "";
@@ -637,10 +652,10 @@ static ULONG ASM DriverDisplay(struct Hook *hook REG(a0), char **array REG(a2), 
     return(0);
   }
 
-  if(drv_indirect == (struct GameDriver **) 2)
+  if(drv_indirect == (struct _game_driver **) 2)
   {
-    sprintf(driver, "\0338%s", VectorGameDefaultsString);
-
+    snprintf(driver,63, "\0338%s", VectorGameDefaultsString);
+     driver[63]=0;
     *array++  = driver;
     *array++  = "";
     *array++  = "";
@@ -654,10 +669,15 @@ static ULONG ASM DriverDisplay(struct Hook *hook REG(a0), char **array REG(a2), 
 
   drv = *drv_indirect;
 
+    machine_config machine;
+    memset(&machine,0,sizeof(machine));
+    drv->drv(&machine);
+
+
   *array++ = (char *) drv->description;
   *array++ = (char *) drv->name;
 
-  if(drv->drv->video_attributes & VIDEO_TYPE_VECTOR)
+  if(machine.video_attributes & VIDEO_TYPE_VECTOR)
   {
     *array++  = VectorString;
     *array++  = "";
@@ -680,20 +700,20 @@ static ULONG ASM DriverDisplay(struct Hook *hook REG(a0), char **array REG(a2), 
 
     *array++  = BitmapString;
     if(drv->flags & ORIENTATION_SWAP_XY)
-      sprintf(width, "%d", drv->drv->screen_height);
+      snprintf(width,63, "%d", machine.screen_height);
     else
-      sprintf(width, "%d", drv->drv->screen_width);
+      snprintf(width,63, "%d", machine.screen_width);
     *array++  = width;
     if(drv->flags & ORIENTATION_SWAP_XY)
-      sprintf(height, "%d", drv->drv->screen_width);
+      snprintf(height,63, "%d", machine.screen_width);
     else
-      sprintf(height, "%d", drv->drv->screen_height);
+      snprintf(height,63, "%d", machine.screen_height);
     *array++  = height;
   }
 // GAME_REQUIRES_16BIT
 //0.35  if(drv->drv->video_attributes & VIDEO_SUPPORTS_16BIT)
-  if(drv->flags & GAME_REQUIRES_16BIT ||
-    drv->drv->total_colors > 256
+  if(machine.flags & GAME_REQUIRES_16BIT ||
+   machine.total_colors > 256
     )
     sprintf(colors, "16Bit");
   else
@@ -717,8 +737,8 @@ static ULONG ASM DriverDispatcher(struct IClass *cclass REG(a0), Object * obj RE
 {
   struct DriverData   *data;
   struct IntuiMessage *imsg;
-  struct GameDriver   **drv_indirect;
-  struct GameDriver   *drv;
+  struct _game_driver   **drv_indirect;
+  struct _game_driver   *drv;
   struct InputEvent   ie;
 
   Object  *list;
@@ -835,18 +855,18 @@ void AllocGUI(void)
 
   for(NumDrivers = 0; Drivers[NumDrivers]; NumDrivers++);
 
-  SortedDrivers = ( struct GameDriver ***)malloc((NumDrivers + DRIVER_OFFSET) * sizeof(struct GameDriver **));
+  SortedDrivers = ( struct _game_driver ***)malloc((NumDrivers + DRIVER_OFFSET) * sizeof(struct _game_driver **));
 
   if(SortedDrivers)
   {
 #ifndef MESS
-    SortedDrivers[0]  = (struct GameDriver **) 1;
-    SortedDrivers[1]  = (struct GameDriver **) 2;
+    SortedDrivers[0]  = (struct _game_driver **) 1;
+    SortedDrivers[1]  = (struct _game_driver **) 2;
 #endif
     for(i = 0; i < NumDrivers; i++)
-      SortedDrivers[i+DRIVER_OFFSET] = const_cast<struct GameDriver **>(&Drivers[i]);
+      SortedDrivers[i+DRIVER_OFFSET] = const_cast<struct _game_driver **>(&Drivers[i]);
 
-    qsort(&SortedDrivers[DRIVER_OFFSET], NumDrivers, sizeof(struct GameDriver **), (int (*)(const void *, const void *)) DriverCompare);
+    qsort(&SortedDrivers[DRIVER_OFFSET], NumDrivers, sizeof(struct _game_driver **), (int (*)(const void *, const void *)) DriverCompare);
 
     MUIMasterBase = OpenLibrary("muimaster.library", 16);
 
@@ -1884,7 +1904,7 @@ static ULONG ASM DriverNotify(struct Hook *hook REG(a0), APTR obj REG(a2), ULONG
 #ifndef MESS
 static ULONG ASM UseDefaultsNotify(struct Hook *hook REG(a0), APTR obj REG(a2), ULONG *par REG(a1))
 {
-  struct GameDriver *drv;
+  struct _game_driver *drv;
 
   ULONG v;
 
