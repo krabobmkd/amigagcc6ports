@@ -35,7 +35,7 @@ const game_driver * const drivers[] =
 };
 
 #else	/* DRIVER_RECURSIVE */
-
+#ifdef OTHERDRIVERS
 	/* "Pacman hardware" games */
 	DRIVER( puckman )	/* (c) 1980 Namco */
 	DRIVER( puckmana )	/* (c) 1980 Namco */
@@ -7067,5 +7067,5 @@ Other Sun games
 	DRIVER( lastfght )	/* (c) 2000 Subsino */
 	DRIVER( sliver )	/* (c) 1996 Hollow Corp */
 	DRIVER( intrscti )	/* ???? */
-
+#endif
 #endif	/* DRIVER_RECURSIVE */

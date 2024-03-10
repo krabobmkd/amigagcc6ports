@@ -116,7 +116,7 @@ static quark_table *allocate_quark_table(UINT32 entries, UINT32 hashsize)
  *
  *************************************/
 
-INLINE UINT32 quark_string_crc(const char *string)
+static inline UINT32 quark_string_crc(const char *string)
 {
 	return crc32(0, (UINT8 *)string, strlen(string));
 }
@@ -130,7 +130,7 @@ INLINE UINT32 quark_string_crc(const char *string)
  *
  *************************************/
 
-INLINE void add_quark(quark_table *table, int index, UINT32 crc)
+static inline void add_quark(quark_table *table, int index, UINT32 crc)
 {
 	quark_entry *entry = &table->entry[index];
 	int hash = crc % table->hashsize;
@@ -148,7 +148,7 @@ INLINE void add_quark(quark_table *table, int index, UINT32 crc)
  *
  *************************************/
 
-INLINE quark_entry *first_hash_entry(quark_table *table, UINT32 crc)
+static inline quark_entry *first_hash_entry(quark_table *table, UINT32 crc)
 {
 	return table->hash[crc % table->hashsize];
 }

@@ -556,6 +556,6 @@ int seq_read_async(input_seq *seq, int first);
 int string_to_seq(const char *string, input_seq *seq);
 void seq_to_string(const input_seq *seq, char *string, int maxlen);
 
-INLINE input_code seq_get_1(const input_seq *seq) { return seq->code[0]; }
+static inline input_code seq_get_1(const input_seq *seq) { return seq->code[0]; }
 
 #endif	/* __INPUT_H__ */

@@ -1508,7 +1508,7 @@ static UINT32 menu_default_input_groups(UINT32 state)
  *
  *************************************/
 
-INLINE int input_menu_update_polling(input_seq *selected_seq, int *record_next, int *polling)
+static inline int input_menu_update_polling(input_seq *selected_seq, int *record_next, int *polling)
 {
 	int result = seq_read_async(selected_seq, !*record_next);
 
@@ -1531,7 +1531,7 @@ INLINE int input_menu_update_polling(input_seq *selected_seq, int *record_next, 
 }
 
 
-INLINE void input_menu_toggle_none_default(input_seq *selected_seq, input_seq *original_seq, const input_seq *selected_defseq)
+static inline void input_menu_toggle_none_default(input_seq *selected_seq, input_seq *original_seq, const input_seq *selected_defseq)
 {
 	/* if we used to be "none", toggle to the default value */
 	if (seq_get_1(original_seq) == CODE_NONE)
@@ -1550,7 +1550,7 @@ INLINE void input_menu_toggle_none_default(input_seq *selected_seq, input_seq *o
  *
  *************************************/
 
-INLINE void default_input_menu_add_item(ui_menu_item *item, const char *format, const char *name, const input_seq *seq, const input_seq *defseq)
+static inline void default_input_menu_add_item(ui_menu_item *item, const char *format, const char *name, const input_seq *seq, const input_seq *defseq)
 {
 	/* set the item text using the formatting string provided */
 	item->text = &menu_string_pool[menu_string_pool_offset];
@@ -1699,7 +1699,7 @@ static UINT32 menu_default_input(UINT32 state)
  *
  *************************************/
 
-INLINE void game_input_menu_add_item(ui_menu_item *item, const char *format, input_port_entry *in, void *ref, int which)
+static inline void game_input_menu_add_item(ui_menu_item *item, const char *format, input_port_entry *in, void *ref, int which)
 {
 	/* set the item text using the formatting string provided */
 	item->text = &menu_string_pool[menu_string_pool_offset];
@@ -1719,7 +1719,7 @@ INLINE void game_input_menu_add_item(ui_menu_item *item, const char *format, inp
 }
 
 
-INLINE UINT16 compute_port_sort_order(const input_port_entry *in)
+static inline UINT16 compute_port_sort_order(const input_port_entry *in)
 {
 	if (in->type >= IPT_START1 && in->type <= __ipt_analog_end)
 		return (in->type << 2) | (in->player << 12);
@@ -1862,7 +1862,7 @@ static UINT32 menu_game_input(UINT32 state)
  *
  *************************************/
 
-INLINE void switch_menu_add_item(ui_menu_item *item, const input_port_entry *in, int switch_entry, void *ref)
+static inline void switch_menu_add_item(ui_menu_item *item, const input_port_entry *in, int switch_entry, void *ref)
 {
 	const input_port_entry *tin;
 
@@ -2028,7 +2028,7 @@ static UINT32 menu_switches(UINT32 state)
  *
  *************************************/
 
-INLINE void analog_menu_add_item(ui_menu_item *item, const input_port_entry *in, int append_string, int which_item)
+static inline void analog_menu_add_item(ui_menu_item *item, const input_port_entry *in, int append_string, int which_item)
 {
 	int value, minval, maxval;
 

@@ -126,14 +126,14 @@ static void mixer_update(void *param, stream_sample_t **inputs, stream_sample_t 
 
 
 /***************************************************************************
-    INLINES
+    static inlineS
 ***************************************************************************/
 
 /*-------------------------------------------------
     find_speaker_by_tag - find a tagged speaker
 -------------------------------------------------*/
 
-INLINE speaker_info *find_speaker_by_tag(const char *tag)
+static inline speaker_info *find_speaker_by_tag(const char *tag)
 {
 	int spknum;
 
@@ -149,7 +149,7 @@ INLINE speaker_info *find_speaker_by_tag(const char *tag)
     find_sound_by_tag - find a tagged sound chip
 -------------------------------------------------*/
 
-INLINE sound_info *find_sound_by_tag(const char *tag)
+static inline sound_info *find_sound_by_tag(const char *tag)
 {
 	int sndnum;
 
@@ -841,7 +841,7 @@ void sndti_set_output_gain(int type, int index, int output, float gain)
     a particular input
 -------------------------------------------------*/
 
-INLINE speaker_info *index_to_input(int index, int *input)
+static inline speaker_info *index_to_input(int index, int *input)
 {
 	int count = 0, speakernum;
 

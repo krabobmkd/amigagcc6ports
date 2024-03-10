@@ -1237,7 +1237,7 @@ static int save_this_port_type(int type)
  *
  *************************************/
 
-INLINE input_code get_default_code(int config_type, int type)
+static inline input_code get_default_code(int config_type, int type)
 {
 	switch (type)
 	{
@@ -1255,7 +1255,7 @@ INLINE input_code get_default_code(int config_type, int type)
 }
 
 
-INLINE int string_to_seq_index(const char *string)
+static inline int string_to_seq_index(const char *string)
 {
 	int seqindex;
 
@@ -2404,7 +2404,7 @@ static void update_digital_joysticks(void)
  *
  *************************************/
 
-INLINE INT32 apply_analog_min_max(const analog_port_info *info, INT32 value)
+static inline INT32 apply_analog_min_max(const analog_port_info *info, INT32 value)
 {
 	const input_port_entry *port = info->port;
 	INT32 adjmax, adjmin;

@@ -151,7 +151,7 @@ mame_time mame_timer_firetime(mame_timer *which);
 
 
 /***************************************************************************
-    INLINES
+    static inlineS
 ***************************************************************************/
 
 /*-------------------------------------------------
@@ -159,7 +159,7 @@ mame_time mame_timer_firetime(mame_timer *which);
     seconds and subseconds components
 -------------------------------------------------*/
 
-INLINE mame_time make_mame_time(seconds_t _secs, subseconds_t _subsecs)
+static inline mame_time make_mame_time(seconds_t _secs, subseconds_t _subsecs)
 {
 	mame_time result;
 	result.seconds = _secs;
@@ -173,7 +173,7 @@ INLINE mame_time make_mame_time(seconds_t _secs, subseconds_t _subsecs)
     to double
 -------------------------------------------------*/
 
-INLINE double mame_time_to_double(mame_time _time)
+static inline double mame_time_to_double(mame_time _time)
 {
 	return (double)_time.seconds + SUBSECONDS_TO_DOUBLE(_time.subseconds);
 }
@@ -184,7 +184,7 @@ INLINE double mame_time_to_double(mame_time _time)
     mame_time
 -------------------------------------------------*/
 
-INLINE mame_time double_to_mame_time(double _time)
+static inline mame_time double_to_mame_time(double _time)
 {
 	mame_time abstime;
 
@@ -206,7 +206,7 @@ INLINE mame_time double_to_mame_time(double _time)
     add_mame_times - add two mame_times
 -------------------------------------------------*/
 
-INLINE mame_time add_mame_times(mame_time _time1, mame_time _time2)
+static inline mame_time add_mame_times(mame_time _time1, mame_time _time2)
 {
 	mame_time result;
 
@@ -233,7 +233,7 @@ INLINE mame_time add_mame_times(mame_time _time1, mame_time _time2)
     to a mame_time
 -------------------------------------------------*/
 
-INLINE mame_time add_subseconds_to_mame_time(mame_time _time1, subseconds_t _subseconds)
+static inline mame_time add_subseconds_to_mame_time(mame_time _time1, subseconds_t _subseconds)
 {
 	mame_time result;
 
@@ -259,7 +259,7 @@ INLINE mame_time add_subseconds_to_mame_time(mame_time _time1, subseconds_t _sub
     sub_mame_times - subtract two mame_times
 -------------------------------------------------*/
 
-INLINE mame_time sub_mame_times(mame_time _time1, mame_time _time2)
+static inline mame_time sub_mame_times(mame_time _time1, mame_time _time2)
 {
 	mame_time result;
 
@@ -286,7 +286,7 @@ INLINE mame_time sub_mame_times(mame_time _time1, mame_time _time2)
     subseconds from a mame_time
 -------------------------------------------------*/
 
-INLINE mame_time sub_subseconds_from_mame_time(mame_time _time1, subseconds_t _subseconds)
+static inline mame_time sub_subseconds_from_mame_time(mame_time _time1, subseconds_t _subseconds)
 {
 	mame_time result;
 
@@ -312,7 +312,7 @@ INLINE mame_time sub_subseconds_from_mame_time(mame_time _time1, subseconds_t _s
     compare_mame_times - compare two mame_times
 -------------------------------------------------*/
 
-INLINE int compare_mame_times(mame_time _time1, mame_time _time2)
+static inline int compare_mame_times(mame_time _time1, mame_time _time2)
 {
 	if (_time1.seconds > _time2.seconds)
 		return 1;

@@ -112,7 +112,7 @@ static void mame_timer_remove(mame_timer *which);
     get_current_time - return the current time
 -------------------------------------------------*/
 
-INLINE mame_time get_current_time(void)
+static inline mame_time get_current_time(void)
 {
 	int activecpu;
 
@@ -134,7 +134,7 @@ INLINE mame_time get_current_time(void)
     timer_new - allocate a new timer
 -------------------------------------------------*/
 
-INLINE mame_timer *timer_new(void)
+static inline mame_timer *timer_new(void)
 {
 	mame_timer *timer;
 
@@ -159,7 +159,7 @@ INLINE mame_timer *timer_new(void)
     the list at the appropriate location
 -------------------------------------------------*/
 
-INLINE void timer_list_insert(mame_timer *timer)
+static inline void timer_list_insert(mame_timer *timer)
 {
 	mame_time expire = timer->enabled ? timer->expire : time_never;
 	mame_timer *t, *lt = NULL;
@@ -214,7 +214,7 @@ INLINE void timer_list_insert(mame_timer *timer)
     linked list
 -------------------------------------------------*/
 
-INLINE void timer_list_remove(mame_timer *timer)
+static inline void timer_list_remove(mame_timer *timer)
 {
 	/* sanity checks for the debug build */
 	#ifdef MAME_DEBUG
@@ -511,7 +511,7 @@ int timer_count_anonymous(void)
     isn't primed yet
 -------------------------------------------------*/
 
-INLINE mame_timer *_mame_timer_alloc_common(void (*callback)(int), void (*callback_ptr)(void *), void *param, const char *file, int line, const char *func, int temp)
+static inline mame_timer *_mame_timer_alloc_common(void (*callback)(int), void (*callback_ptr)(void *), void *param, const char *file, int line, const char *func, int temp)
 {
 	mame_time time = get_current_time();
 	mame_timer *timer = timer_new();
@@ -606,7 +606,7 @@ static void mame_timer_remove(mame_timer *which)
     fire periodically
 -------------------------------------------------*/
 
-INLINE void mame_timer_adjust_common(mame_timer *which, mame_time duration, INT32 param, mame_time period)
+static inline void mame_timer_adjust_common(mame_timer *which, mame_time duration, INT32 param, mame_time period)
 {
 	mame_time time = get_current_time();
 

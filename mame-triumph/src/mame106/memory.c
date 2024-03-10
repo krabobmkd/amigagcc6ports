@@ -1171,7 +1171,7 @@ static int init_cpudata(void)
     given address space in a standard fashion
 -------------------------------------------------*/
 
-INLINE void adjust_addresses(addrspace_data *space, int ismatchmask, offs_t *start, offs_t *end, offs_t *mask, offs_t *mirror)
+static inline void adjust_addresses(addrspace_data *space, int ismatchmask, offs_t *start, offs_t *end, offs_t *mask, offs_t *mirror)
 {
 	/* adjust start/end/mask values */
 	if (!*mask) *mask = space->rawmask;

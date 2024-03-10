@@ -24,6 +24,7 @@ set(AMIGA_SRC
 	amiga106_inputs.cpp
 	amiga106_audiostream.cpp
 	amiga106_filesystem.cpp
+	amiga106_timer.cpp
 	main.cpp
 #	romscan.cpp
 	gui_mui.cpp
@@ -60,7 +61,7 @@ set_property(TARGET ${PROGNAME} PROPERTY CXX_STANDARD 11)
 target_compile_definitions(${PROGNAME} PUBLIC MAMEVERSION=106 ZIP_CACHE=1 )
 
 # the static libs that are part of this repo: 
-target_link_libraries(${PROGNAME} PUBLIC mamecore z)
+target_link_libraries(${PROGNAME} PUBLIC mamecore z expat)
 
 # the extra original static libs furnished by triumph,"moo db" is a database used for config:
 target_link_directories(${PROGNAME} PUBLIC "../../lib")

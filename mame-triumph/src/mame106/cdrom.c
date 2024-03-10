@@ -129,7 +129,7 @@ UINT32 cdrom_chd_frame_to_phys(cdrom_file *file, UINT32 frame)
 
 static int endian_mode = 0;
 
-INLINE UINT32 get_bigendian_uint32(const UINT8 *base)
+static inline UINT32 get_bigendian_uint32(const UINT8 *base)
 {
 	if (!endian_mode)
 		return (base[3] << 24) | (base[2] << 16) | (base[1] << 8) | base[0];
@@ -577,7 +577,7 @@ UINT32 cdrom_get_track_length(cdrom_file *file, int track)
 	return (file->cdtoc.tracks[track].frames * file->cdtoc.tracks[track].datasize);
 }
 
-INLINE UINT8 make_bcd(UINT8 data)
+static inline UINT8 make_bcd(UINT8 data)
 {
 	return ((data / 10) << 4) | (data % 10);
 }

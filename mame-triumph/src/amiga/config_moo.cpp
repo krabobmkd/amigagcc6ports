@@ -11,11 +11,10 @@
  *
  *************************************************************************/
 
-
+#include <proto/dos.h>
 
 extern "C" {
 #include <exec/types.h>
-#include <clib/dos_protos.h>
 //just for INVALID_ID
 #include <graphics/modeid.h>
 }
@@ -520,17 +519,17 @@ const char *GetRomPath(int index, int path_num)
 
 #ifndef MESS
     case 1:
-      if(Drivers[index]->drv->video_attributes & VIDEO_TYPE_VECTOR)
-        rom_path = dbstringGet(DBRomPath, 1);
-      else
+//      if(Drivers[index]->drv->video_attributes & VIDEO_TYPE_VECTOR)
+//        rom_path = dbstringGet(DBRomPath, 1);
+//      else
         rom_path = dbstringGet(DBRomPath, 0);
       
       break;
 
     case 2:
-      if(Drivers[index]->drv->video_attributes & VIDEO_TYPE_VECTOR)
-        rom_path = dbstringGet(DBRomPath, 0);
-      else
+//      if(Drivers[index]->drv->video_attributes & VIDEO_TYPE_VECTOR)
+//        rom_path = dbstringGet(DBRomPath, 0);
+//      else
         rom_path = dbstringGet(DBRomPath, 1);
 
       break;
@@ -558,17 +557,17 @@ const char *GetSamplePath(int index, int path_num)
 
 #ifndef MESS
     case 1:
-      if(Drivers[index]->drv->video_attributes & VIDEO_TYPE_VECTOR)
-        sample_path = dbstringGet(DBSamplePath, 1);
-      else
+//      if(Drivers[index]->drv->video_attributes & VIDEO_TYPE_VECTOR)
+//        sample_path = dbstringGet(DBSamplePath, 1);
+//      else
         sample_path = dbstringGet(DBSamplePath, 0);
       
       break;
 
     case 2:
-      if(Drivers[index]->drv->video_attributes & VIDEO_TYPE_VECTOR)
-        sample_path = dbstringGet(DBSamplePath, 0);
-      else
+//      if(Drivers[index]->drv->video_attributes & VIDEO_TYPE_VECTOR)
+//        sample_path = dbstringGet(DBSamplePath, 0);
+//      else
         sample_path = dbstringGet(DBSamplePath, 1);
 
       break;

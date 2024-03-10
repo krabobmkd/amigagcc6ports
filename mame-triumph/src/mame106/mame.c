@@ -717,7 +717,7 @@ UINT32 memory_region_flags(int num)
     auto_malloc_add - add pointer to malloc list
 -------------------------------------------------*/
 
-INLINE void auto_malloc_add(void *result)
+static inline void auto_malloc_add(void *result)
 {
 	/* make sure we have tracking space */
 	if (malloc_list_index == malloc_list_size)

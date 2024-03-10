@@ -23,6 +23,7 @@
     -   You can currently configure a tilemap as xscroll + scrolling columns or
         yscroll + scrolling rows, but not both types of scrolling simultaneously.
 */
+#include "drawgfx.h"
 
 #if !defined(DECLARE) && !defined(TRANSP)
 
@@ -707,7 +708,7 @@ static void install_draw_handlers( tilemap *tmap )
 	}
 }
 
-INLINE tilemap_draw_func pick_draw_func( mame_bitmap *dest )
+static inline tilemap_draw_func pick_draw_func( mame_bitmap *dest )
 {
 	switch (dest ? dest->depth : Machine->color_depth)
 	{

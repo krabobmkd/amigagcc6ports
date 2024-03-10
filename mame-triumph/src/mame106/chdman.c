@@ -98,7 +98,7 @@ static const char *error_strings[] =
     put_bigendian_uint32 - write a UINT32 in big-endian order to memory
 -------------------------------------------------*/
 
-INLINE void put_bigendian_uint32(UINT8 *base, UINT32 value)
+static inline void put_bigendian_uint32(UINT8 *base, UINT32 value)
 {
 	base[0] = value >> 24;
 	base[1] = value >> 16;
@@ -742,7 +742,7 @@ static void do_createblankhd(int argc, char *argv[])
 /*
     Compute the largest common divisor of two numbers.
 */
-INLINE UINT32 lcd_u32(UINT32 a, UINT32 b)
+static inline UINT32 lcd_u32(UINT32 a, UINT32 b)
 {
 	UINT32 c;
 

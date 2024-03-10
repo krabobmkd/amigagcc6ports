@@ -25,32 +25,11 @@ extern "C" {
 #include <string.h>
 #include <cstdlib>
 #include <stdio.h>
+#include <cstdarg>
 #include <vector>
 #include <sstream>
-//#include <memory>
-
 
 using namespace std;
-
-
-//TODO
-
-//int mame_fseek(mame_file *file, INT64 offset, int whence);
-//void mame_fclose(mame_file *file);
-//int mame_fchecksum(const char *gamename, const char *filename, unsigned int *length, char *hash);
-//UINT64 mame_fsize(mame_file *file);
-//const char *mame_fhash(mame_file *file);
-//int mame_fgetc(mame_file *file);
-//int mame_ungetc(int c, mame_file *file);
-//char *mame_fgets(char *s, int n, mame_file *file);
-//int mame_feof(mame_file *file);
-//UINT64 mame_ftell(mame_file *file);
-
-//int mame_fputs(mame_file *f, const char *s);
-//int CLIB_DECL mame_fprintf(mame_file *f, const char *fmt, ...) ATTR_PRINTF(2,3);
-
-
-// - - --  -- -
 
 void fileio_init(void)
 {
@@ -85,8 +64,10 @@ stringstream &glog() {
 // this is picked from mame's unzip.
 // this would use a "zip file cache" (or not) and would need unzip_cache_clear() after audit
 // and game.
-int load_zipped_file(const char *zipfile, const char *filename, unsigned char **buf, unsigned int *length);
-
+//int load_zipped_file(const char *zipfile, const char *filename, unsigned char **buf, unsigned int *length);
+extern "C" {
+int load_zipped_file (int pathtype, int pathindex, const char* zipfile, const char* filename, unsigned char** buf, unsigned int* length);
+}
 #define FILE_IMPLEMENT_NAME
 //#define PRINTOSDFILESYSTEMCALLS
 /** file for reading, will just read all file and
@@ -172,6 +153,13 @@ public:
         int c=(int)*(_pData+_offset);
         _offset++;
         return c;
+    }
+    // put string
+    inline int fputs(const char *p) {
+        if(!_writeHdl) return -1; // EOF
+        int l = strlen(p);
+        Write(_writeHdl,p,l); // important: term 0 is not copied
+        return 0; // OK
     }
     inline int ungetc(int c) {
         if(!_pData || _offset<=0) return 0;
@@ -321,7 +309,9 @@ int _mame_file::openreadinzip(const char *pZipFile,const char *pFileName)
 #ifdef FILE_IMPLEMENT_NAME
     _path = pZipFile;
 #endif
-    if(load_zipped_file(pZipFile, pFileName,(unsigned char**)&_pData,(unsigned int *) &_Length)!=0)
+    //int load_zipped_file (int pathtype, int pathindex, const char* zipfile, const char* filename, unsigned char** buf, unsigned int* length);
+
+    if(load_zipped_file(0,0,pZipFile, pFileName,(unsigned char**)&_pData,(unsigned int *) &_Length)!=0)
     {
         return 0;
     }
@@ -566,6 +556,20 @@ mame_file *mame_fopen(const char *gamename, const char *filename, int filetype, 
 {
     return mame_fopen_error(gamename,filename,filetype,openforwrite,NULL);
 }
+osd_file *osd_fopen(int pathtype, int pathindex, const char *filename, const char *mode, osd_file_error *error)
+{
+    // only used for unzip read...
+    if(strchr(mode,'b' )!=NULL)
+    {
+        return (osd_file *)mame_fopen(NULL,filename,0,0);
+    } else
+    {
+        return (osd_file *)mame_fopen(NULL,filename,0,1);
+    }
+}
+
+
+
 
 mame_file *mame_fopen_rom(const char *gamename, const char *filename, const char *exphash)
 {
@@ -622,6 +626,15 @@ UINT32 mame_fread(mame_file *file, void *buffer, UINT32 length)
 #endif
     return file->read(buffer,length);
 }
+UINT32 osd_fread(osd_file *file, void *buffer, UINT32 length)
+{
+    if(!file) return 0;
+#ifdef PRINTOSDFILESYSTEMCALLS
+    printf("osd_fread: l:%d %s\n",length,f.cname());
+#endif
+    return ((mame_file *)file)->read(buffer,length);
+}
+
 UINT32 mame_fwrite(mame_file *file, const void *buffer, UINT32 length)
 {
     if(!file) return 0;
@@ -668,9 +681,19 @@ int mame_fseek(mame_file *file, INT64 offset, int whence)
 #ifdef PRINTOSDFILESYSTEMCALLS
     printf("osd_fseek: ofs:%d t:%d %s\n",offset,whence,f.cname());
 #endif
-
     return file->seek(offset,whence);
 }
+/* Seek within a file */
+int osd_fseek(osd_file *file, INT64 offset, int whence)
+{
+    if(!file) return -1;
+    #ifdef PRINTOSDFILESYSTEMCALLS
+        printf("osd_fseek: ofs:%d t:%d %s\n",offset,whence,f.cname());
+    #endif
+    return ((mame_file*)file)->seek(offset,whence);
+}
+
+
 void mame_fclose(mame_file *file)
 {
     if(!file) return;
@@ -679,7 +702,15 @@ void mame_fclose(mame_file *file)
 #endif
     delete file; // destructor does the job.
 }
-
+/* Close an open file */
+void osd_fclose(osd_file *file)
+{
+    if(!file) return;
+#ifdef PRINTOSDFILESYSTEMCALLS
+    printf("osd_fclose: %s\n",file->cname());
+#endif
+    delete (mame_file*)file; // destructor does the job.
+}
 
 
 int mame_fchecksum(const char *gamename, const char *filename, unsigned int *length, char *hash)
@@ -722,15 +753,19 @@ int mame_fchecksum(const char *gamename, const char *filename, unsigned int *len
     return 0; // ok for that one.
 
 }
-int osd_fsize(void *file)
+const char *mame_fhash(mame_file *file)
+{
+    file->hash();
+}
+
+UINT64 mame_fsize(mame_file *file)
+//int osd_fsize(void *file)
 {
     if(!file) return 0;
-    _mame_file &f = *((_mame_file *)file);
 #ifdef PRINTOSDFILESYSTEMCALLS
     printf("osd_fsize:%s\n",f.cname());
 #endif
-
-    return (int)f.size();
+    return (UINT64)file->size();
 }
 //unsigned int osd_fcrc(void *file)
 //{
@@ -742,56 +777,103 @@ int osd_fsize(void *file)
 
 //    return f.crc();
 //}
-
-int osd_fgetc(void *file)
+int mame_fgetc(mame_file *file)
+//int osd_fgetc(void *file)
 {
     if(!file) return 0;
-    _mame_file &f = *((_mame_file *)file);
 #ifdef PRINTOSDFILESYSTEMCALLS
     printf("osd_fgetc:%s\n",f.cname());
 #endif
-
-    return f.getc();
+    return file->getc();
 }
-int osd_ungetc(int c, void *file)
+int mame_ungetc(int c, mame_file *file)
+//int osd_ungetc(int c, void *file)
 {
     // this is just used to rewind one byte.
     if(!file) return 0;
-    _mame_file &f = *((_mame_file *)file);
 #ifdef PRINTOSDFILESYSTEMCALLS
     printf("osd_ungetc:%s\n",f.cname());
 #endif
 
-    return f.ungetc(c);
+    return file->ungetc(c);
 }
 // must return s if succeed
-char *osd_fgets(char *s, int n, void *file)
+char *mame_fgets(char *s, int n, mame_file *file)
+//char *osd_fgets(char *s, int n, void *file)
 {
     if(!file) return NULL;
-    _mame_file &f = *((_mame_file *)file);
 #ifdef PRINTOSDFILESYSTEMCALLS
     printf("osd_fgets:%s\n",f.cname());
 #endif
 
-    return f.getstring(s,n);
+    return file->getstring(s,n);
 }
-int osd_feof(void *file)
+
+int mame_fputs(mame_file *f, const char *s)
+{
+    if(!f) return NULL;
+#ifdef PRINTOSDFILESYSTEMCALLS
+    printf("mame_fputs:%s\n",f.cname());
+#endif
+    return f->fputs(s);
+}
+
+
+int mame_feof(mame_file *file)
+//int osd_feof(void *file)
 {
     if(!file) return 0;
-    _mame_file &f = *((_mame_file *)file);
 #ifdef PRINTOSDFILESYSTEMCALLS
     printf("osd_feof:%s\n",f.cname());
 #endif
-
-    return f.eof();
+    return file->eof();
 }
-int osd_ftell(void *file)
+UINT64 mame_ftell(mame_file *file)
+//int osd_ftell(void *file)
 {
     if(!file) return 0;
-    _mame_file &f = *((_mame_file *)file);
 #ifdef PRINTOSDFILESYSTEMCALLS
      printf("osd_ftell:%s\n",f.cname());
 #endif
 
-    return f.tell();
+    return file->tell();
 }
+/* Return current file position */
+UINT64 osd_ftell(osd_file *file)
+{
+    if(!file) return 0;
+#ifdef PRINTOSDFILESYSTEMCALLS
+     printf("osd_ftell:%s\n",f.cname());
+#endif
+
+    return ((mame_file *)file)->tell();
+}
+
+
+
+int mame_fprintf(mame_file *file, const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    if(!file) return -1;
+
+    char temp[256];
+    int l =vsnprintf(temp,255,fmt,args);
+    temp[255]=0;
+    mame_fputs(file,temp);
+    return l;
+}
+
+
+
+
+/* Return 1 if we're at the end of file */
+//int osd_feof(osd_file *file);
+
+/* Read bytes from a file */
+
+
+/* Write bytes to a file */
+//UINT32 osd_fwrite(osd_file *file, const void *buffer, UINT32 length);
+
+

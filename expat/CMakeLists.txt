@@ -29,12 +29,13 @@ set(EXPAT_HDRS
     expat.h     intconfig.h       nametab.h    xmltok.h
 )
 set(EXPAT_SRCS
-    xmlparse.c  xmlrole.c  xmltok.c  xmltok_impl.c  xmltok_ns.c
+    xmlparse.c  xmlrole.c  xmltok.c
+	#  xmltok_ns.c  xmltok_impl.c
 )
 
 add_library(expat STATIC  ${EXPAT_SRCS} ${EXPAT_HDRS} )
 set_property(TARGET expat PROPERTY C_STANDARD 11)
-
+target_compile_definitions(expat PUBLIC PTRCALL= )
 ## generate zconf.h
 #configure_file(	${CMAKE_CURRENT_SOURCE_DIR}/../zlib/zconf.h.cmakein
 #		${CMAKE_CURRENT_BINARY_DIR}/zconf.h @ONLY)

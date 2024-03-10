@@ -777,7 +777,7 @@ static int temp_string_pool_index;
  *
  *************************************/
 
-INLINE void set_cpu_context(int cpunum)
+static inline void set_cpu_context(int cpunum)
 {
 	int newfamily = cpu[cpunum].family;
 	int oldcontext = cpu_active_context[newfamily];

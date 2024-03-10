@@ -56,18 +56,18 @@
 #define PTRFASTCALL
 #endif
 
-#ifndef XML_MIN_SIZE
-#if !defined(__cplusplus) && !defined(inline)
-#ifdef __GNUC__
-#define inline __inline
-#endif /* __GNUC__ */
-#endif
-#endif /* XML_MIN_SIZE */
+//#ifndef XML_MIN_SIZE
+//#if !defined(__cplusplus) && !defined(inline)
+//#ifdef __GNUC__
+//#define inline __inline
+//#endif /* __GNUC__ */
+//#endif
+//#endif /* XML_MIN_SIZE */
 
-#ifdef __cplusplus
-#define inline inline
-#else
-#ifndef inline
-#define inline
-#endif
-#endif
+//#ifdef __cplusplus
+//#define inline inline
+//#else
+//#ifndef inline
+//#define inline
+//#endif
+//#endif

@@ -52,6 +52,7 @@ extern "C" {
 extern "C" {
     #include "osdepend.h"
     #include "driver.h"
+    #include "unzip.h"
 }
 #include "version.h"
 #include "audio.h"
@@ -120,17 +121,16 @@ LONG          Height;
 struct Audio      *Audio=NULL;
 struct Video      *Video=NULL;
 struct Inputs     *Inputs=NULL;
-struct AChannelArray  *ChannelArray[2];
 struct VPixelArray    *PixelArray[2];
 struct VDirectArray   *DirectArray;
-LONG          CurrentArray  = 0;
+
 BYTE          *Keys=NULL;
 struct IPort      *Port1=NULL;
 struct IPort      *Port2=NULL;
 UBYTE         *DirectPixels;
 ULONG         DirectBytesPerRow;
 
-struct timerequest    *TimerIO;
+struct timerequest    *TimerIO=NULL;
 struct MsgPort      TimerMP;
 
 static struct Hook    RefreshHook;
@@ -231,7 +231,6 @@ int libs_init()
     return(0);
 }
 
-void unzip_cache_clear();
 
 // exit code that is executed in all cases:
 // - after main()
@@ -248,6 +247,11 @@ void main_close()
     printf("does main_close\n");
     if(TimerIO)
     {
+        if (!(CheckIO((struct IORequest *)TimerIO)))
+        {
+            AbortIO((struct IORequest *)TimerIO);      /* Ask device to abort any pending requests */
+        }
+        WaitIO((struct IORequest *)TimerIO);
         if(TimerBase)
           CloseDevice((struct IORequest *) TimerIO);
         DeleteIORequest((struct IORequest *) TimerIO);

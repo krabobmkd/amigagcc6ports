@@ -202,13 +202,13 @@ static UINT64 multi_length(chd_interface_file *file);
  *
  *************************************/
 
-INLINE UINT64 get_bigendian_uint64(const UINT8 *base)
+static inline UINT64 get_bigendian_uint64(const UINT8 *base)
 {
 	return ((UINT64)base[0] << 56) | ((UINT64)base[1] << 48) | ((UINT64)base[2] << 40) | ((UINT64)base[3] << 32) |
 			((UINT64)base[4] << 24) | ((UINT64)base[5] << 16) | ((UINT64)base[6] << 8) | (UINT64)base[7];
 }
 
-INLINE void put_bigendian_uint64(UINT8 *base, UINT64 value)
+static inline void put_bigendian_uint64(UINT8 *base, UINT64 value)
 {
 	base[0] = value >> 56;
 	base[1] = value >> 48;
@@ -220,12 +220,12 @@ INLINE void put_bigendian_uint64(UINT8 *base, UINT64 value)
 	base[7] = value;
 }
 
-INLINE UINT32 get_bigendian_uint32(const UINT8 *base)
+static inline UINT32 get_bigendian_uint32(const UINT8 *base)
 {
 	return (base[0] << 24) | (base[1] << 16) | (base[2] << 8) | base[3];
 }
 
-INLINE void put_bigendian_uint32(UINT8 *base, UINT32 value)
+static inline void put_bigendian_uint32(UINT8 *base, UINT32 value)
 {
 	base[0] = value >> 24;
 	base[1] = value >> 16;
@@ -233,18 +233,18 @@ INLINE void put_bigendian_uint32(UINT8 *base, UINT32 value)
 	base[3] = value;
 }
 
-INLINE UINT16 get_bigendian_uint16(const UINT8 *base)
+static inline UINT16 get_bigendian_uint16(const UINT8 *base)
 {
 	return (base[0] << 8) | base[1];
 }
 
-INLINE void put_bigendian_uint16(UINT8 *base, UINT16 value)
+static inline void put_bigendian_uint16(UINT8 *base, UINT16 value)
 {
 	base[0] = value >> 8;
 	base[1] = value;
 }
 
-INLINE void extract_map_entry(const UINT8 *base, map_entry *entry)
+static inline void extract_map_entry(const UINT8 *base, map_entry *entry)
 {
 	entry->offset = get_bigendian_uint64(&base[0]);
 	entry->crc = get_bigendian_uint32(&base[8]);
@@ -252,7 +252,7 @@ INLINE void extract_map_entry(const UINT8 *base, map_entry *entry)
 	entry->flags = get_bigendian_uint16(&base[14]);
 }
 
-INLINE void assemble_map_entry(UINT8 *base, map_entry *entry)
+static inline void assemble_map_entry(UINT8 *base, map_entry *entry)
 {
 	put_bigendian_uint64(&base[0], entry->offset);
 	put_bigendian_uint32(&base[8], entry->crc);
@@ -260,7 +260,7 @@ INLINE void assemble_map_entry(UINT8 *base, map_entry *entry)
 	put_bigendian_uint16(&base[14], entry->flags);
 }
 
-INLINE void extract_old_map_entry(const UINT8 *base, map_entry *entry, UINT32 hunkbytes)
+static inline void extract_old_map_entry(const UINT8 *base, map_entry *entry, UINT32 hunkbytes)
 {
 	entry->offset = get_bigendian_uint64(&base[0]);
 	entry->crc = 0;
@@ -273,7 +273,7 @@ INLINE void extract_old_map_entry(const UINT8 *base, map_entry *entry, UINT32 hu
 #endif
 }
 
-INLINE void assemble_old_map_entry(UINT8 *base, map_entry *entry)
+static inline void assemble_old_map_entry(UINT8 *base, map_entry *entry)
 {
 	UINT64 data = entry->offset | ((UINT64)entry->length << 44);
 	put_bigendian_uint64(&base[0], data);

@@ -17,6 +17,9 @@
 
 #include <proto/exec.h>
 #include <proto/dos.h>
+#include <proto/timer.h>
+
+
 // #include <proto/cybergraphics.h>
 extern "C" {
 #include <cybergraphx/cybergraphics.h>
@@ -28,6 +31,7 @@ extern "C" {
     #include "mame.h"
     #include "driver.h"
     #include "osdepend.h"
+    #include "unzip.h"
 }
 
 #include <stdio.h>
@@ -68,9 +72,6 @@ extern void *playback;
 
 static uint8_t Palette[256][3];
 
-static int MasterVolume;
-static int Attenuation;
-
 static int FrameCounter;
 static const int NoFrameSkipCount = 10;
 
@@ -93,10 +94,13 @@ unsigned char No_FM   = 1;
 
 static int input_update_counter = 0;
 
-extern int antialias;
-extern int beam;
-extern int flicker;
-extern int translucency;
+// vector things
+//extern "C" {
+//    extern int antialias;
+//    extern int beam;
+//    extern int flicker;
+//    extern int translucency;
+//}
 
 #ifndef ORIENTATION_DEFAULT
 #define ORIENTATION_DEFAULT 0
@@ -212,7 +216,7 @@ void StartGame(void)
 
  //ok
   frameskip = Config[CFG_FRAMESKIP];
-
+/* vector things removed
   antialias    = Config[CFG_ANTIALIASING];
   translucency = Config[CFG_TRANSLUCENCY];
 
@@ -227,7 +231,7 @@ void StartGame(void)
     flicker = 0;
   if(flicker > 255)
     flicker = 255;
-
+*/
 #ifdef MESS
   for(i = 0; i < MAX_ROM; i++)
   {
@@ -797,7 +801,24 @@ void osd_close_display(void)
 
   VideoClose();
 }
-void osd_update_video_and_audio(mame_bitmap *bitmap)
+
+
+
+/*
+  Update video and audio. game_bitmap contains the game display, while
+  debug_bitmap an image of the debugger window (if the debugger is active; NULL
+  otherwise). They can be shown one at a time, or in two separate windows,
+  depending on the OS limitations. If only one is shown, the user must be able
+  to toggle between the two by pressing IPT_UI_TOGGLE_DEBUG; moreover,
+  osd_debugger_focus() will be used by the core to force the display of a
+  specific bitmap, e.g. the debugger one when the debugger becomes active.
+
+  leds_status is a bitmask of lit LEDs, usually player start lamps. They can be
+  simulated using the keyboard LEDs, or in other ways e.g. by placing graphics
+  on the window title bar.
+*/
+void osd_update_video_and_audio(struct _mame_display *display)
+//void osd_update_video_and_audio(mame_bitmap *bitmap)
 //old void osd_update_video_and_audio(void)
 {
   unsigned char *line;
@@ -814,6 +835,8 @@ void osd_update_video_and_audio(mame_bitmap *bitmap)
   uint8_t     *newb, *new2, *new3;
   uint8_t     *old, *old2, *old3;
   char      buf[30];
+
+  mame_bitmap *bitmap = display->game_bitmap;
 
   static int showfpstemp;
   int need_to_clear_bitmap = 0;
@@ -1701,52 +1724,6 @@ void osd_opl_write(int chip,int data)
 
 
 
-void osd_set_mastervolume(int attenuation)
-{
-	float volume;
-
-	Attenuation = attenuation;
-
- 	volume = 256.0;	/* range is 0-256 */
-
-	while(attenuation++ < 0)
-		volume /= 1.122018454;	/* = (10 ^ (1/20)) = 1dB */
-
-  MasterVolume = volume;
-
-  if(ChannelArray[0])
-  {
-#ifdef POWERUP
-    if(!ChannelArray[1])
-      return;
-#endif
-    ASetMasterVolume(ChannelArray[CurrentArray], MasterVolume);
-  }
-}
-
-int osd_get_mastervolume(void)
-{
-  return(Attenuation);
-}
-
-void osd_sound_enable(int enable)
-{
-#ifdef POWERUP
-  if(ChannelArray[0] && ChannelArray[1])
-#else
-  if(ChannelArray[0])
-#endif
-  {
-    if(enable)
-    {
-      ASetMasterVolume(ChannelArray[CurrentArray], MasterVolume);
-    }
-    else
-    {
-      ASetMasterVolume(ChannelArray[CurrentArray], 0);
-    }
-  }
-}
 // this fonction takes the place of the mame source one in common.cpp:
 /*re, adapt to new file
 struct GameSamples *readsamples(const char **samplenames,const char *basename)
@@ -2040,7 +2017,10 @@ void osd_save_snapshot(mame_bitmap *bitmap)
 
 }
 
-int osd_display_loading_rom_message(const char *name,int current,int total)
+/* called while loading ROMs. It is called a last time with name == 0 to signal */
+/* that the ROM loading process is finished. */
+/* return non-zero to abort loading */
+int osd_display_loading_rom_message(const char *name,rom_load_data *romdata)
 {
   return(0);
 }
@@ -2054,9 +2034,25 @@ void osd_pause(int paused)
 {
 
 }
-// from osd:
-void logerror(const char *text,...)
-{
 
+/*
+  Provides a hook to allow the OSD system to override processing of a
+  snapshot.  This function will either return a new bitmap, for which the
+  caller is responsible for freeing.
+*/
+mame_bitmap *osd_override_snapshot(mame_bitmap *bitmap, rectangle *bounds)
+{
+    return NULL;
+}
+
+
+/*
+  Returns a pointer to the text to display when the FPS display is toggled.
+  This normally includes information about the frameskip, FPS, and percentage
+  of full game speed.
+*/
+const char *osd_get_fps_text(const performance_info *performance)
+{
+    return "osd_get_fps_text to implement";
 }
 

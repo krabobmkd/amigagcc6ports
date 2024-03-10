@@ -171,14 +171,14 @@ pen_t get_white_pen(void);
 
 
 /***************************************************************************
-    INLINE FUNCTIONS
+    static inline FUNCTIONS
 ***************************************************************************/
 
 /*-------------------------------------------------
     pal1bit - convert a 1-bit value to 8 bits
 -------------------------------------------------*/
 
-INLINE UINT8 pal1bit(UINT8 bits)
+static inline UINT8 pal1bit(UINT8 bits)
 {
 	return bits ? 0xff : 0x00;
 }
@@ -188,7 +188,7 @@ INLINE UINT8 pal1bit(UINT8 bits)
     pal2bit - convert a 2-bit value to 8 bits
 -------------------------------------------------*/
 
-INLINE UINT8 pal2bit(UINT8 bits)
+static inline UINT8 pal2bit(UINT8 bits)
 {
 	bits &= 3;
 	return (bits << 6) | (bits << 4) | (bits << 2) | bits;
@@ -199,7 +199,7 @@ INLINE UINT8 pal2bit(UINT8 bits)
     pal3bit - convert a 3-bit value to 8 bits
 -------------------------------------------------*/
 
-INLINE UINT8 pal3bit(UINT8 bits)
+static inline UINT8 pal3bit(UINT8 bits)
 {
 	bits &= 7;
 	return (bits << 5) | (bits << 2) | (bits >> 1);
@@ -210,7 +210,7 @@ INLINE UINT8 pal3bit(UINT8 bits)
     pal4bit - convert a 4-bit value to 8 bits
 -------------------------------------------------*/
 
-INLINE UINT8 pal4bit(UINT8 bits)
+static inline UINT8 pal4bit(UINT8 bits)
 {
 	bits &= 0xf;
 	return (bits << 4) | bits;
@@ -221,7 +221,7 @@ INLINE UINT8 pal4bit(UINT8 bits)
     pal5bit - convert a 5-bit value to 8 bits
 -------------------------------------------------*/
 
-INLINE UINT8 pal5bit(UINT8 bits)
+static inline UINT8 pal5bit(UINT8 bits)
 {
 	bits &= 0x1f;
 	return (bits << 3) | (bits >> 2);
@@ -232,7 +232,7 @@ INLINE UINT8 pal5bit(UINT8 bits)
     pal6bit - convert a 6-bit value to 8 bits
 -------------------------------------------------*/
 
-INLINE UINT8 pal6bit(UINT8 bits)
+static inline UINT8 pal6bit(UINT8 bits)
 {
 	bits &= 0x3f;
 	return (bits << 2) | (bits >> 4);
@@ -243,7 +243,7 @@ INLINE UINT8 pal6bit(UINT8 bits)
     pal7bit - convert a 7-bit value to 8 bits
 -------------------------------------------------*/
 
-INLINE UINT8 pal7bit(UINT8 bits)
+static inline UINT8 pal7bit(UINT8 bits)
 {
 	bits &= 0x7f;
 	return (bits << 1) | (bits >> 6);

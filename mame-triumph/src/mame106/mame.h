@@ -340,7 +340,7 @@ void begin_resource_tracking(void);
 void end_resource_tracking(void);
 
 /* return the current resource tag */
-INLINE int get_resource_tag(void)
+static inline int get_resource_tag(void)
 {
 	extern int resource_tracking_tag;
 	return resource_tracking_tag;

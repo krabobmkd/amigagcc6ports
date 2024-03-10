@@ -47,8 +47,9 @@ extern "C" {
 #include "macros.h"
 #include "main.h"
 
-extern "C" {
+extern "C" {    
     #include "driver.h"
+    #include "mamecore.h"
 }
 
 #include "gui_mui.h"
@@ -466,7 +467,7 @@ static void ScanDrivers(void)
                 {
                   len = strlen((*SortedDrivers[i+DRIVER_OFFSET])->name);
 
-                  if(!mame_strnicmp(fib->fib_FileName, (*SortedDrivers[i+DRIVER_OFFSET])->name, len))
+                  if(!strnicmp(fib->fib_FileName, (*SortedDrivers[i+DRIVER_OFFSET])->name, len))
                   {
                     if(!fib->fib_FileName[len])
                     {
@@ -712,12 +713,12 @@ static ULONG ASM DriverDisplay(struct Hook *hook REG(a0), char **array REG(a2), 
   }
 // GAME_REQUIRES_16BIT
 //0.35  if(drv->drv->video_attributes & VIDEO_SUPPORTS_16BIT)
-  if(machine.flags & GAME_REQUIRES_16BIT ||
+  if(/*machine.flags & GAME_REQUIRES_16BIT ||*/
    machine.total_colors > 256
     )
     sprintf(colors, "16Bit");
   else
-    sprintf(colors, "%d", drv->drv->total_colors);
+    sprintf(colors, "%d", machine.total_colors);
 
   *array++ = colors;
 
@@ -1717,11 +1718,15 @@ static void SetOptions(BOOL set_driver)
 
   SetDisplayName(Config[CFG_SCREENMODE]);
 
+
+  machine_config machine;
+  memset(&machine,0,sizeof(machine));
+  Drivers[Config[CFG_DRIVER]]->drv(&machine);
+
+
   if((Config[CFG_DRIVER] < 0) || (!Config[CFG_USEDEFAULTS]
-     && /*(Drivers[Config[CFG_DRIVER]]->drv->video_attributes & VIDEO_SUPPORTS_16BIT)*/
-       ((Drivers[Config[CFG_DRIVER]]->flags & GAME_REQUIRES_16BIT) ||
-        (Drivers[Config[CFG_DRIVER]]->drv->total_colors > 256)
-       )
+     && /*(Drivers[Config[CFG_DRIVER]]->drv->video_attributes & VIDEO_SUPPORTS_16BIT)*/      
+        (machine.total_colors > 256)
      ))
   {
     set(CM_Allow16Bit, MUIA_Disabled, FALSE);
@@ -1991,8 +1996,11 @@ static ULONG ASM UseDefaultsNotify(struct Hook *hook REG(a0), APTR obj REG(a2), 
 
     drv = GetDriver();
 
-    //0.35 if(!drv || (drv->drv->video_attributes & VIDEO_SUPPORTS_16BIT))
-    if(!drv || drv->drv->total_colors<256 || (drv->flags & GAME_REQUIRES_16BIT)==0)
+    machine_config machine;
+    memset(&machine,0,sizeof(machine));
+    if(drv) drv->drv(&machine);
+
+    if(machine.total_colors<256 )
       set(CM_Allow16Bit, MUIA_Disabled, FALSE);
     else
       set(CM_Allow16Bit, MUIA_Disabled, TRUE);

@@ -351,17 +351,17 @@ typedef union
 /* since stricmp is not part of the standard, we use this instead */
 int mame_stricmp(const char *s1, const char *s2);
 
-/* this macro prevents people from using stricmp directly */
-#undef stricmp
-#define stricmp !MUST_USE_MAME_STRICMP_INSTEAD!
+///* this macro prevents people from using stricmp directly */
+//#undef stricmp
+//#define stricmp !MUST_USE_MAME_STRICMP_INSTEAD!
 
 
 /* since strnicmp is not part of the standard, we use this instead */
 int mame_strnicmp(const char *s1, const char *s2, size_t n);
 
-/* this macro prevents people from using strnicmp directly */
-#undef strnicmp
-#define strnicmp !MUST_USE_MAME_STRNICMP_INSTEAD!
+///* this macro prevents people from using strnicmp directly */
+//#undef strnicmp
+//#define strnicmp !MUST_USE_MAME_STRNICMP_INSTEAD!
 
 
 /* since strdup is not part of the standard, we use this instead */
@@ -373,7 +373,7 @@ char *mame_strdup(const char *str);
 
 
 /* compute the intersection of two rectangles */
-INLINE void sect_rect(rectangle *dst, const rectangle *src)
+static inline void sect_rect(rectangle *dst, const rectangle *src)
 {
 	if (src->min_x > dst->min_x) dst->min_x = src->min_x;
 	if (src->max_x < dst->max_x) dst->max_x = src->max_x;
@@ -383,7 +383,7 @@ INLINE void sect_rect(rectangle *dst, const rectangle *src)
 
 
 /* convert a series of 32 bits into a float */
-INLINE float u2f(UINT32 v)
+static inline float u2f(UINT32 v)
 {
 	union {
 		float ff;
@@ -395,7 +395,7 @@ INLINE float u2f(UINT32 v)
 
 
 /* convert a float into a series of 32 bits */
-INLINE UINT32 f2u(float f)
+static inline UINT32 f2u(float f)
 {
 	union {
 		float ff;
@@ -407,7 +407,7 @@ INLINE UINT32 f2u(float f)
 
 
 /* convert a series of 64 bits into a double */
-INLINE double u2d(UINT64 v)
+static inline double u2d(UINT64 v)
 {
 	union {
 		double dd;
@@ -419,7 +419,7 @@ INLINE double u2d(UINT64 v)
 
 
 /* convert a double into a series of 64 bits */
-INLINE UINT64 d2u(double d)
+static inline UINT64 d2u(double d)
 {
 	union {
 		double dd;
@@ -443,7 +443,7 @@ INLINE UINT64 d2u(double d)
 
 /* return the number of leading zero bits in a 32-bt value */
 #ifndef count_leading_zeros
-INLINE UINT32 count_leading_zeros(UINT32 val)
+static inline UINT32 count_leading_zeros(UINT32 val)
 {
 	UINT32 count;
 	for (count = 0; (INT32)val >= 0; count++) val <<= 1;
@@ -454,7 +454,7 @@ INLINE UINT32 count_leading_zeros(UINT32 val)
 
 /* return the number of leading one bits in a 32-bt value */
 #ifndef count_leading_ones
-INLINE UINT32 count_leading_ones(UINT32 val)
+static inline UINT32 count_leading_ones(UINT32 val)
 {
 	UINT32 count;
 	for (count = 0; (INT32)val < 0; count++) val <<= 1;
@@ -465,7 +465,7 @@ INLINE UINT32 count_leading_ones(UINT32 val)
 
 /* perform a 32x32 multiply to 64-bit precision and then shift */
 #ifndef fixed_mul_shift
-INLINE INT32 fixed_mul_shift(INT32 val1, INT32 val2, UINT8 shift)
+static inline INT32 fixed_mul_shift(INT32 val1, INT32 val2, UINT8 shift)
 {
 	return (INT32)(((INT64)val1 * (INT64)val2) >> shift);
 }
@@ -479,7 +479,7 @@ INLINE INT32 fixed_mul_shift(INT32 val1, INT32 val2, UINT8 shift)
 
 ***************************************************************************/
 
-INLINE int bcd_adjust(int value)
+static inline int bcd_adjust(int value)
 {
 	if ((value & 0xf) >= 0xa)
 		value = value + 0x10 - 0xa;
@@ -489,13 +489,13 @@ INLINE int bcd_adjust(int value)
 }
 
 
-INLINE int dec_2_bcd(int a)
+static inline int dec_2_bcd(int a)
 {
 	return (a % 10) | ((a / 10) << 4);
 }
 
 
-INLINE int bcd_2_dec(int a)
+static inline int bcd_2_dec(int a)
 {
 	return (a & 0xf) + (a >> 4) * 10;
 }
@@ -508,14 +508,14 @@ INLINE int bcd_2_dec(int a)
 
 ***************************************************************************/
 
-INLINE int gregorian_is_leap_year(int year)
+static inline int gregorian_is_leap_year(int year)
 {
 	return !(year % 100 ? year % 4 : year % 400);
 }
 
 
 /* months are one counted */
-INLINE int gregorian_days_in_month(int month, int year)
+static inline int gregorian_days_in_month(int month, int year)
 {
 	if (month == 2)
 		return gregorian_is_leap_year(year) ? 29 : 28;

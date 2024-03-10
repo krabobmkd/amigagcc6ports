@@ -191,7 +191,7 @@ void extract_scanline16(mame_bitmap *bitmap,int x,int y,int length,UINT16 *dst);
 
 
 /* Alpha blending functions */
-INLINE void alpha_set_level(int level)
+static inline void alpha_set_level(int level)
 {
 	assert(level >= 0 && level <= 256);
 	drawgfx_alpha_cache.alphas = drawgfx_alpha_cache.alpha[level];
@@ -199,7 +199,7 @@ INLINE void alpha_set_level(int level)
 }
 
 
-INLINE UINT32 alpha_blend16(UINT32 d, UINT32 s)
+static inline UINT32 alpha_blend16(UINT32 d, UINT32 s)
 {
 	const UINT8 *alphas = drawgfx_alpha_cache.alphas;
 	const UINT8 *alphad = drawgfx_alpha_cache.alphad;
@@ -208,7 +208,7 @@ INLINE UINT32 alpha_blend16(UINT32 d, UINT32 s)
 }
 
 
-INLINE UINT32 alpha_blend32(UINT32 d, UINT32 s)
+static inline UINT32 alpha_blend32(UINT32 d, UINT32 s)
 {
 	const UINT8 *alphas = drawgfx_alpha_cache.alphas;
 	const UINT8 *alphad = drawgfx_alpha_cache.alphad;
@@ -217,7 +217,7 @@ INLINE UINT32 alpha_blend32(UINT32 d, UINT32 s)
 }
 
 
-INLINE UINT32 alpha_blend_r16(UINT32 d, UINT32 s, UINT8 level)
+static inline UINT32 alpha_blend_r16(UINT32 d, UINT32 s, UINT8 level)
 {
 	const UINT8 *alphas = drawgfx_alpha_cache.alpha[level];
 	const UINT8 *alphad = drawgfx_alpha_cache.alpha[256 - level];
@@ -226,7 +226,7 @@ INLINE UINT32 alpha_blend_r16(UINT32 d, UINT32 s, UINT8 level)
 }
 
 
-INLINE UINT32 alpha_blend_r32( UINT32 d, UINT32 s, UINT8 level )
+static inline UINT32 alpha_blend_r32( UINT32 d, UINT32 s, UINT8 level )
 {
 	const UINT8 *alphas = drawgfx_alpha_cache.alpha[level];
 	const UINT8 *alphad = drawgfx_alpha_cache.alpha[256 - level];

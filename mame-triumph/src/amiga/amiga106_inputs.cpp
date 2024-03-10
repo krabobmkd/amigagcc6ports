@@ -225,13 +225,21 @@ const os_code_info *osd_get_code_list(void)
 }
 
 /*
+  return the value of the specified input. digital inputs return 0 or 1. analog
+  inputs should return a value between -65536 and +65536. oscode is the OS dependent
+  code specified in the list returned by osd_get_code_list().
+*/
+
+/*
   tell whether the specified key is pressed or not. keycode is the OS dependant
   code specified in the list returned by osd_get_key_list().
 */
-int osd_is_key_pressed(int keycode) // now , always rawkey.
+INT32 osd_get_code_value(os_code oscode)
+//int osd_is_key_pressed(int keycode) // now , always rawkey.
 {
     if(!Inputs) return 0;
-    return (int)Inputs->Keys[keycode];
+    if(oscode<128) return (int)Inputs->Keys[oscode];
+    return 0;
 }
 
 /*
@@ -261,3 +269,49 @@ int osd_readkey_unicode(int flush)
     printf("osd_readkey_unicode\n");
     return 0;
 }
+
+
+
+/* Joystick calibration routines BW 19981216 */
+/* Do we need to calibrate the joystick at all? */
+int osd_joystick_needs_calibration(void)
+{
+    return 0;
+}
+/* Preprocessing for joystick calibration. Returns 0 on success */
+void osd_joystick_start_calibration(void)
+{
+
+}
+/* Prepare the next calibration step. Return a description of this step. */
+/* (e.g. "move to upper left") */
+const char *osd_joystick_calibrate_next(void)
+{
+    return NULL;
+}
+/* Get the actual joystick calibration data for the current position */
+void osd_joystick_calibrate(void)
+{
+
+}
+/* Postprocessing (e.g. saving joystick data to config) */
+void osd_joystick_end_calibration(void)
+{
+
+}
+
+/*
+  inptport.c defines some general purpose defaults for key and joystick bindings.
+  They may be further adjusted by the OS dependent code to better match the
+  available keyboard, e.g. one could map pause to the Pause key instead of P, or
+  snapshot to PrtScr instead of F12. Of course the user can further change the
+  settings to anything he/she likes.
+  This function is called on startup, before reading the configuration from disk.
+  Scan the list, and change the keys/joysticks you want.
+*/
+void osd_customize_inputport_list(input_port_default_entry *defaults)
+{
+
+}
+
+

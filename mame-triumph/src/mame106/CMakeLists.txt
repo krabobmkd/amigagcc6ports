@@ -3,7 +3,7 @@
 cmake_minimum_required (VERSION 3.1)
 
 set(C_STANDARD 11)
-
+set(CXX_STANDARD 11)
 project(MameLib LANGUAGES C CXX VERSION 1.0)
 
 #if(AMIGA)
@@ -19,14 +19,19 @@ add_subdirectory(${ZLIBPATH} zlib)
 add_subdirectory(${EXPATPATH} expat)
 
 set(MAME_CORE_SRC
+# chdman.c is an external tool !
+# romcmp.c  is an external tool !
+
 # artwork.c x86drc.c profiler.c tiny.c
 # fileio.c finally not, implemented on amiga side.
+	artwork.c
+
    cpuint.c    inptport.c  palette.c   streams.c   video.c
 	audit.c    cpuintrf.c  input.c     png.c       tilemap.c
 	cdrom.c    drawgfx.c   jedparse.c  timer.c     xml2info.c
-	chd.c      driver.c    jedutil.c   romcmp.c    xmlfile.c
-	chdcd.c    fileio.c    mame.c      romload.c   ui_text.c
-	chdman.c   harddisk.c  mamecore.c  sha1.c      unzip.c
+	chd.c      driver.c    jedutil.c   xmlfile.c
+	chdcd.c    mame.c      romload.c   ui_text.c
+	  harddisk.c  mamecore.c  sha1.c      unzip.c
 	cheat.c    hash.c      mamedriv.c  sndintrf.c  usrintrf.c
 	config.c   hiscore.c   md5.c       sound.c     validity.c
 	cpuexec.c  info.c      memory.c    state.c     version.c
@@ -59,11 +64,21 @@ set(MAME_CORE_SRC
 #	sound/mixer.cpp
 #	machine/z80fmly.cpp machine/6821pia.cpp
 #	machine/8255ppi.cpp
-#	vidhrdw/generic.cpp vidhrdw/vector.cpp
-#	vidhrdw/avgdvg.cpp machine/mathbox.cpp
-#	machine/ticket.cpp machine/eeprom.cpp
+	vidhrdw/generic.c vidhrdw/vector.c
+#	machine/mathbox.c
+	# 	vidhrdw/avgdvg.c
+#	machine/ticket.cpp
+	machine/generic.c
+	machine/generic.h
+	machine/eeprom.c
+	machine/eeprom.h
 #	sound/votrax.cpp
-
+	sound/flt_vol.c
+	sound/flt_vol.h
+	sound/flt_rc.c
+	sound/flt_rc.h
+	sound/wavwrite.c
+	sound/wavwrite.h
 #	artwork.h   drawgfx.h   input.h         network.h   sndintrf.h      ui_text.h
 #	audit.h     driver.h    legacy.h        osdepend.h  sprite.h        unzip.h
 #	cheat.h     gfxobj.h    mame.h          palette.h   state.h         usrintrf.h
