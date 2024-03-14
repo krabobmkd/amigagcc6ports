@@ -239,7 +239,7 @@ void coin_lockout_global_w(int on)
     on which ones are non-NULL
 -------------------------------------------------*/
 
-static inline void *nvram_select(void)
+INLINE void *nvram_select(void)
 {
 	if (generic_nvram)
 		return generic_nvram;
@@ -352,7 +352,7 @@ void nvram_handler_generic_randfill(mame_file *file, int read_or_write)
     file
 -------------------------------------------------*/
 
-static inline void memcard_name(int index, char *buffer)
+INLINE void memcard_name(int index, char *buffer)
 {
 	sprintf(buffer, "memcard.%03d", index);
 }
@@ -592,7 +592,7 @@ READ8_HANDLER( interrupt_enable_r )
     specified state on the active CPU
 -------------------------------------------------*/
 
-static inline void irqn_line_set(int line, int state)
+INLINE void irqn_line_set(int line, int state)
 {
 	int cpunum = cpu_getactivecpu();
 	if (interrupt_enable[cpunum])

@@ -11,7 +11,7 @@ project(MameLib LANGUAGES C CXX VERSION 1.0)
 #	 add_compile_options(-m68060 -mhard-float -ffast-math -save-temps )
 #endif()
 
-#re include(gamedrivers.cmake)
+include(gamedrivers.cmake)
 
 set(ZLIBPATH "../../../zlib")
 set(EXPATPATH "../../../expat")
@@ -89,7 +89,7 @@ set(MAME_CORE_SRC
 
 	)
 
-set(MAME_INCLUDE_DIRS "src" "../amiga" "." ${EXPATPATH})
+set(MAME_INCLUDE_DIRS "src" "../amiga" "." "./includes" ${EXPATPATH})
 
 add_library( mamecore STATIC ${MAME_CORE_SRC}
 							 ${MAME_DRIVERS_SRC} ${MAME_SOUND_SRC} ${MAME_CPU_SRC} )

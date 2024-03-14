@@ -3088,6 +3088,8 @@ DokiDoki Penguin Land *not confirmed
 	DRIVER( quartetj )	/* (c) 1986 (8751) */
 	DRIVER( quartet2 )	/* (c) 1986 (8751) */
 	DRIVER( quartt2j )	/* (c) 1986 (8751) */
+#endif
+#ifdef LINK_SEGASYSTEM16
 
 	/* System16A */
 	DRIVER( afighter )	/* (c) 1986 (FD1089A, decrypted) */
@@ -3659,7 +3661,8 @@ BOMULEUL CHAJARA SEGA ST-V  1997/04/11
 						/* 10 */
 	DRIVER( mp_mazin )	/* 11 */
 	DRIVER( mp_col3 )	/* ?? */
-
+#endif
+#ifdef OTHERDRV2
 	/* Data East "Burger Time hardware" games */
 	DRIVER( lnc )		/* (c) 1981 */
 	DRIVER( zoar )		/* (c) 1982 */

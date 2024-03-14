@@ -247,11 +247,6 @@ void main_close()
     printf("does main_close\n");
     if(TimerIO)
     {
-        if (!(CheckIO((struct IORequest *)TimerIO)))
-        {
-            AbortIO((struct IORequest *)TimerIO);      /* Ask device to abort any pending requests */
-        }
-        WaitIO((struct IORequest *)TimerIO);
         if(TimerBase)
           CloseDevice((struct IORequest *) TimerIO);
         DeleteIORequest((struct IORequest *) TimerIO);
@@ -317,7 +312,7 @@ int main(int argc, char **argv)
 
     printf("drivers:\n");
     int idrv=0;
-    while(Drivers[idrv] != NULL)
+    while(drivers[idrv] != NULL)
     {
         if(Drivers[idrv] && Drivers[idrv]->name) printf("driver:%s\n",Drivers[idrv]->name);
         idrv++;
@@ -329,7 +324,7 @@ int main(int argc, char **argv)
         // go into interface loop
         if(MainGUI()!=0) exit(0);
     }
-
+    printf("bef loop\n");
     ULONG quit=FALSE;
 
     // loop per emulation launched
@@ -342,6 +337,7 @@ int main(int argc, char **argv)
 
         GetConfig(0, Config);
 
+
        /* if(Config[CFG_USEDEFAULTS])
         {
 
@@ -351,7 +347,7 @@ int main(int argc, char **argv)
             GetConfig(0, Config);
         }*/
         #endif
-
+    printf("aft GetConfig\n");
         NewGame     = 1;
         Inputs      = NULL;
         Keys      = NULL;
@@ -375,15 +371,19 @@ int main(int argc, char **argv)
     #endif
       }
     }
-
+    printf("bef StartGame\n");
 
     StartGame();
+    printf("aft StartGame\n");
+
 
     if(Audio)
     {
       FreeAudio(Audio);
       Audio = NULL;
     }
+
+        printf("bef MainGUI\n");
     if(NewGame > 0)
       quit = MainGUI();
     else if(!NewGame)
@@ -433,7 +433,11 @@ LONG VideoOpen(LONG width, LONG height, LONG left, LONG top, LONG right, LONG bo
 
     machine_config machine;
     memset(&machine,0,sizeof(machine));
-    Drivers[Config[CFG_DRIVER]]->drv(&machine);
+    if(Config[CFG_DRIVER]>=0 &&  Drivers[Config[CFG_DRIVER]] != NULL)
+    {
+        Drivers[Config[CFG_DRIVER]]->drv(&machine);
+    }
+
 
   /* Disable dirty line support if requested by user. */
 

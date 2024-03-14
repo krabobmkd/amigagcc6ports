@@ -125,7 +125,7 @@ struct Library *MUIMasterBase = NULL;
 static struct _game_driver ***SortedDrivers = NULL;
 
 static char  *DriversFound = NULL;
-static ULONG NumDrivers;
+static ULONG NumDrivers=0;
 
 static struct MUI_CustomClass *DriverClass;
 
@@ -386,6 +386,7 @@ static struct _game_driver *GetDriver(void)
 #ifndef MESS
 static void ScanDrivers(void)
 {
+  printf("ScanDrivers\n");
   struct FileInfoBlock *fib;
   //const char           *str;
   std::string str;
@@ -397,7 +398,7 @@ static void ScanDrivers(void)
   int  vector_lock;
 
 //  const MameConfig &config = Config();
-
+  printf("DriversFound:%d\n",(int)DriversFound);
   if(DriversFound)
   {
     memset(DriversFound, 0, NumDrivers);
@@ -559,6 +560,7 @@ static void ScanDrivers(void)
     for(i = 0; i < NumDrivers; i++)
       SetFound(DRIVER_OFFSET+GetSortedDriverIndex(DRIVER_OFFSET+i),DriversFound[i]);
   }
+  printf("ScanDrivers end\n");
 }
 
 static void ShowFound(void)
@@ -1054,15 +1056,19 @@ int MainGUI(void)
   ULONG v;
   ULONG signals = 0;
   BOOL  loop  = TRUE;
+
+  printf("MainGUI: MUIMasterBase:%08x\n",(int)MUIMasterBase);
 //
   if(MUIMasterBase)
   {
     if(!App)
       CreateApp();
+  printf("after CreateApp()\n");
     if(App)
     {
       if(!MainWin)
       {
+  printf("go MUINewObject()\n");
         MainWin =  MUINewObject(MUIC_Window,
           MUIA_Window_Title,(ULONG) APPNAME,
           MUIA_Window_ID   , MAKE_ID('M','A','I','N'),
@@ -1441,22 +1447,19 @@ int MainGUI(void)
 #endif
         }
       }
-
+  printf("after MUINewObject():%08x\n",(int)MainWin);
       if(MainWin)
       {
         SetOptions(TRUE);
-
         set(MainWin,  MUIA_Window_ActiveObject, (ULONG) LV_Driver);
         set(MainWin,  MUIA_Window_Open,     TRUE);
 
         /* This must be done after the window has been opened. */
-
         DoMethod( LI_Driver, MUIM_List_Jump, MUIV_List_Jump_Active);
 
         do
         {
           rid = DoMethod(App,MUIM_Application_NewInput,&signals);
-
           switch(rid)
           {
             case RID_Start:
@@ -1522,6 +1525,7 @@ int MainGUI(void)
       }
     }
   }
+
   return(1);
 };
 
@@ -1669,9 +1673,9 @@ static void GetOptions(BOOL get_driver)
 static void SetOptions(BOOL set_driver)
 {
   ULONG i, v;
-
+  printf("SetOptions() 1\n");
   GetConfig(Config[CFG_DRIVER] + DRIVER_OFFSET, Config);
-
+  printf("SetOptions() 2\n");
 #ifndef MESS
   if(Config[CFG_DRIVER] < 0)
     Config[CFG_USEDEFAULTS] = FALSE;
@@ -1712,18 +1716,21 @@ static void SetOptions(BOOL set_driver)
 #ifdef POWERUP
   set(CM_AsyncPPC,         MUIA_Selected,        Config[CFG_ASYNCPPC]);
 #endif
-
+  printf("SetOptions() 3\n");
   ScreenModeTags[SMT_DISPLAYID].ti_Data = Config[CFG_SCREENMODE];
   ScreenModeTags[SMT_DEPTH].ti_Data     = Config[CFG_DEPTH];
-
+  printf("SetOptions() 3b\n");
   SetDisplayName(Config[CFG_SCREENMODE]);
-
+  printf("SetOptions() 3c\n");
 
   machine_config machine;
   memset(&machine,0,sizeof(machine));
-  Drivers[Config[CFG_DRIVER]]->drv(&machine);
-
-
+  //printf("SetOptions() Config[CFG_DRIVER]:%d NumDrivers:%d\n",Config[CFG_DRIVER] ,NumDrivers );
+    if(Config[CFG_DRIVER]<NumDrivers && Drivers[Config[CFG_DRIVER]] != NULL)
+    {
+        Drivers[Config[CFG_DRIVER]]->drv(&machine);
+    }
+  printf("SetOptions() 4\n");
   if((Config[CFG_DRIVER] < 0) || (!Config[CFG_USEDEFAULTS]
      && /*(Drivers[Config[CFG_DRIVER]]->drv->video_attributes & VIDEO_SUPPORTS_16BIT)*/      
         (machine.total_colors > 256)
@@ -1766,6 +1773,7 @@ static void SetOptions(BOOL set_driver)
     }
 #endif
   }
+    printf("SetOptions() 5\n");
 }
 
 static void SetDisplayName(ULONG displayid)
@@ -1997,7 +2005,7 @@ static ULONG ASM UseDefaultsNotify(struct Hook *hook REG(a0), APTR obj REG(a2), 
     drv = GetDriver();
 
     machine_config machine;
-    memset(&machine,0,sizeof(machine));
+    memset(&machine,0,sizeof(machine));       
     if(drv) drv->drv(&machine);
 
     if(machine.total_colors<256 )
