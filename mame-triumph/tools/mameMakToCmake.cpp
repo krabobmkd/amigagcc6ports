@@ -35,6 +35,11 @@ class TMachine {
     map<string,int>  _cpu_defs;
 };
 
+class TChip {
+public:
+    map<string,vector<string>> _vars;
+   // vector<string> _sources;
+};
 
 inline bool isJustComment(const string &s)
 {
@@ -49,7 +54,7 @@ inline bool isJustComment(const string &s)
 }
 
 std::string trim(std::string& str) {
-    const std::string whitespace = " \t";
+    const std::string whitespace = " \t\r";
     auto begin = str.find_first_not_of(whitespace);
     if (begin == std::string::npos) begin=0;
 
@@ -308,10 +313,10 @@ int read_mak_machines(
 }
 
 
-int createCmake(map<string,TMachine> machinetargets )
+int createCmake(map<string,TMachine> machinetargets,
+                map<string,TChip> &soundsources,
+                map<string,TChip> &cpusources)
 {
-// gamedrivers.cmake
-   // stringstream ss;
     ofstream ofs("gamedrivers.cmake", ios::binary|ios::out);
     if(!ofs.good()) return 1;
 
@@ -342,7 +347,75 @@ int createCmake(map<string,TMachine> machinetargets )
             }
         }
         ofs << "\t)\n";
-        // - - -
+        // - - - add sound sources
+        if(machine._sound_defs.size()>0)
+        {
+            ofs << "\tlist(APPEND MAME_SOUND_SRC\n";
+            nbinline=0;
+            for(const auto &defs : machine._sound_defs)
+            {
+                string updefs = defs.first;
+                toUpper(updefs);
+                // search if sources known for that chip
+                if(soundsources.find(updefs)!=soundsources.end())
+                {
+                    TChip &schip = soundsources[updefs];
+                    if(schip._vars.find("SOUNDOBJS")!=schip._vars.end() )
+                    {
+                        for(const string &src : schip._vars["SOUNDOBJS"])
+                        {
+                            if(nbinline==0) ofs << "\t\t";
+                            ofs << src << " ";
+                            nbinline++;
+                            if(nbinline==4) {
+                                ofs << "\n";
+                            nbinline=0;
+                            }
+
+                        }
+                    }
+                } else
+                {
+                    cout << " **** no source find for soundchip: "<<updefs << endl;
+                }
+            }
+            ofs << "\t)\n";
+        }
+        // - - - add cpu sources
+        if(machine._cpu_defs.size()>0)
+        {
+            ofs << "\tlist(APPEND MAME_CPU_SRC\n";
+            nbinline=0;
+            for(const auto &defs : machine._cpu_defs)
+            {
+                string updefs = defs.first;
+                toUpper(updefs);
+                // search if sources known for that chip
+                if(cpusources.find(updefs)!=cpusources.end())
+                {
+                    TChip &schip = cpusources[updefs];
+                    if(schip._vars.find("CPUOBJS")!=schip._vars.end() )
+                    {
+                        for(const string &src : schip._vars["CPUOBJS"])
+                        {
+                            if(nbinline==0) ofs << "\t\t";
+                            ofs << src << " ";
+                            nbinline++;
+                            if(nbinline==4) {
+                                ofs << "\n";
+                            nbinline=0;
+                            }
+
+                        }
+                    }
+                } else
+                {
+                    cout << " **** no source find for cpuchip: "<<updefs << endl;
+                }
+            }
+            ofs << "\t)\n";
+        }
+        // - - - add sound defs
         if(machine._sound_defs.size()>0)
         {
             ofs << "\tlist(APPEND CPU_DEFS\n";
@@ -383,9 +456,233 @@ int createCmake(map<string,TMachine> machinetargets )
         ofs << "endif()\n";
     }
 
+    ofs <<
+    "list(REMOVE_DUPLICATES MAME_DRIVERS_SRC)\n"
+    "list(REMOVE_DUPLICATES MAME_SOUND_SRC)\n"
+    "list(REMOVE_DUPLICATES MAME_CPU_SRC)\n"
+    "list(REMOVE_DUPLICATES CPU_DEFS)\n"
+    ;
+
     return EXIT_SUCCESS;
 }
 
+int createMameDrivc( map<string,TMachine> &machinetargets)
+{
+    ifstream ifs(sourcebase+"mamedriv.c");
+    if(!ifs.good()) return 1;
+
+    ofstream ofs("mamedriv.c", ios::binary|ios::out);
+    if(!ofs.good()) return 1;
+
+    while(!ifs.eof())
+    {
+        string line;
+        getline(ifs,line);
+        ofs << line << "\n";
+        if(line.find("#else	/* DRIVER_RECURSIVE */")==0)
+        {
+            break;
+        }
+    }
+    // - - - -from there on,
+    for(const auto &p : machinetargets)
+    {
+        const TMachine &machine = p.second;
+        string upName = p.first;
+        toUpper(upName);
+        ofs << "#ifdef LINK_"<<upName<<"\n";
+        for(const auto &pgd : machine._gamedrivers)
+        {
+            const TGameDriver &gd = pgd.second;
+            ofs << "\tDRIVER( " <<pgd.first<< " ) /* "<< gd._year << " " << gd._company<< " "  <<gd._fullname<< " */\n";
+        }
+
+        ofs << "#endif\n";
+    }
+
+    // end is easy:
+    ofs << "#endif	/* DRIVER_RECURSIVE */" << endl;
+
+//#else	/* DRIVER_RECURSIVE */
+//#ifdef OTHERDRIVERS
+//	/* "Pacman hardware" games */
+//	DRIVER( puckman )	/* (c) 1980 Namco */
+//	DRIVER( puckmana )	/* (c) 1980 Namco */
+    return 0;
+}
+
+int read_mak_sounds(map<string,TChip> &soundsources)
+{
+    ifstream ifsmak(sourcebase+"sound/sound.mak");
+    if(!ifsmak.good()) {
+        cout << "need sound.mak" << endl;
+        return EXIT_FAILURE;
+    }
+
+    string currentSoundChip;
+
+
+    string line, nextline;
+    bool dolinknext = false;
+    size_t il=0;
+    while(!ifsmak.eof())
+    {
+        getline(ifsmak,nextline);
+        il++;
+        if(isJustComment(nextline) ) {
+            continue;
+        }
+       // cout <<"l:"<<il << " : "<< nextline << endl;
+        bool hasbackward = (!nextline.empty() && nextline.back()=='\\');
+        if(hasbackward) nextline.pop_back();
+        trim(nextline);
+
+        if(dolinknext)
+        {
+            if(!line.empty()) line+=" ";
+            line += nextline;
+            dolinknext = false;
+        }
+        else
+        {
+            line = nextline;
+        }
+        if(hasbackward){
+            dolinknext = true;
+            continue;
+        }
+
+        // treat real line
+        if(line.empty()) continue;
+//        cout << "line:"<< line << endl;
+        string filterpattern="ifneq ($(filter ";
+        size_t iFilter = line.find(filterpattern);
+        if(iFilter != string::npos)
+        {
+            size_t iend =line.find(",",iFilter+filterpattern.length());
+            if(iend != string::npos)
+            {
+                currentSoundChip = line.substr(iFilter+filterpattern.length(),iend-(iFilter+filterpattern.length()));
+            }
+        }
+
+
+        if(line.find("+=") != string::npos){
+            string skey,sval;
+            sepline(line,"+=",skey,sval);
+            if(!skey.empty())
+            {
+                sval = replace(sval,"$(OBJ)/","");
+                sval = replace(sval,".o",".c");
+                vector<string> v = splitt(sval," ");
+                vector<string> &mv = soundsources[currentSoundChip]._vars[skey];
+                mv.insert(mv.end(),v.begin(),v.end());
+            }
+
+        } else if(line.find("=") != string::npos)
+        {
+            string skey,sval;
+            sepline(line,"=",skey,sval);
+            if(!skey.empty())
+            {
+                sval = replace(sval,"$(OBJ)/","");
+                sval = replace(sval,".o",".c");
+                vector<string> v = splitt(sval," ");
+                vector<string> &mv = soundsources[currentSoundChip]._vars[skey];
+                mv.insert(mv.end(),v.begin(),v.end());
+            }
+        }
+        line.clear();
+        dolinknext = false;
+    }
+    return 0;
+}
+
+int read_mak_cpus(map<string,TChip> &sources)
+{
+    ifstream ifsmak(sourcebase+"cpu/cpu.mak");
+    if(!ifsmak.good()) {
+        cout << "need cpu.mak" << endl;
+        return EXIT_FAILURE;
+    }
+
+    string currentChip;
+
+
+    string line, nextline;
+    bool dolinknext = false;
+    size_t il=0;
+    while(!ifsmak.eof())
+    {
+        getline(ifsmak,nextline);
+        il++;
+        if(isJustComment(nextline) ) {
+            continue;
+        }
+       // cout <<"l:"<<il << " : "<< nextline << endl;
+        bool hasbackward = (!nextline.empty() && nextline.back()=='\\');
+        if(hasbackward) nextline.pop_back();
+        trim(nextline);
+
+        if(dolinknext)
+        {
+            if(!line.empty()) line+=" ";
+            line += nextline;
+            dolinknext = false;
+        }
+        else
+        {
+            line = nextline;
+        }
+        if(hasbackward){
+            dolinknext = true;
+            continue;
+        }
+
+        // treat real line
+        if(line.empty()) continue;
+//        cout << "line:"<< line << endl;
+        string filterpattern="ifneq ($(filter ";
+        size_t iFilter = line.find(filterpattern);
+        if(iFilter != string::npos)
+        {
+            size_t iend =line.find(",",iFilter+filterpattern.length());
+            if(iend != string::npos)
+            {
+                currentChip = line.substr(iFilter+filterpattern.length(),iend-(iFilter+filterpattern.length()));
+            }
+        }
+
+        if(line.find("+=") != string::npos){
+            string skey,sval;
+            sepline(line,"+=",skey,sval);
+            if(!skey.empty())
+            {
+                sval = replace(sval,"$(OBJ)/","");
+                sval = replace(sval,".o",".c");
+                vector<string> v = splitt(sval," ");
+                vector<string> &mv = sources[currentChip]._vars[skey];
+                mv.insert(mv.end(),v.begin(),v.end());
+            }
+
+        } else if(line.find("=") != string::npos)
+        {
+            string skey,sval;
+            sepline(line,"=",skey,sval);
+            if(!skey.empty())
+            {
+                sval = replace(sval,"$(OBJ)/","");
+                sval = replace(sval,".o",".c");
+                vector<string> v = splitt(sval," ");
+                vector<string> &mv = sources[currentChip]._vars[skey];
+                mv.insert(mv.end(),v.begin(),v.end());
+            }
+        }
+        line.clear();
+        dolinknext = false;
+    }
+    return 0;
+}
 int main(int argc, char **argv)
 {
 
@@ -395,9 +692,20 @@ int main(int argc, char **argv)
     int r = read_mak_machines(vars,machinetargets);
     if(r) return r;
 
+    map<string,TChip> soundsources;
+    r = read_mak_sounds(soundsources);
+    if(r) return r;
+
+    map<string,TChip> cpusources;
+    r = read_mak_cpus(cpusources);
+    if(r) return r;
+
 //    TMachine &tm = machinetargets["sega"];
 
-    createCmake(machinetargets);
+    createCmake(machinetargets,soundsources,cpusources);
+
+    createMameDrivc(machinetargets);
+
 
     return EXIT_SUCCESS;
 }
