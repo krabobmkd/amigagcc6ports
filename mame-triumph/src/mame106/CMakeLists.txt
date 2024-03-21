@@ -79,6 +79,9 @@ set(MAME_CORE_SRC
 	sound/flt_rc.h
 	sound/wavwrite.c
 	sound/wavwrite.h
+
+	sndhrdw/generic.c
+	sndhrdw/generic.h
 #	artwork.h   drawgfx.h   input.h         network.h   sndintrf.h      ui_text.h
 #	audit.h     driver.h    legacy.h        osdepend.h  sprite.h        unzip.h
 #	cheat.h     gfxobj.h    mame.h          palette.h   state.h         usrintrf.h
