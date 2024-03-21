@@ -9,3 +9,4 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 
 add_executable( mamemakToCmake mameMakToCmake.cpp )
+add_executable( m68kmake ../src/mame106/cpu/m68000/m68kmake.c )

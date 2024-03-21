@@ -82,7 +82,7 @@ target_include_directories(${PROGNAME} PUBLIC "../../../extrasdk/MUI/include")
 #add_executable(${RNAME} r2_main.cpp amiga_locale.cpp config_v37.cpp config_v37.h romscan.cpp romscan.h gui_mui.cpp gui_gadtools.cpp)
 #set_property(TARGET ${RNAME} PROPERTY C_STANDARD 11)
 #set_property(TARGET ${RNAME} PROPERTY CXX_STANDARD 11)
-#target_compile_definitions(${RNAME} PUBLIC MAMEVERSION=37 INLINE=inline )
+#target_compile_definitions(${RNAME} PUBLIC MAMEVERSION=37 static inline=inline )
 ## the static libs that are part of this repo:
 #target_link_directories(${RNAME} PUBLIC "../../lib")
 #target_include_directories(${RNAME} PUBLIC "../../include" )

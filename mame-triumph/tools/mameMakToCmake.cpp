@@ -113,6 +113,16 @@ void toUpper(string &s) {
     transform(s.begin(), s.end(), s.begin(),
               ::toupper);
 }
+
+string rgetline(istream &ifs)
+{
+    string s;
+    getline(ifs,s);
+    if(s.length()>0 && s.back()=='\r') s.pop_back();
+    return s;
+}
+
+
 int searchDrivers(TMachine &machine, map<string,vector<string>> &vars)
 {
     const vector<string> &sounds = vars["SOUNDS"];
@@ -128,8 +138,7 @@ int searchDrivers(TMachine &machine, map<string,vector<string>> &vars)
         }
         while(!ifssrc.eof())
         {
-            string line;
-            getline(ifssrc,line);
+            string line = rgetline(ifssrc);
             trim(line);
             size_t isgamedriverline =line.find("GAME(");
             size_t isgamedriverlineb =line.find("GAMEB(");
@@ -189,7 +198,24 @@ int searchDrivers(TMachine &machine, map<string,vector<string>> &vars)
                     string soundh = line.substr(is_soundinclude+7,endsi-(is_soundinclude+7));
                     // look if correspond to known sound cpu
                     toUpper(soundh);
-                    bool isInDefs = false;
+                    // ugly but works
+                    if(soundh=="3812INTF") soundh="YM3812";
+                    if(soundh=="2413INTF") soundh="YM2413";
+                    if(soundh=="2203INTF") soundh="YM2203";
+                    if(soundh=="2610INTF") soundh="YM2610";
+
+                    if(soundh=="5220INTF") soundh="TMS5220";
+                    if(soundh=="5110INTF") soundh="TMS5110";
+
+                    if(soundh=="2151INTF") soundh="YM2151";
+                    if(soundh=="TIAINTF") soundh="TIA";
+
+                    if(soundh=="262INTF") soundh="YMF262";
+
+                    if(soundh=="PSX") soundh="PSXSPU";
+                    if(soundh=="GAELCO") soundh="GAELCO_GAE1";
+                    //
+                    bool isInDefs = false;                 
                     for(const string &sounditem : sounds )
                     {
                         if(sounditem == soundh) {isInDefs = true; break;}
@@ -197,6 +223,8 @@ int searchDrivers(TMachine &machine, map<string,vector<string>> &vars)
                     cout << "got sound:"<<soundh << " isin: "<< (isInDefs?"OK":"--")<< endl;
                     if(isInDefs) {
                         machine._sound_defs[soundh]=1;
+                    } else {
+                        cout << "not in defs" << endl;
                     }
                 }
             } // end if sound include
@@ -241,7 +269,7 @@ int read_mak_machines(
     size_t il=0;
     while(!ifsmak.eof())
     {
-        getline(ifsmak,nextline);
+        nextline = rgetline(ifsmak);
         il++;
         if(isJustComment(nextline) ) {
             continue;
@@ -476,8 +504,7 @@ int createMameDrivc( map<string,TMachine> &machinetargets)
 
     while(!ifs.eof())
     {
-        string line;
-        getline(ifs,line);
+        string line = rgetline(ifs);
         ofs << line << "\n";
         if(line.find("#else	/* DRIVER_RECURSIVE */")==0)
         {
@@ -520,14 +547,14 @@ int read_mak_sounds(map<string,TChip> &soundsources)
     }
 
     string currentSoundChip;
-
+    vector<string> allcurrentsoundchips;
 
     string line, nextline;
     bool dolinknext = false;
     size_t il=0;
     while(!ifsmak.eof())
     {
-        getline(ifsmak,nextline);
+        nextline = rgetline(ifsmak);
         il++;
         if(isJustComment(nextline) ) {
             continue;
@@ -563,6 +590,21 @@ int read_mak_sounds(map<string,TChip> &soundsources)
             if(iend != string::npos)
             {
                 currentSoundChip = line.substr(iFilter+filterpattern.length(),iend-(iFilter+filterpattern.length()));
+            }
+        }
+        // - - if currentChip contains many chips, we have to consider this is the conf for each.
+        if(currentSoundChip.find(" ") != string::npos)
+        {
+            allcurrentsoundchips = splitt(currentSoundChip," ");
+            currentSoundChip = allcurrentsoundchips[0];
+        }
+
+        if(line.find("endif")==0 && !currentSoundChip.empty() && allcurrentsoundchips.size()>1)
+        {
+            // means end of currentchip, may apply equivalences (M68020 use same code as M68000, ...)
+            for(size_t ic=1;ic<allcurrentsoundchips.size();ic++)
+            {
+                soundsources[allcurrentsoundchips[ic]] = soundsources[currentSoundChip];
             }
         }
 
@@ -607,14 +649,14 @@ int read_mak_cpus(map<string,TChip> &sources)
     }
 
     string currentChip;
-
+    vector<string> allcurrentchips;
 
     string line, nextline;
     bool dolinknext = false;
     size_t il=0;
     while(!ifsmak.eof())
     {
-        getline(ifsmak,nextline);
+        nextline = rgetline(ifsmak);
         il++;
         if(isJustComment(nextline) ) {
             continue;
@@ -641,6 +683,8 @@ int read_mak_cpus(map<string,TChip> &sources)
 
         // treat real line
         if(line.empty()) continue;
+
+
 //        cout << "line:"<< line << endl;
         string filterpattern="ifneq ($(filter ";
         size_t iFilter = line.find(filterpattern);
@@ -650,6 +694,24 @@ int read_mak_cpus(map<string,TChip> &sources)
             if(iend != string::npos)
             {
                 currentChip = line.substr(iFilter+filterpattern.length(),iend-(iFilter+filterpattern.length()));
+                trim(currentChip);
+            }
+        }
+        // - - if currentChip contains many chips, we have to consider this is the conf for each.
+
+        if(currentChip.find(" ") != string::npos)
+        {
+            allcurrentchips = splitt(currentChip," ");
+            currentChip = allcurrentchips[0];
+        }
+
+        if(line.find("endif")==0 && !currentChip.empty())
+        {
+            // means end of currentchip, may apply equivalences (M68020 use same code as M68000, ...)
+            if(allcurrentchips.size()>1)
+            for(size_t ic=1;ic<allcurrentchips.size();ic++)
+            {
+                sources[allcurrentchips[ic]] = sources[currentChip];
             }
         }
 

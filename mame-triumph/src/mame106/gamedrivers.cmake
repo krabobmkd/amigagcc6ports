@@ -54,7 +54,7 @@ option(OPT_PSIKYO "" OFF)
 option(OPT_RAMTEK "" OFF)
 option(OPT_RARE "" OFF)
 option(OPT_SANRITSU "" OFF)
-option(OPT_SEGA "" OFF)
+option(OPT_SEGA "" ON)
 option(OPT_SEIBU "" OFF)
 option(OPT_SETA "" OFF)
 option(OPT_SHARED "" OFF)
@@ -105,11 +105,14 @@ if(OPT_ALPHA)
 		machine/exctsccr.c vidhrdw/exctsccr.c drivers/meijinsn.c drivers/shougi.c 
 		drivers/talbot.c 	)
 	list(APPEND MAME_SOUND_SRC
-		sound/ay8910.c sound/dac.c sound/msm5232.c 	)
+		sound/ay8910.c sound/dac.c sound/msm5232.c sound/2203intf.c 
+		sound/ay8910.c sound/fm.c sound/2413intf.c sound/ym2413.c 
+		sound/3812intf.c sound/fmopl.c 	)
 	list(APPEND MAME_CPU_SRC
 		cpu/z80/z80.c cpu/z80/z80daisy.c 	)
 	list(APPEND CPU_DEFS
-		HAS_AY8910=1 HAS_DAC=1 HAS_MSM5232=1 	)
+		HAS_AY8910=1 HAS_DAC=1 HAS_MSM5232=1 HAS_YM2203=1 
+		HAS_YM2413=1 HAS_YM3812=1 	)
 	list(APPEND CPU_DEFS
 		HAS_Z80=1 	)
 endif()
@@ -121,7 +124,8 @@ if(OPT_AMIGA)
 	list(APPEND MAME_SOUND_SRC
 		sound/custom.c sound/es5503.c 	)
 	list(APPEND MAME_CPU_SRC
-	)
+		cpu/m68000/m68kcpu.c cpu/m68000/m68kmame.c cpu/m68000/m68kops.c cpu/m68000/m68kopac.c 
+		cpu/m68000/m68kopdm.c cpu/m68000/m68kopnz.c 	)
 	list(APPEND CPU_DEFS
 		HAS_CUSTOM=1 HAS_ES5503=1 	)
 	list(APPEND CPU_DEFS
@@ -179,13 +183,19 @@ if(OPT_ATARI)
 	list(APPEND MAME_SOUND_SRC
 		sound/ay8910.c sound/custom.c sound/dac.c sound/discrete.c 
 		sound/dmadac.c sound/okim6295.c sound/pokey.c sound/sn76496.c 
+		sound/tiasound.c sound/tiaintf.c sound/tms5220.c sound/5220intf.c 
+		sound/2151intf.c sound/ym2151.c sound/2413intf.c sound/ym2413.c 
 	)
 	list(APPEND MAME_CPU_SRC
-		cpu/asap/asap.c cpu/jaguar/jaguar.c cpu/s2650/s2650.c cpu/t11/t11.c 
-		cpu/tms32010/tms32010.c cpu/tms32031/tms32031.c 	)
+		cpu/adsp2100/adsp2100.c cpu/asap/asap.c cpu/i386/i386.c cpu/jaguar/jaguar.c 
+		cpu/m6502/m6502.c cpu/m68000/m68kcpu.c cpu/m68000/m68kmame.c cpu/m68000/m68kops.c 
+		cpu/m68000/m68kopac.c cpu/m68000/m68kopdm.c cpu/m68000/m68kopnz.c cpu/m6809/m6809.c 
+		cpu/s2650/s2650.c cpu/t11/t11.c cpu/tms32010/tms32010.c cpu/tms32031/tms32031.c 
+		cpu/tms34010/tms34010.c cpu/tms34010/34010fld.c 	)
 	list(APPEND CPU_DEFS
 		HAS_AY8910=1 HAS_CUSTOM=1 HAS_DAC=1 HAS_DISCRETE=1 
 		HAS_DMADAC=1 HAS_OKIM6295=1 HAS_POKEY=1 HAS_SN76496=1 
+		HAS_TIA=1 HAS_TMS5220=1 HAS_YM2151=1 HAS_YM2413=1 
 	)
 	list(APPEND CPU_DEFS
 		HAS_ADSP2100=1 HAS_ASAP=1 HAS_I386=1 HAS_JAGUAR=1 
@@ -199,9 +209,10 @@ if(OPT_ATLUS)
 		drivers/blmbycar.c vidhrdw/blmbycar.c drivers/ohmygod.c vidhrdw/ohmygod.c 
 		drivers/powerins.c vidhrdw/powerins.c 	)
 	list(APPEND MAME_SOUND_SRC
-		sound/okim6295.c 	)
+		sound/okim6295.c sound/2203intf.c sound/ay8910.c sound/fm.c 
+	)
 	list(APPEND CPU_DEFS
-		HAS_OKIM6295=1 	)
+		HAS_OKIM6295=1 HAS_YM2203=1 	)
 endif()
 if(OPT_BFM)
 	add_compile_definitions(LINK_BFM=1)
@@ -209,11 +220,14 @@ if(OPT_BFM)
 		drivers/bfm_sc2.c vidhrdw/bfm_adr2.c drivers/mpu4.c machine/lamps.c 
 		machine/mmtr.c machine/steppers.c machine/vacfdisp.c 	)
 	list(APPEND MAME_SOUND_SRC
-		sound/ay8910.c sound/saa1099.c sound/upd7759.c 	)
+		sound/ay8910.c sound/saa1099.c sound/upd7759.c sound/2413intf.c 
+		sound/ym2413.c 	)
 	list(APPEND MAME_CPU_SRC
-	)
+		cpu/m68000/m68kcpu.c cpu/m68000/m68kmame.c cpu/m68000/m68kops.c cpu/m68000/m68kopac.c 
+		cpu/m68000/m68kopdm.c cpu/m68000/m68kopnz.c cpu/m6809/m6809.c 	)
 	list(APPEND CPU_DEFS
-		HAS_AY8910=1 HAS_SAA1099=1 HAS_UPD7759=1 	)
+		HAS_AY8910=1 HAS_SAA1099=1 HAS_UPD7759=1 HAS_YM2413=1 
+	)
 	list(APPEND CPU_DEFS
 		HAS_M68000=1 HAS_M6809=1 	)
 endif()
@@ -234,13 +248,21 @@ if(OPT_CAPCOM)
 		drivers/zn.c machine/znsec.c machine/at28c16.c machine/mb3773.c 
 		machine/kabuki.c 	)
 	list(APPEND MAME_SOUND_SRC
-		sound/ay8910.c sound/msm5205.c sound/okim6295.c sound/qsound.c 
-		sound/sn76496.c sound/ymf271.c sound/ymz280b.c 	)
+		sound/ay8910.c sound/msm5205.c sound/okim6295.c sound/psx.c 
+		sound/qsound.c sound/sn76496.c sound/2151intf.c sound/ym2151.c 
+		sound/2203intf.c sound/ay8910.c sound/fm.c sound/2413intf.c 
+		sound/ym2413.c sound/2610intf.c sound/ay8910.c sound/fm.c 
+		sound/ymdeltat.c sound/3812intf.c sound/fmopl.c sound/ymf271.c 
+		sound/ymz280b.c 	)
 	list(APPEND MAME_CPU_SRC
-		cpu/z80/z80.c cpu/z80/z80daisy.c 	)
+		cpu/m68000/m68kcpu.c cpu/m68000/m68kmame.c cpu/m68000/m68kops.c cpu/m68000/m68kopac.c 
+		cpu/m68000/m68kopdm.c cpu/m68000/m68kopnz.c cpu/m6809/m6809.c cpu/z80/z80.c 
+		cpu/z80/z80daisy.c 	)
 	list(APPEND CPU_DEFS
-		HAS_AY8910=1 HAS_MSM5205=1 HAS_OKIM6295=1 HAS_QSOUND=1 
-		HAS_SN76496=1 HAS_YMF271=1 HAS_YMZ280B=1 	)
+		HAS_AY8910=1 HAS_MSM5205=1 HAS_OKIM6295=1 HAS_PSXSPU=1 
+		HAS_QSOUND=1 HAS_SN76496=1 HAS_YM2151=1 HAS_YM2203=1 
+		HAS_YM2413=1 HAS_YM2610=1 HAS_YM3812=1 HAS_YMF271=1 
+		HAS_YMZ280B=1 	)
 	list(APPEND CPU_DEFS
 		HAS_M68000=1 HAS_M6809=1 HAS_Z80=1 	)
 endif()
@@ -254,13 +276,13 @@ if(OPT_CINEMAT)
 	)
 	list(APPEND MAME_SOUND_SRC
 		sound/ay8910.c sound/custom.c sound/dac.c sound/samples.c 
-	)
+		sound/2151intf.c sound/ym2151.c 	)
 	list(APPEND MAME_CPU_SRC
-		cpu/ccpu/ccpu.c cpu/s2650/s2650.c cpu/z80/z80.c cpu/z80/z80daisy.c 
-	)
+		cpu/ccpu/ccpu.c cpu/i86/i86.c cpu/s2650/s2650.c cpu/z80/z80.c 
+		cpu/z80/z80daisy.c 	)
 	list(APPEND CPU_DEFS
 		HAS_AY8910=1 HAS_CUSTOM=1 HAS_DAC=1 HAS_SAMPLES=1 
-	)
+		HAS_YM2151=1 	)
 	list(APPEND CPU_DEFS
 		HAS_CCPU=1 HAS_I86=1 HAS_S2650=1 HAS_Z80=1 
 	)
@@ -272,11 +294,12 @@ if(OPT_COMAD)
 		drivers/pushman.c vidhrdw/pushman.c drivers/zerozone.c vidhrdw/zerozone.c 
 	)
 	list(APPEND MAME_SOUND_SRC
-		sound/okim6295.c 	)
+		sound/okim6295.c sound/2203intf.c sound/ay8910.c sound/fm.c 
+		sound/3812intf.c sound/fmopl.c 	)
 	list(APPEND MAME_CPU_SRC
-		cpu/z80/z80.c cpu/z80/z80daisy.c 	)
+		cpu/m6805/m6805.c cpu/z80/z80.c cpu/z80/z80daisy.c 	)
 	list(APPEND CPU_DEFS
-		HAS_OKIM6295=1 	)
+		HAS_OKIM6295=1 HAS_YM2203=1 HAS_YM3812=1 	)
 	list(APPEND CPU_DEFS
 		HAS_M6805=1 HAS_Z80=1 	)
 endif()
@@ -288,7 +311,7 @@ if(OPT_CVS)
 	list(APPEND MAME_SOUND_SRC
 		sound/dac.c sound/tms5110.c sound/5110intf.c 	)
 	list(APPEND MAME_CPU_SRC
-		cpu/s2650/s2650.c 	)
+		cpu/i8x41/i8x41.c cpu/s2650/s2650.c 	)
 	list(APPEND CPU_DEFS
 		HAS_DAC=1 HAS_TMS5110=1 	)
 	list(APPEND CPU_DEFS
@@ -324,15 +347,18 @@ if(OPT_DATAEAST)
 		machine/decoprot.c vidhrdw/deco16ic.c 	)
 	list(APPEND MAME_SOUND_SRC
 		sound/ay8910.c sound/bsmt2000.c sound/c6280.c sound/dac.c 
-		sound/msm5205.c sound/okim6295.c sound/samples.c sound/ymz280b.c 
-	)
+		sound/msm5205.c sound/okim6295.c sound/samples.c sound/2151intf.c 
+		sound/ym2151.c sound/2203intf.c sound/ay8910.c sound/fm.c 
+		sound/3812intf.c sound/fmopl.c sound/ymz280b.c 	)
 	list(APPEND MAME_CPU_SRC
-		cpu/arm/arm.c cpu/h6280/h6280.c cpu/i8x41/i8x41.c cpu/z80/z80.c 
+		cpu/arm/arm.c cpu/h6280/h6280.c cpu/i8x41/i8x41.c cpu/m6502/m6502.c 
+		cpu/m68000/m68kcpu.c cpu/m68000/m68kmame.c cpu/m68000/m68kops.c cpu/m68000/m68kopac.c 
+		cpu/m68000/m68kopdm.c cpu/m68000/m68kopnz.c cpu/m6809/m6809.c cpu/z80/z80.c 
 		cpu/z80/z80daisy.c 	)
 	list(APPEND CPU_DEFS
 		HAS_AY8910=1 HAS_BSMT2000=1 HAS_C6280=1 HAS_DAC=1 
-		HAS_MSM5205=1 HAS_OKIM6295=1 HAS_SAMPLES=1 HAS_YMZ280B=1 
-	)
+		HAS_MSM5205=1 HAS_OKIM6295=1 HAS_SAMPLES=1 HAS_YM2151=1 
+		HAS_YM2203=1 HAS_YM3812=1 HAS_YMZ280B=1 	)
 	list(APPEND CPU_DEFS
 		HAS_ARM=1 HAS_H6280=1 HAS_I8X41=1 HAS_M6502=1 
 		HAS_M68000=1 HAS_M6809=1 HAS_Z80=1 	)
@@ -343,9 +369,10 @@ if(OPT_DOOYONG)
 		drivers/dooyong.c vidhrdw/dooyong.c drivers/gundealr.c vidhrdw/gundealr.c 
 	)
 	list(APPEND MAME_SOUND_SRC
-		sound/okim6295.c 	)
+		sound/okim6295.c sound/2151intf.c sound/ym2151.c sound/2203intf.c 
+		sound/ay8910.c sound/fm.c 	)
 	list(APPEND CPU_DEFS
-		HAS_OKIM6295=1 	)
+		HAS_OKIM6295=1 HAS_YM2151=1 HAS_YM2203=1 	)
 endif()
 if(OPT_DYNAX)
 	add_compile_definitions(LINK_DYNAX=1)
@@ -354,13 +381,14 @@ if(OPT_DYNAX)
 		drivers/hnayayoi.c vidhrdw/hnayayoi.c drivers/rcasino.c drivers/realbrk.c 
 		vidhrdw/realbrk.c drivers/royalmah.c 	)
 	list(APPEND MAME_SOUND_SRC
-		sound/ay8910.c sound/msm5205.c sound/okim6295.c sound/ymz280b.c 
-	)
+		sound/ay8910.c sound/msm5205.c sound/okim6295.c sound/2203intf.c 
+		sound/ay8910.c sound/fm.c sound/2413intf.c sound/ym2413.c 
+		sound/3812intf.c sound/fmopl.c sound/ymz280b.c 	)
 	list(APPEND MAME_CPU_SRC
 		cpu/z80/z80.c cpu/z80/z80daisy.c 	)
 	list(APPEND CPU_DEFS
-		HAS_AY8910=1 HAS_MSM5205=1 HAS_OKIM6295=1 HAS_YMZ280B=1 
-	)
+		HAS_AY8910=1 HAS_MSM5205=1 HAS_OKIM6295=1 HAS_YM2203=1 
+		HAS_YM2413=1 HAS_YM3812=1 HAS_YMZ280B=1 	)
 	list(APPEND CPU_DEFS
 		HAS_Z80=1 	)
 endif()
@@ -372,10 +400,11 @@ if(OPT_EDEVICES)
 		vidhrdw/stlforce.c drivers/ppmast93.c drivers/twins.c 	)
 	list(APPEND MAME_SOUND_SRC
 		sound/ay8910.c sound/dac.c sound/msm5205.c sound/okim6295.c 
-	)
+		sound/2151intf.c sound/ym2151.c sound/2413intf.c sound/ym2413.c 
+		sound/3812intf.c sound/fmopl.c 	)
 	list(APPEND CPU_DEFS
 		HAS_AY8910=1 HAS_DAC=1 HAS_MSM5205=1 HAS_OKIM6295=1 
-	)
+		HAS_YM2151=1 HAS_YM2413=1 HAS_YM3812=1 	)
 endif()
 if(OPT_EOLITH)
 	add_compile_definitions(LINK_EOLITH=1)
@@ -392,11 +421,14 @@ if(OPT_EXCELENT)
 		drivers/aquarium.c vidhrdw/aquarium.c drivers/gcpinbal.c vidhrdw/gcpinbal.c 
 		drivers/vmetal.c 	)
 	list(APPEND MAME_SOUND_SRC
-		sound/es8712.c sound/msm5205.c sound/okim6295.c 	)
+		sound/es8712.c sound/msm5205.c sound/okim6295.c sound/2151intf.c 
+		sound/ym2151.c 	)
 	list(APPEND MAME_CPU_SRC
-	)
+		cpu/m68000/m68kcpu.c cpu/m68000/m68kmame.c cpu/m68000/m68kops.c cpu/m68000/m68kopac.c 
+		cpu/m68000/m68kopdm.c cpu/m68000/m68kopnz.c 	)
 	list(APPEND CPU_DEFS
-		HAS_ES8712=1 HAS_MSM5205=1 HAS_OKIM6295=1 	)
+		HAS_ES8712=1 HAS_MSM5205=1 HAS_OKIM6295=1 HAS_YM2151=1 
+	)
 	list(APPEND CPU_DEFS
 		HAS_M68000=1 	)
 endif()
@@ -412,12 +444,12 @@ if(OPT_EXIDY)
 		sndhrdw/targ.c 	)
 	list(APPEND MAME_SOUND_SRC
 		sound/custom.c sound/dac.c sound/hc55516.c sound/pokey.c 
-		sound/samples.c 	)
+		sound/samples.c sound/tms5220.c sound/5220intf.c 	)
 	list(APPEND MAME_CPU_SRC
-	)
+		cpu/m6502/m6502.c cpu/m6805/m6805.c 	)
 	list(APPEND CPU_DEFS
 		HAS_CUSTOM=1 HAS_DAC=1 HAS_HC55516=1 HAS_POKEY=1 
-		HAS_SAMPLES=1 	)
+		HAS_SAMPLES=1 HAS_TMS5220=1 	)
 	list(APPEND CPU_DEFS
 		HAS_M6502=1 HAS_M6805=1 	)
 endif()
@@ -426,9 +458,10 @@ if(OPT_F32)
 	list(APPEND MAME_DRIVERS_SRC
 		drivers/crospang.c vidhrdw/crospang.c drivers/f-32.c 	)
 	list(APPEND MAME_SOUND_SRC
-		sound/okim6295.c 	)
+		sound/okim6295.c sound/2151intf.c sound/ym2151.c sound/3812intf.c 
+		sound/fmopl.c 	)
 	list(APPEND CPU_DEFS
-		HAS_OKIM6295=1 	)
+		HAS_OKIM6295=1 HAS_YM2151=1 HAS_YM3812=1 	)
 endif()
 if(OPT_FUUKI)
 	add_compile_definitions(LINK_FUUKI=1)
@@ -436,9 +469,12 @@ if(OPT_FUUKI)
 		drivers/fuukifg2.c vidhrdw/fuukifg2.c drivers/fuukifg3.c vidhrdw/fuukifg3.c 
 	)
 	list(APPEND MAME_SOUND_SRC
-		sound/okim6295.c sound/ymf278b.c 	)
+		sound/okim6295.c sound/2203intf.c sound/ay8910.c sound/fm.c 
+		sound/3812intf.c sound/fmopl.c sound/ymf262.c sound/262intf.c 
+		sound/ymf278b.c 	)
 	list(APPEND CPU_DEFS
-		HAS_OKIM6295=1 HAS_YMF278B=1 	)
+		HAS_OKIM6295=1 HAS_YM2203=1 HAS_YM3812=1 HAS_YMF262=1 
+		HAS_YMF278B=1 	)
 endif()
 if(OPT_GAELCO)
 	add_compile_definitions(LINK_GAELCO=1)
@@ -450,13 +486,16 @@ if(OPT_GAELCO)
 		drivers/xorworld.c vidhrdw/xorworld.c drivers/wrally.c machine/wrally.c 
 		vidhrdw/wrally.c 	)
 	list(APPEND MAME_SOUND_SRC
-		sound/dmadac.c sound/msm5205.c sound/okim6295.c sound/saa1099.c 
-	)
+		sound/dmadac.c sound/gaelco.c sound/msm5205.c sound/okim6295.c 
+		sound/saa1099.c sound/2203intf.c sound/ay8910.c sound/fm.c 
+		sound/3812intf.c sound/fmopl.c 	)
 	list(APPEND MAME_CPU_SRC
+		cpu/adsp2100/adsp2100.c cpu/m68000/m68kcpu.c cpu/m68000/m68kmame.c cpu/m68000/m68kops.c 
+		cpu/m68000/m68kopac.c cpu/m68000/m68kopdm.c cpu/m68000/m68kopnz.c cpu/m6809/m6809.c 
 		cpu/tms32031/tms32031.c cpu/z80/z80.c cpu/z80/z80daisy.c 	)
 	list(APPEND CPU_DEFS
-		HAS_DMADAC=1 HAS_MSM5205=1 HAS_OKIM6295=1 HAS_SAA1099=1 
-	)
+		HAS_DMADAC=1 HAS_GAELCO_GAE1=1 HAS_MSM5205=1 HAS_OKIM6295=1 
+		HAS_SAA1099=1 HAS_YM2203=1 HAS_YM3812=1 	)
 	list(APPEND CPU_DEFS
 		HAS_ADSP2100=1 HAS_M68000=1 HAS_M6809=1 HAS_TMS32031=1 
 		HAS_Z80=1 	)
@@ -487,12 +526,12 @@ if(OPT_GOTTLIEB)
 		vidhrdw/gottlieb.c 	)
 	list(APPEND MAME_SOUND_SRC
 		sound/ay8910.c sound/dac.c sound/samples.c sound/sp0250.c 
-	)
+		sound/2151intf.c sound/ym2151.c 	)
 	list(APPEND MAME_CPU_SRC
-	)
+		cpu/m6502/m6502.c cpu/tms34010/tms34010.c cpu/tms34010/34010fld.c 	)
 	list(APPEND CPU_DEFS
 		HAS_AY8910=1 HAS_DAC=1 HAS_SAMPLES=1 HAS_SP0250=1 
-	)
+		HAS_YM2151=1 	)
 	list(APPEND CPU_DEFS
 		HAS_M6502=1 HAS_TMS34010=1 	)
 endif()
@@ -513,11 +552,13 @@ if(OPT_IGS)
 		vidhrdw/lordgun.c drivers/pgm.c vidhrdw/pgm.c drivers/tarzan.c 
 		machine/pgmcrypt.c machine/pgmprot.c machine/pgmy2ks.c 	)
 	list(APPEND MAME_SOUND_SRC
-		sound/ay8910.c sound/ics2115.c sound/okim6295.c 	)
+		sound/ay8910.c sound/ics2115.c sound/okim6295.c sound/2413intf.c 
+		sound/ym2413.c sound/3812intf.c sound/fmopl.c 	)
 	list(APPEND MAME_CPU_SRC
 		cpu/arm7/arm7.c cpu/z80/z80.c cpu/z80/z80daisy.c 	)
 	list(APPEND CPU_DEFS
-		HAS_AY8910=1 HAS_ICS2115=1 HAS_OKIM6295=1 	)
+		HAS_AY8910=1 HAS_ICS2115=1 HAS_OKIM6295=1 HAS_YM2413=1 
+		HAS_YM3812=1 	)
 	list(APPEND CPU_DEFS
 		HAS_ARM7=1 HAS_Z80=1 	)
 endif()
@@ -535,12 +576,14 @@ if(OPT_IREM)
 		sndhrdw/irem.c 	)
 	list(APPEND MAME_SOUND_SRC
 		sound/ay8910.c sound/dac.c sound/iremga20.c sound/msm5205.c 
-		sound/samples.c 	)
+		sound/samples.c sound/2151intf.c sound/ym2151.c sound/2203intf.c 
+		sound/ay8910.c sound/fm.c 	)
 	list(APPEND MAME_CPU_SRC
-		cpu/z80/z80.c cpu/z80/z80daisy.c 	)
+		cpu/i8x41/i8x41.c cpu/m6502/m6502.c cpu/m6800/m6800.c cpu/z80/z80.c 
+		cpu/z80/z80daisy.c 	)
 	list(APPEND CPU_DEFS
 		HAS_AY8910=1 HAS_DAC=1 HAS_IREMGA20=1 HAS_MSM5205=1 
-		HAS_SAMPLES=1 	)
+		HAS_SAMPLES=1 HAS_YM2151=1 HAS_YM2203=1 	)
 	list(APPEND CPU_DEFS
 		HAS_I8039=1 HAS_M6502=1 HAS_M6800=1 HAS_Z80=1 
 	)
@@ -551,11 +594,16 @@ if(OPT_ITECH)
 		drivers/capbowl.c vidhrdw/capbowl.c drivers/itech8.c machine/slikshot.c 
 		vidhrdw/itech8.c drivers/itech32.c vidhrdw/itech32.c 	)
 	list(APPEND MAME_SOUND_SRC
-		sound/dac.c sound/es5506.c sound/okim6295.c 	)
+		sound/dac.c sound/k054539.c sound/okim6295.c sound/2203intf.c 
+		sound/ay8910.c sound/fm.c sound/3812intf.c sound/fmopl.c 
+	)
 	list(APPEND MAME_CPU_SRC
-		cpu/z80/z80.c cpu/z80/z80daisy.c 	)
+		cpu/m68000/m68kcpu.c cpu/m68000/m68kmame.c cpu/m68000/m68kops.c cpu/m68000/m68kopac.c 
+		cpu/m68000/m68kopdm.c cpu/m68000/m68kopnz.c cpu/m6809/m6809.c cpu/z80/z80.c 
+		cpu/z80/z80daisy.c 	)
 	list(APPEND CPU_DEFS
-		HAS_DAC=1 HAS_ES5506=1 HAS_OKIM6295=1 	)
+		HAS_DAC=1 HAS_ES5506=1 HAS_OKIM6295=1 HAS_YM2203=1 
+		HAS_YM3812=1 	)
 	list(APPEND CPU_DEFS
 		HAS_M68000=1 HAS_M6809=1 HAS_Z80=1 	)
 endif()
@@ -573,13 +621,14 @@ if(OPT_JALECO)
 		vidhrdw/skyfox.c drivers/stepstag.c drivers/tetrisp2.c vidhrdw/tetrisp2.c 
 	)
 	list(APPEND MAME_SOUND_SRC
-		sound/ay8910.c sound/okim6295.c sound/ymf271.c sound/ymz280b.c 
-	)
+		sound/ay8910.c sound/okim6295.c sound/2151intf.c sound/ym2151.c 
+		sound/2203intf.c sound/ay8910.c sound/fm.c sound/3812intf.c 
+		sound/fmopl.c sound/ymf271.c sound/ymz280b.c 	)
 	list(APPEND MAME_CPU_SRC
 		cpu/z80/z80.c cpu/z80/z80daisy.c 	)
 	list(APPEND CPU_DEFS
-		HAS_AY8910=1 HAS_OKIM6295=1 HAS_YMF271=1 HAS_YMZ280B=1 
-	)
+		HAS_AY8910=1 HAS_OKIM6295=1 HAS_YM2151=1 HAS_YM2203=1 
+		HAS_YM3812=1 HAS_YMF271=1 HAS_YMZ280B=1 	)
 	list(APPEND CPU_DEFS
 		HAS_Z80=1 	)
 endif()
@@ -591,11 +640,13 @@ if(OPT_KANEKO)
 		drivers/galpani3.c drivers/jchan.c drivers/kaneko16.c machine/kaneko16.c 
 		vidhrdw/kaneko16.c drivers/suprnova.c vidhrdw/suprnova.c 	)
 	list(APPEND MAME_SOUND_SRC
-		sound/okim6295.c sound/ymz280b.c 	)
+		sound/okim6295.c sound/2151intf.c sound/ym2151.c sound/2203intf.c 
+		sound/ay8910.c sound/fm.c sound/ymz280b.c 	)
 	list(APPEND MAME_CPU_SRC
 		cpu/z80/z80.c cpu/z80/z80daisy.c 	)
 	list(APPEND CPU_DEFS
-		HAS_OKIM6295=1 HAS_YMZ280B=1 	)
+		HAS_OKIM6295=1 HAS_YM2151=1 HAS_YM2203=1 HAS_YMZ280B=1 
+	)
 	list(APPEND CPU_DEFS
 		HAS_Z80=1 	)
 endif()
@@ -647,17 +698,22 @@ if(OPT_KONAMI)
 	list(APPEND MAME_SOUND_SRC
 		sound/ay8910.c sound/cdda.c sound/dac.c sound/k005289.c 
 		sound/k007232.c sound/k051649.c sound/k053260.c sound/k054539.c 
-		sound/msm5205.c sound/okim6295.c sound/rf5c400.c sound/samples.c 
-		sound/sn76496.c sound/tms5110.c sound/5110intf.c sound/upd7759.c 
-		sound/vlm5030.c sound/ymz280b.c 	)
+		sound/msm5205.c sound/okim6295.c sound/psx.c sound/rf5c400.c 
+		sound/samples.c sound/sn76496.c sound/tms5110.c sound/5110intf.c 
+		sound/upd7759.c sound/vlm5030.c sound/2151intf.c sound/ym2151.c 
+		sound/2203intf.c sound/ay8910.c sound/fm.c sound/3812intf.c 
+		sound/fmopl.c sound/ymz280b.c 	)
 	list(APPEND MAME_CPU_SRC
-		cpu/hd6309/hd6309.c cpu/konami/konami.c cpu/s2650/s2650.c cpu/z80/z80.c 
+		cpu/hd6309/hd6309.c cpu/i8x41/i8x41.c cpu/konami/konami.c cpu/m68000/m68kcpu.c 
+		cpu/m68000/m68kmame.c cpu/m68000/m68kops.c cpu/m68000/m68kopac.c cpu/m68000/m68kopdm.c 
+		cpu/m68000/m68kopnz.c cpu/m6809/m6809.c cpu/s2650/s2650.c cpu/z80/z80.c 
 		cpu/z80/z80daisy.c 	)
 	list(APPEND CPU_DEFS
 		HAS_AY8910=1 HAS_CDDA=1 HAS_DAC=1 HAS_K005289=1 
 		HAS_K007232=1 HAS_K051649=1 HAS_K053260=1 HAS_K054539=1 
-		HAS_MSM5205=1 HAS_OKIM6295=1 HAS_RF5C400=1 HAS_SAMPLES=1 
-		HAS_SN76496=1 HAS_TMS5110=1 HAS_UPD7759=1 HAS_VLM5030=1 
+		HAS_MSM5205=1 HAS_OKIM6295=1 HAS_PSXSPU=1 HAS_RF5C400=1 
+		HAS_SAMPLES=1 HAS_SN76496=1 HAS_TMS5110=1 HAS_UPD7759=1 
+		HAS_VLM5030=1 HAS_YM2151=1 HAS_YM2203=1 HAS_YM3812=1 
 		HAS_YMZ280B=1 	)
 	list(APPEND CPU_DEFS
 		HAS_HD6309=1 HAS_I8039=1 HAS_KONAMI=1 HAS_M68000=1 
@@ -692,11 +748,14 @@ if(OPT_METRO)
 		drivers/hyprduel.c vidhrdw/hyprduel.c drivers/metro.c vidhrdw/metro.c 
 		drivers/rabbit.c 	)
 	list(APPEND MAME_SOUND_SRC
-		sound/okim6295.c sound/ymf278b.c 	)
+		sound/okim6295.c sound/2151intf.c sound/ym2151.c sound/2413intf.c 
+		sound/ym2413.c sound/2610intf.c sound/ay8910.c sound/fm.c 
+		sound/ymdeltat.c sound/ymf278b.c 	)
 	list(APPEND MAME_CPU_SRC
-	)
+		cpu/upd7810/upd7810.c 	)
 	list(APPEND CPU_DEFS
-		HAS_OKIM6295=1 HAS_YMF278B=1 	)
+		HAS_OKIM6295=1 HAS_YM2151=1 HAS_YM2413=1 HAS_YM2610=1 
+		HAS_YMF278B=1 	)
 	list(APPEND CPU_DEFS
 		HAS_UPD7810=1 	)
 endif()
@@ -719,7 +778,7 @@ if(OPT_MIDW8080)
 		sound/custom.c sound/dac.c sound/discrete.c sound/samples.c 
 		sound/sn76477.c 	)
 	list(APPEND MAME_CPU_SRC
-	)
+		cpu/i8x41/i8x41.c 	)
 	list(APPEND CPU_DEFS
 		HAS_CUSTOM=1 HAS_DAC=1 HAS_DISCRETE=1 HAS_SAMPLES=1 
 		HAS_SN76477=1 	)
@@ -743,13 +802,16 @@ if(OPT_MIDWAY)
 	list(APPEND MAME_SOUND_SRC
 		sound/ay8910.c sound/cem3394.c sound/custom.c sound/dac.c 
 		sound/dmadac.c sound/hc55516.c sound/okim6295.c sound/samples.c 
+		sound/tms5220.c sound/5220intf.c sound/2151intf.c sound/ym2151.c 
 	)
 	list(APPEND MAME_CPU_SRC
-		cpu/tms32031/tms32031.c cpu/z80/z80.c cpu/z80/z80daisy.c 	)
+		cpu/adsp2100/adsp2100.c cpu/m6800/m6800.c cpu/m6809/m6809.c cpu/tms32031/tms32031.c 
+		cpu/tms34010/tms34010.c cpu/tms34010/34010fld.c cpu/z80/z80.c cpu/z80/z80daisy.c 
+	)
 	list(APPEND CPU_DEFS
 		HAS_AY8910=1 HAS_CEM3394=1 HAS_CUSTOM=1 HAS_DAC=1 
 		HAS_DMADAC=1 HAS_HC55516=1 HAS_OKIM6295=1 HAS_SAMPLES=1 
-	)
+		HAS_TMS5220=1 HAS_YM2151=1 	)
 	list(APPEND CPU_DEFS
 		HAS_ADSP2100=1 HAS_M6800=1 HAS_M6809=1 HAS_TMS32031=1 
 		HAS_TMS34010=1 HAS_Z80=1 	)
@@ -797,16 +859,22 @@ if(OPT_MISC)
 	list(APPEND MAME_SOUND_SRC
 		sound/ay8910.c sound/bsmt2000.c sound/custom.c sound/dac.c 
 		sound/msm5232.c sound/okim6295.c sound/samples.c sound/sn76477.c 
-		sound/sn76496.c sound/upd7759.c sound/vrender0.c sound/ymz280b.c 
-	)
+		sound/sn76496.c sound/upd7759.c sound/vrender0.c sound/2151intf.c 
+		sound/ym2151.c sound/2203intf.c sound/ay8910.c sound/fm.c 
+		sound/2610intf.c sound/ay8910.c sound/fm.c sound/ymdeltat.c 
+		sound/3812intf.c sound/fmopl.c sound/ymz280b.c 	)
 	list(APPEND MAME_CPU_SRC
 		cpu/arm/arm.c cpu/arm7/arm7.c cpu/h83002/h83002.c cpu/h83002/h8periph.c 
-		cpu/s2650/s2650.c cpu/se3208/se3208.c cpu/z180/z180.c cpu/z80/z80daisy.c 
+		cpu/i8051/i8051.c cpu/m68000/m68kcpu.c cpu/m68000/m68kmame.c cpu/m68000/m68kops.c 
+		cpu/m68000/m68kopac.c cpu/m68000/m68kopdm.c cpu/m68000/m68kopnz.c cpu/m6809/m6809.c 
+		cpu/s2650/s2650.c cpu/se3208/se3208.c cpu/tms32025/tms32025.c cpu/tms34010/tms34010.c 
+		cpu/tms34010/34010fld.c cpu/upd7810/upd7810.c cpu/z180/z180.c cpu/z80/z80daisy.c 
 		cpu/z80/z80.c cpu/z80/z80daisy.c 	)
 	list(APPEND CPU_DEFS
 		HAS_AY8910=1 HAS_BSMT2000=1 HAS_CUSTOM=1 HAS_DAC=1 
 		HAS_MSM5232=1 HAS_OKIM6295=1 HAS_SAMPLES=1 HAS_SN76477=1 
-		HAS_SN76496=1 HAS_UPD7759=1 HAS_VRENDER0=1 HAS_YMZ280B=1 
+		HAS_SN76496=1 HAS_UPD7759=1 HAS_VRENDER0=1 HAS_YM2151=1 
+		HAS_YM2203=1 HAS_YM2610=1 HAS_YM3812=1 HAS_YMZ280B=1 
 	)
 	list(APPEND CPU_DEFS
 		HAS_ARM=1 HAS_ARM7=1 HAS_H83002=1 HAS_I8051=1 
@@ -839,8 +907,13 @@ if(OPT_NAMCO)
 		sound/dac.c sound/namco.c sound/namcona.c sound/samples.c 
 		sound/sn76496.c sound/2151intf.c sound/ym2151.c 	)
 	list(APPEND MAME_CPU_SRC
-		cpu/h83002/h83002.c cpu/h83002/h8periph.c cpu/i960/i960.c cpu/s2650/s2650.c 
-		cpu/z80/z80.c cpu/z80/z80daisy.c cpu/z8000/z8000.c 	)
+		cpu/h83002/h83002.c cpu/h83002/h8periph.c cpu/i960/i960.c cpu/m37710/m37710.c 
+		cpu/m37710/m37710o0.c cpu/m37710/m37710o1.c cpu/m37710/m37710o2.c cpu/m37710/m37710o3.c 
+		cpu/m37710/m7700ds.c cpu/m6502/m6502.c cpu/m6800/m6800.c cpu/m68000/m68kcpu.c 
+		cpu/m68000/m68kmame.c cpu/m68000/m68kops.c cpu/m68000/m68kopac.c cpu/m68000/m68kopdm.c 
+		cpu/m68000/m68kopnz.c cpu/m6805/m6805.c cpu/m6809/m6809.c cpu/s2650/s2650.c 
+		cpu/tms32025/tms32025.c cpu/z80/z80.c cpu/z80/z80daisy.c cpu/z8000/z8000.c 
+	)
 	list(APPEND CPU_DEFS
 		HAS_AY8910=1 HAS_C140=1 HAS_C352=1 HAS_CUSTOM=1 
 		HAS_DAC=1 HAS_NAMCO=1 HAS_NAMCONA=1 HAS_SAMPLES=1 
@@ -856,17 +929,23 @@ if(OPT_NASCO)
 	list(APPEND MAME_DRIVERS_SRC
 		drivers/crgolf.c vidhrdw/crgolf.c drivers/suprgolf.c 	)
 	list(APPEND MAME_SOUND_SRC
-		sound/ay8910.c sound/msm5205.c 	)
+		sound/ay8910.c sound/msm5205.c sound/2203intf.c sound/ay8910.c 
+		sound/fm.c 	)
 	list(APPEND CPU_DEFS
-		HAS_AY8910=1 HAS_MSM5205=1 	)
+		HAS_AY8910=1 HAS_MSM5205=1 HAS_YM2203=1 	)
 endif()
 if(OPT_NEOGEO)
 	add_compile_definitions(LINK_NEOGEO=1)
 	list(APPEND MAME_DRIVERS_SRC
 		drivers/neogeo.c machine/neogeo.c vidhrdw/neogeo.c machine/neoboot.c 
 		machine/neocrypt.c machine/neoprot.c 	)
+	list(APPEND MAME_SOUND_SRC
+		sound/2610intf.c sound/ay8910.c sound/fm.c sound/ymdeltat.c 
+	)
 	list(APPEND MAME_CPU_SRC
 		cpu/z80/z80.c cpu/z80/z80daisy.c 	)
+	list(APPEND CPU_DEFS
+		HAS_YM2610=1 	)
 	list(APPEND CPU_DEFS
 		HAS_Z80=1 	)
 endif()
@@ -887,12 +966,16 @@ if(OPT_NICHIBUT)
 	)
 	list(APPEND MAME_SOUND_SRC
 		sound/ay8910.c sound/custom.c sound/dac.c sound/msm5205.c 
-		sound/okim6295.c sound/samples.c 	)
+		sound/okim6295.c sound/samples.c sound/2203intf.c sound/ay8910.c 
+		sound/fm.c sound/3812intf.c sound/fmopl.c 	)
 	list(APPEND MAME_CPU_SRC
-		cpu/z80/z80.c cpu/z80/z80daisy.c 	)
+		cpu/m68000/m68kcpu.c cpu/m68000/m68kmame.c cpu/m68000/m68kops.c cpu/m68000/m68kopac.c 
+		cpu/m68000/m68kopdm.c cpu/m68000/m68kopnz.c cpu/z80/z80.c cpu/z80/z80daisy.c 
+	)
 	list(APPEND CPU_DEFS
 		HAS_AY8910=1 HAS_CUSTOM=1 HAS_DAC=1 HAS_MSM5205=1 
-		HAS_OKIM6295=1 HAS_SAMPLES=1 	)
+		HAS_OKIM6295=1 HAS_SAMPLES=1 HAS_YM2203=1 HAS_YM3812=1 
+	)
 	list(APPEND CPU_DEFS
 		HAS_M68000=1 HAS_Z80=1 	)
 endif()
@@ -912,8 +995,8 @@ if(OPT_NINTENDO)
 		sound/vlm5030.c 	)
 	list(APPEND MAME_CPU_SRC
 		cpu/g65816/g65816.c cpu/g65816/g65816o0.c cpu/g65816/g65816o1.c cpu/g65816/g65816o2.c 
-		cpu/g65816/g65816o3.c cpu/g65816/g65816o4.c cpu/s2650/s2650.c cpu/z80/z80.c 
-		cpu/z80/z80daisy.c 	)
+		cpu/g65816/g65816o3.c cpu/g65816/g65816o4.c cpu/i8x41/i8x41.c cpu/m6502/m6502.c 
+		cpu/s2650/s2650.c cpu/z80/z80.c cpu/z80/z80daisy.c 	)
 	list(APPEND CPU_DEFS
 		HAS_AY8910=1 HAS_DAC=1 HAS_SAMPLES=1 HAS_SN76477=1 
 		HAS_VLM5030=1 	)
@@ -929,7 +1012,7 @@ if(OPT_NIX)
 	list(APPEND MAME_SOUND_SRC
 		sound/okim6295.c 	)
 	list(APPEND MAME_CPU_SRC
-	)
+		cpu/upd7810/upd7810.c 	)
 	list(APPEND CPU_DEFS
 		HAS_OKIM6295=1 	)
 	list(APPEND CPU_DEFS
@@ -942,11 +1025,14 @@ if(OPT_NMK)
 		drivers/nmk16.c machine/nmk004.c vidhrdw/nmk16.c drivers/quizdna.c 
 		vidhrdw/quizdna.c drivers/quizpani.c vidhrdw/quizpani.c 	)
 	list(APPEND MAME_SOUND_SRC
-		sound/es5506.c sound/okim6295.c 	)
+		sound/k054539.c sound/okim6295.c sound/2203intf.c sound/ay8910.c 
+		sound/fm.c sound/3812intf.c sound/fmopl.c 	)
 	list(APPEND MAME_CPU_SRC
-	)
+		cpu/m68000/m68kcpu.c cpu/m68000/m68kmame.c cpu/m68000/m68kops.c cpu/m68000/m68kopac.c 
+		cpu/m68000/m68kopdm.c cpu/m68000/m68kopnz.c 	)
 	list(APPEND CPU_DEFS
-		HAS_ES5506=1 HAS_OKIM6295=1 	)
+		HAS_ES5506=1 HAS_OKIM6295=1 HAS_YM2203=1 HAS_YM3812=1 
+	)
 	list(APPEND CPU_DEFS
 		HAS_M68000=1 	)
 endif()
@@ -956,11 +1042,11 @@ if(OPT_OLYMPIA)
 		drivers/dday.c vidhrdw/dday.c drivers/portrait.c vidhrdw/portrait.c 
 	)
 	list(APPEND MAME_SOUND_SRC
-		sound/ay8910.c 	)
+		sound/ay8910.c sound/tms5220.c sound/5220intf.c 	)
 	list(APPEND MAME_CPU_SRC
-	)
+		cpu/i8x41/i8x41.c 	)
 	list(APPEND CPU_DEFS
-		HAS_AY8910=1 	)
+		HAS_AY8910=1 HAS_TMS5220=1 	)
 	list(APPEND CPU_DEFS
 		HAS_I8039=1 	)
 endif()
@@ -1043,7 +1129,7 @@ if(OPT_PLAYMARK)
 	list(APPEND MAME_SOUND_SRC
 		sound/okim6295.c 	)
 	list(APPEND MAME_CPU_SRC
-	)
+		cpu/i8051/i8051.c 	)
 	list(APPEND CPU_DEFS
 		HAS_OKIM6295=1 	)
 	list(APPEND CPU_DEFS
@@ -1055,11 +1141,12 @@ if(OPT_PSIKYO)
 		drivers/psikyo.c vidhrdw/psikyo.c drivers/psikyo4.c vidhrdw/psikyo4.c 
 		drivers/psikyosh.c vidhrdw/psikyosh.c 	)
 	list(APPEND MAME_SOUND_SRC
+		sound/2610intf.c sound/ay8910.c sound/fm.c sound/ymdeltat.c 
 		sound/ymf278b.c 	)
 	list(APPEND MAME_CPU_SRC
 		cpu/sh2/sh2.c 	)
 	list(APPEND CPU_DEFS
-		HAS_YMF278B=1 	)
+		HAS_YM2610=1 HAS_YMF278B=1 	)
 	list(APPEND CPU_DEFS
 		HAS_SH2=1 	)
 endif()
@@ -1081,7 +1168,7 @@ if(OPT_RARE)
 	list(APPEND MAME_SOUND_SRC
 		sound/bsmt2000.c sound/dac.c 	)
 	list(APPEND MAME_CPU_SRC
-	)
+		cpu/adsp2100/adsp2100.c cpu/tms34010/tms34010.c cpu/tms34010/34010fld.c 	)
 	list(APPEND CPU_DEFS
 		HAS_BSMT2000=1 HAS_DAC=1 	)
 	list(APPEND CPU_DEFS
@@ -1096,10 +1183,11 @@ if(OPT_SANRITSU)
 	)
 	list(APPEND MAME_SOUND_SRC
 		sound/ay8910.c sound/custom.c sound/msm5205.c sound/okim6295.c 
-		sound/sn76496.c 	)
+		sound/sn76496.c sound/2203intf.c sound/ay8910.c sound/fm.c 
+	)
 	list(APPEND CPU_DEFS
 		HAS_AY8910=1 HAS_CUSTOM=1 HAS_MSM5205=1 HAS_OKIM6295=1 
-		HAS_SN76496=1 	)
+		HAS_SN76496=1 HAS_YM2203=1 	)
 endif()
 if(OPT_SEGA)
 	add_compile_definitions(LINK_SEGA=1)
@@ -1135,15 +1223,18 @@ if(OPT_SEGA)
 		sound/multipcm.c sound/okim6295.c sound/rf5c68.c sound/samples.c 
 		sound/scsp.c sound/segapcm.c sound/sn76496.c sound/sp0250.c 
 		sound/tms36xx.c sound/upd7759.c sound/2151intf.c sound/ym2151.c 
-	)
+		sound/2203intf.c sound/ay8910.c sound/fm.c sound/2413intf.c 
+		sound/ym2413.c sound/3812intf.c sound/fmopl.c 	)
 	list(APPEND MAME_CPU_SRC
-		cpu/i960/i960.c cpu/sh2/sh2.c cpu/z80/z80.c cpu/z80/z80daisy.c 
-	)
+		cpu/i8x41/i8x41.c cpu/i960/i960.c cpu/m68000/m68kcpu.c cpu/m68000/m68kmame.c 
+		cpu/m68000/m68kops.c cpu/m68000/m68kopac.c cpu/m68000/m68kopdm.c cpu/m68000/m68kopnz.c 
+		cpu/sh2/sh2.c cpu/z80/z80.c cpu/z80/z80daisy.c 	)
 	list(APPEND CPU_DEFS
 		HAS_AY8910=1 HAS_DAC=1 HAS_DISCRETE=1 HAS_MSM5205=1 
 		HAS_MULTIPCM=1 HAS_OKIM6295=1 HAS_RF5C68=1 HAS_SAMPLES=1 
 		HAS_SCSP=1 HAS_SEGAPCM=1 HAS_SN76496=1 HAS_SP0250=1 
-		HAS_TMS36XX=1 HAS_UPD7759=1 HAS_YM2151=1 	)
+		HAS_TMS36XX=1 HAS_UPD7759=1 HAS_YM2151=1 HAS_YM2203=1 
+		HAS_YM2413=1 HAS_YM3812=1 	)
 	list(APPEND CPU_DEFS
 		HAS_I8039=1 HAS_I960=1 HAS_M68000=1 HAS_SH2=1 
 		HAS_Z80=1 	)
@@ -1160,12 +1251,15 @@ if(OPT_SEIBU)
 		vidhrdw/wiz.c machine/spisprit.c sndhrdw/seibu.c 	)
 	list(APPEND MAME_SOUND_SRC
 		sound/ay8910.c sound/discrete.c sound/msm5205.c sound/okim6295.c 
-		sound/ymf271.c 	)
+		sound/2151intf.c sound/ym2151.c sound/2203intf.c sound/ay8910.c 
+		sound/fm.c sound/3812intf.c sound/fmopl.c sound/ymf271.c 
+	)
 	list(APPEND MAME_CPU_SRC
-		cpu/z80/z80.c cpu/z80/z80daisy.c 	)
+		cpu/m6800/m6800.c cpu/z80/z80.c cpu/z80/z80daisy.c 	)
 	list(APPEND CPU_DEFS
 		HAS_AY8910=1 HAS_DISCRETE=1 HAS_MSM5205=1 HAS_OKIM6295=1 
-		HAS_YMF271=1 	)
+		HAS_YM2151=1 HAS_YM2203=1 HAS_YM3812=1 HAS_YMF271=1 
+	)
 	list(APPEND CPU_DEFS
 		HAS_M6800=1 HAS_Z80=1 	)
 endif()
@@ -1179,13 +1273,16 @@ if(OPT_SETA)
 		drivers/ssv.c vidhrdw/ssv.c drivers/st0016.c vidhrdw/st0016.c 
 	)
 	list(APPEND MAME_SOUND_SRC
-		sound/ay8910.c sound/custom.c sound/es5506.c sound/msm5205.c 
-		sound/okim6295.c sound/st0016.c sound/x1_010.c 	)
+		sound/ay8910.c sound/custom.c sound/k054539.c sound/msm5205.c 
+		sound/okim6295.c sound/st0016.c sound/x1_010.c sound/2203intf.c 
+		sound/ay8910.c sound/fm.c sound/3812intf.c sound/fmopl.c 
+	)
 	list(APPEND MAME_CPU_SRC
 		cpu/rsp/rsp.c cpu/z80/z80.c cpu/z80/z80daisy.c 	)
 	list(APPEND CPU_DEFS
 		HAS_AY8910=1 HAS_CUSTOM=1 HAS_ES5506=1 HAS_MSM5205=1 
-		HAS_OKIM6295=1 HAS_ST0016=1 HAS_X1_010=1 	)
+		HAS_OKIM6295=1 HAS_ST0016=1 HAS_X1_010=1 HAS_YM2203=1 
+		HAS_YM3812=1 	)
 	list(APPEND CPU_DEFS
 		HAS_RSP=1 HAS_Z80=1 	)
 endif()
@@ -1217,7 +1314,7 @@ if(OPT_SIGMA)
 	list(APPEND MAME_SOUND_SRC
 		sound/ay8910.c sound/dac.c 	)
 	list(APPEND MAME_CPU_SRC
-	)
+		cpu/m6800/m6800.c cpu/m6809/m6809.c 	)
 	list(APPEND CPU_DEFS
 		HAS_AY8910=1 HAS_DAC=1 	)
 	list(APPEND CPU_DEFS
@@ -1236,13 +1333,14 @@ if(OPT_SNK)
 	list(APPEND MAME_SOUND_SRC
 		sound/ay8910.c sound/custom.c sound/dac.c sound/namco.c 
 		sound/samples.c sound/sn76477.c sound/sn76496.c sound/upd7759.c 
-	)
+		sound/2610intf.c sound/ay8910.c sound/fm.c sound/ymdeltat.c 
+		sound/3812intf.c sound/fmopl.c 	)
 	list(APPEND MAME_CPU_SRC
-		cpu/z80/z80.c cpu/z80/z80daisy.c 	)
+		cpu/m6502/m6502.c cpu/z80/z80.c cpu/z80/z80daisy.c 	)
 	list(APPEND CPU_DEFS
 		HAS_AY8910=1 HAS_CUSTOM=1 HAS_DAC=1 HAS_NAMCO=1 
 		HAS_SAMPLES=1 HAS_SN76477=1 HAS_SN76496=1 HAS_UPD7759=1 
-	)
+		HAS_YM2610=1 HAS_YM3812=1 	)
 	list(APPEND CPU_DEFS
 		HAS_M6502=1 HAS_Z80=1 	)
 endif()
@@ -1286,11 +1384,14 @@ if(OPT_SUNA)
 		drivers/goindol.c vidhrdw/goindol.c drivers/suna8.c sndhrdw/suna8.c 
 		vidhrdw/suna8.c drivers/suna16.c vidhrdw/suna16.c 	)
 	list(APPEND MAME_SOUND_SRC
-		sound/ay8910.c sound/dac.c sound/samples.c 	)
+		sound/ay8910.c sound/dac.c sound/samples.c sound/2151intf.c 
+		sound/ym2151.c sound/2203intf.c sound/ay8910.c sound/fm.c 
+		sound/3812intf.c sound/fmopl.c 	)
 	list(APPEND MAME_CPU_SRC
 		cpu/z80/z80.c cpu/z80/z80daisy.c 	)
 	list(APPEND CPU_DEFS
-		HAS_AY8910=1 HAS_DAC=1 HAS_SAMPLES=1 	)
+		HAS_AY8910=1 HAS_DAC=1 HAS_SAMPLES=1 HAS_YM2151=1 
+		HAS_YM2203=1 HAS_YM3812=1 	)
 	list(APPEND CPU_DEFS
 		HAS_Z80=1 	)
 endif()
@@ -1301,11 +1402,14 @@ if(OPT_TAD)
 		drivers/goal92.c vidhrdw/goal92.c drivers/legionna.c vidhrdw/legionna.c 
 		drivers/toki.c vidhrdw/toki.c 	)
 	list(APPEND MAME_SOUND_SRC
-		sound/msm5205.c sound/okim6295.c 	)
+		sound/msm5205.c sound/okim6295.c sound/2151intf.c sound/ym2151.c 
+		sound/2203intf.c sound/ay8910.c sound/fm.c sound/3812intf.c 
+		sound/fmopl.c 	)
 	list(APPEND MAME_CPU_SRC
 		cpu/z80/z80.c cpu/z80/z80daisy.c 	)
 	list(APPEND CPU_DEFS
-		HAS_MSM5205=1 HAS_OKIM6295=1 	)
+		HAS_MSM5205=1 HAS_OKIM6295=1 HAS_YM2151=1 HAS_YM2203=1 
+		HAS_YM3812=1 	)
 	list(APPEND CPU_DEFS
 		HAS_Z80=1 	)
 endif()
@@ -1351,15 +1455,21 @@ if(OPT_TAITO)
 		machine/mb87078.c sndhrdw/taitosnd.c vidhrdw/taitoic.c 	)
 	list(APPEND MAME_SOUND_SRC
 		sound/ay8910.c sound/custom.c sound/dac.c sound/discrete.c 
-		sound/es5506.c sound/msm5205.c sound/msm5232.c sound/okim6295.c 
+		sound/k054539.c sound/msm5205.c sound/msm5232.c sound/okim6295.c 
 		sound/samples.c sound/sn76477.c sound/sn76496.c sound/x1_010.c 
-	)
+		sound/2151intf.c sound/ym2151.c sound/2203intf.c sound/ay8910.c 
+		sound/fm.c sound/2610intf.c sound/ay8910.c sound/fm.c 
+		sound/ymdeltat.c sound/3812intf.c sound/fmopl.c 	)
 	list(APPEND MAME_CPU_SRC
-		cpu/i8x41/i8x41.c cpu/z80/z80.c cpu/z80/z80daisy.c 	)
+		cpu/i386/i386.c cpu/i8x41/i8x41.c cpu/i8x41/i8x41.c cpu/m6800/m6800.c 
+		cpu/m68000/m68kcpu.c cpu/m68000/m68kmame.c cpu/m68000/m68kops.c cpu/m68000/m68kopac.c 
+		cpu/m68000/m68kopdm.c cpu/m68000/m68kopnz.c cpu/m6805/m6805.c cpu/m6809/m6809.c 
+		cpu/tms32025/tms32025.c cpu/z80/z80.c cpu/z80/z80daisy.c 	)
 	list(APPEND CPU_DEFS
 		HAS_AY8910=1 HAS_CUSTOM=1 HAS_DAC=1 HAS_DISCRETE=1 
 		HAS_ES5506=1 HAS_MSM5205=1 HAS_MSM5232=1 HAS_OKIM6295=1 
 		HAS_SAMPLES=1 HAS_SN76477=1 HAS_SN76496=1 HAS_X1_010=1 
+		HAS_YM2151=1 HAS_YM2203=1 HAS_YM2610=1 HAS_YM3812=1 
 	)
 	list(APPEND CPU_DEFS
 		HAS_I386=1 HAS_I8039=1 HAS_I8X41=1 HAS_M6800=1 
@@ -1372,11 +1482,13 @@ if(OPT_TATSUMI)
 		drivers/lockon.c drivers/tatsumi.c machine/tatsumi.c vidhrdw/tatsumi.c 
 		drivers/tx1.c machine/tx1.c vidhrdw/tx1.c 	)
 	list(APPEND MAME_SOUND_SRC
-		sound/ay8910.c sound/okim6295.c 	)
+		sound/ay8910.c sound/okim6295.c sound/2151intf.c sound/ym2151.c 
+		sound/2203intf.c sound/ay8910.c sound/fm.c 	)
 	list(APPEND MAME_CPU_SRC
-	)
+		cpu/i86/i86.c 	)
 	list(APPEND CPU_DEFS
-		HAS_AY8910=1 HAS_OKIM6295=1 	)
+		HAS_AY8910=1 HAS_OKIM6295=1 HAS_YM2151=1 HAS_YM2203=1 
+	)
 	list(APPEND CPU_DEFS
 		HAS_I86=1 	)
 endif()
@@ -1396,11 +1508,11 @@ if(OPT_TECFRI)
 		drivers/holeland.c vidhrdw/holeland.c drivers/sauro.c vidhrdw/sauro.c 
 		drivers/speedbal.c vidhrdw/speedbal.c 	)
 	list(APPEND MAME_SOUND_SRC
-		sound/ay8910.c 	)
+		sound/ay8910.c sound/3812intf.c sound/fmopl.c 	)
 	list(APPEND MAME_CPU_SRC
 		cpu/z80/z80.c cpu/z80/z80daisy.c 	)
 	list(APPEND CPU_DEFS
-		HAS_AY8910=1 	)
+		HAS_AY8910=1 HAS_YM3812=1 	)
 	list(APPEND CPU_DEFS
 		HAS_Z80=1 	)
 endif()
@@ -1419,12 +1531,18 @@ if(OPT_TECHNOS)
 		vidhrdw/xain.c 	)
 	list(APPEND MAME_SOUND_SRC
 		sound/ay8910.c sound/custom.c sound/dac.c sound/msm5205.c 
-		sound/okim6295.c 	)
+		sound/okim6295.c sound/2151intf.c sound/ym2151.c sound/2203intf.c 
+		sound/ay8910.c sound/fm.c sound/3812intf.c sound/fmopl.c 
+	)
 	list(APPEND MAME_CPU_SRC
-		cpu/z80/z80.c cpu/z80/z80daisy.c 	)
+		cpu/i8x41/i8x41.c cpu/m6502/m6502.c cpu/m6800/m6800.c cpu/m68000/m68kcpu.c 
+		cpu/m68000/m68kmame.c cpu/m68000/m68kops.c cpu/m68000/m68kopac.c cpu/m68000/m68kopdm.c 
+		cpu/m68000/m68kopnz.c cpu/m6809/m6809.c cpu/z80/z80.c cpu/z80/z80daisy.c 
+	)
 	list(APPEND CPU_DEFS
 		HAS_AY8910=1 HAS_CUSTOM=1 HAS_DAC=1 HAS_MSM5205=1 
-		HAS_OKIM6295=1 	)
+		HAS_OKIM6295=1 HAS_YM2151=1 HAS_YM2203=1 HAS_YM3812=1 
+	)
 	list(APPEND CPU_DEFS
 		HAS_I8039=1 HAS_M6502=1 HAS_M6800=1 HAS_M68000=1 
 		HAS_M6809=1 HAS_Z80=1 	)
@@ -1442,12 +1560,17 @@ if(OPT_TEHKAN)
 	)
 	list(APPEND MAME_SOUND_SRC
 		sound/ay8910.c sound/msm5205.c sound/okim6295.c sound/samples.c 
-		sound/sn76496.c sound/ymz280b.c 	)
+		sound/sn76496.c sound/2151intf.c sound/ym2151.c sound/2203intf.c 
+		sound/ay8910.c sound/fm.c sound/3812intf.c sound/fmopl.c 
+		sound/ymf262.c sound/262intf.c sound/ymz280b.c 	)
 	list(APPEND MAME_CPU_SRC
-		cpu/z80/z80.c cpu/z80/z80daisy.c 	)
+		cpu/m68000/m68kcpu.c cpu/m68000/m68kmame.c cpu/m68000/m68kops.c cpu/m68000/m68kopac.c 
+		cpu/m68000/m68kopdm.c cpu/m68000/m68kopnz.c cpu/z80/z80.c cpu/z80/z80daisy.c 
+	)
 	list(APPEND CPU_DEFS
 		HAS_AY8910=1 HAS_MSM5205=1 HAS_OKIM6295=1 HAS_SAMPLES=1 
-		HAS_SN76496=1 HAS_YMZ280B=1 	)
+		HAS_SN76496=1 HAS_YM2151=1 HAS_YM2203=1 HAS_YM3812=1 
+		HAS_YMF262=1 HAS_YMZ280B=1 	)
 	list(APPEND CPU_DEFS
 		HAS_M68000=1 HAS_Z80=1 	)
 endif()
@@ -1470,13 +1593,16 @@ if(OPT_TOAPLAN)
 		vidhrdw/toaplan2.c drivers/twincobr.c machine/twincobr.c vidhrdw/twincobr.c 
 		drivers/wardner.c 	)
 	list(APPEND MAME_SOUND_SRC
-		sound/ay8910.c sound/dac.c sound/okim6295.c sound/ymz280b.c 
+		sound/ay8910.c sound/dac.c sound/okim6295.c sound/2151intf.c 
+		sound/ym2151.c sound/3812intf.c sound/fmopl.c sound/ymz280b.c 
 	)
 	list(APPEND MAME_CPU_SRC
-		cpu/tms32010/tms32010.c cpu/z80/z80.c cpu/z80/z80daisy.c 	)
+		cpu/m68000/m68kcpu.c cpu/m68000/m68kmame.c cpu/m68000/m68kops.c cpu/m68000/m68kopac.c 
+		cpu/m68000/m68kopdm.c cpu/m68000/m68kopnz.c cpu/tms32010/tms32010.c cpu/z80/z80.c 
+		cpu/z80/z80daisy.c 	)
 	list(APPEND CPU_DEFS
-		HAS_AY8910=1 HAS_DAC=1 HAS_OKIM6295=1 HAS_YMZ280B=1 
-	)
+		HAS_AY8910=1 HAS_DAC=1 HAS_OKIM6295=1 HAS_YM2151=1 
+		HAS_YM3812=1 HAS_YMZ280B=1 	)
 	list(APPEND CPU_DEFS
 		HAS_M68000=1 HAS_TMS32010=1 HAS_Z80=1 	)
 endif()
@@ -1488,7 +1614,7 @@ if(OPT_TONG)
 	list(APPEND MAME_SOUND_SRC
 		sound/ay8910.c sound/dac.c 	)
 	list(APPEND MAME_CPU_SRC
-	)
+		cpu/m6502/m6502.c cpu/m6809/m6809.c 	)
 	list(APPEND CPU_DEFS
 		HAS_AY8910=1 HAS_DAC=1 	)
 	list(APPEND CPU_DEFS
@@ -1500,9 +1626,10 @@ if(OPT_UNICO)
 		drivers/drgnmst.c vidhrdw/drgnmst.c drivers/silkroad.c vidhrdw/silkroad.c 
 		drivers/unico.c vidhrdw/unico.c 	)
 	list(APPEND MAME_SOUND_SRC
-		sound/okim6295.c 	)
+		sound/okim6295.c sound/2151intf.c sound/ym2151.c sound/3812intf.c 
+		sound/fmopl.c 	)
 	list(APPEND CPU_DEFS
-		HAS_OKIM6295=1 	)
+		HAS_OKIM6295=1 HAS_YM2151=1 HAS_YM3812=1 	)
 endif()
 if(OPT_UNIVERS)
 	add_compile_definitions(LINK_UNIVERS=1)
@@ -1531,11 +1658,12 @@ if(OPT_UPL)
 		drivers/pkunwar.c vidhrdw/pkunwar.c drivers/raiders5.c vidhrdw/raiders5.c 
 		drivers/xxmissio.c vidhrdw/xxmissio.c 	)
 	list(APPEND MAME_SOUND_SRC
-		sound/ay8910.c sound/samples.c 	)
+		sound/ay8910.c sound/samples.c sound/2203intf.c sound/ay8910.c 
+		sound/fm.c 	)
 	list(APPEND MAME_CPU_SRC
 		cpu/z80/z80.c cpu/z80/z80daisy.c 	)
 	list(APPEND CPU_DEFS
-		HAS_AY8910=1 HAS_SAMPLES=1 	)
+		HAS_AY8910=1 HAS_SAMPLES=1 HAS_YM2203=1 	)
 	list(APPEND CPU_DEFS
 		HAS_Z80=1 	)
 endif()
@@ -1554,11 +1682,12 @@ if(OPT_VELTMJR)
 	list(APPEND MAME_DRIVERS_SRC
 		drivers/cardline.c drivers/witch.c 	)
 	list(APPEND MAME_SOUND_SRC
-		sound/es8712.c 	)
-	list(APPEND MAME_CPU_SRC
+		sound/es8712.c sound/2203intf.c sound/ay8910.c sound/fm.c 
 	)
+	list(APPEND MAME_CPU_SRC
+		cpu/i8051/i8051.c 	)
 	list(APPEND CPU_DEFS
-		HAS_ES8712=1 	)
+		HAS_ES8712=1 HAS_YM2203=1 	)
 	list(APPEND CPU_DEFS
 		HAS_I8051=1 	)
 endif()
@@ -1568,11 +1697,13 @@ if(OPT_VENTURE)
 		drivers/looping.c drivers/spcforce.c vidhrdw/spcforce.c drivers/suprridr.c 
 		vidhrdw/suprridr.c 	)
 	list(APPEND MAME_SOUND_SRC
-		sound/ay8910.c sound/dac.c sound/sn76496.c 	)
+		sound/ay8910.c sound/dac.c sound/sn76496.c sound/tms5220.c 
+		sound/5220intf.c 	)
 	list(APPEND MAME_CPU_SRC
-	)
+		cpu/i8x41/i8x41.c 	)
 	list(APPEND CPU_DEFS
-		HAS_AY8910=1 HAS_DAC=1 HAS_SN76496=1 	)
+		HAS_AY8910=1 HAS_DAC=1 HAS_SN76496=1 HAS_TMS5220=1 
+	)
 	list(APPEND CPU_DEFS
 		HAS_I8039=1 	)
 endif()
@@ -1588,11 +1719,16 @@ if(OPT_VSYSTEM)
 		vidhrdw/taotaido.c drivers/welltris.c vidhrdw/welltris.c 	)
 	list(APPEND MAME_SOUND_SRC
 		sound/ay8910.c sound/msm5205.c sound/okim6295.c sound/upd7759.c 
-	)
+		sound/2151intf.c sound/ym2151.c sound/2413intf.c sound/ym2413.c 
+		sound/2610intf.c sound/ay8910.c sound/fm.c sound/ymdeltat.c 
+		sound/3812intf.c sound/fmopl.c 	)
 	list(APPEND MAME_CPU_SRC
-		cpu/z80/z80.c cpu/z80/z80daisy.c 	)
+		cpu/m68000/m68kcpu.c cpu/m68000/m68kmame.c cpu/m68000/m68kops.c cpu/m68000/m68kopac.c 
+		cpu/m68000/m68kopdm.c cpu/m68000/m68kopnz.c cpu/m6809/m6809.c cpu/z80/z80.c 
+		cpu/z80/z80daisy.c 	)
 	list(APPEND CPU_DEFS
 		HAS_AY8910=1 HAS_MSM5205=1 HAS_OKIM6295=1 HAS_UPD7759=1 
+		HAS_YM2151=1 HAS_YM2413=1 HAS_YM2610=1 HAS_YM3812=1 
 	)
 	list(APPEND CPU_DEFS
 		HAS_M68000=1 HAS_M6809=1 HAS_Z80=1 	)
@@ -1603,11 +1739,12 @@ if(OPT_YUNSUNG)
 		drivers/nmg5.c drivers/paradise.c vidhrdw/paradise.c drivers/yunsung8.c 
 		vidhrdw/yunsung8.c drivers/yunsun16.c vidhrdw/yunsun16.c 	)
 	list(APPEND MAME_SOUND_SRC
-		sound/msm5205.c sound/okim6295.c 	)
+		sound/msm5205.c sound/okim6295.c sound/3812intf.c sound/fmopl.c 
+	)
 	list(APPEND MAME_CPU_SRC
 		cpu/z80/z80.c cpu/z80/z80daisy.c 	)
 	list(APPEND CPU_DEFS
-		HAS_MSM5205=1 HAS_OKIM6295=1 	)
+		HAS_MSM5205=1 HAS_OKIM6295=1 HAS_YM3812=1 	)
 	list(APPEND CPU_DEFS
 		HAS_Z80=1 	)
 endif()
@@ -1618,12 +1755,12 @@ if(OPT_ZACCARIA)
 		drivers/zaccaria.c vidhrdw/zaccaria.c 	)
 	list(APPEND MAME_SOUND_SRC
 		sound/ay8910.c sound/dac.c sound/sn76477.c sound/tms36xx.c 
-	)
+		sound/tms5220.c sound/5220intf.c 	)
 	list(APPEND MAME_CPU_SRC
 		cpu/s2650/s2650.c 	)
 	list(APPEND CPU_DEFS
 		HAS_AY8910=1 HAS_DAC=1 HAS_SN76477=1 HAS_TMS36XX=1 
-	)
+		HAS_TMS5220=1 	)
 	list(APPEND CPU_DEFS
 		HAS_S2650=1 	)
 endif()

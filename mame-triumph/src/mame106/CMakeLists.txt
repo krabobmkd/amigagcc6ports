@@ -96,7 +96,8 @@ add_library( mamecore STATIC ${MAME_CORE_SRC}
 set_property(TARGET mamecore PROPERTY C_STANDARD 11)
 set_property(TARGET mamecore PROPERTY CXX_STANDARD 11)
 target_include_directories(mamecore PUBLIC ${MAME_INCLUDE_DIRS} ${ZLIBPATH} )
-target_compile_definitions(mamecore PUBLIC INLINE=inline ZIP_CACHE=1 CRLF=2 ${CPU_DEFS} )
+set(MAME_INLINE "static inline")
+target_compile_definitions(mamecore PUBLIC INLINE=${MAME_INLINE} ZIP_CACHE=1 CRLF=2 ${CPU_DEFS} )
 # -fpermissive
 target_compile_options(mamecore PUBLIC  -Wno-narrowing )
 
