@@ -352,8 +352,17 @@ int createCmake(map<string,TMachine> machinetargets,
     {
         string upname = p.first;
         toUpper(upname);
-        ofs << "option(OPT_"<< upname<< " \"\" OFF)\n";
+        bool onShouldBeDefault=false;
+        // this is actually a common dependance lib that most machine use.
+        if(upname == "SHARED") onShouldBeDefault=true;
+        // this is optional
+        if(upname == "SEGA" ) onShouldBeDefault = true;
+
+        ofs << "option(OPT_"<< upname<< " \"\" "<<(onShouldBeDefault?"ON":"OFF")<< ")\n";
     }
+
+    // active sound chips sources
+    map<string,int> cpueverused,soundeverused;
 
     for(const auto &p: machinetargets)
     {
@@ -375,6 +384,8 @@ int createCmake(map<string,TMachine> machinetargets,
             }
         }
         ofs << "\t)\n";
+
+#ifdef ADDCPUANDSOUNDINMACHINE
         // - - - add sound sources
         if(machine._sound_defs.size()>0)
         {
@@ -404,7 +415,7 @@ int createCmake(map<string,TMachine> machinetargets,
                     }
                 } else
                 {
-                    cout << " **** no source find for soundchip: "<<updefs << endl;
+                    cout << " **** no source found for soundchip: "<<updefs << endl;
                 }
             }
             ofs << "\t)\n";
@@ -438,11 +449,30 @@ int createCmake(map<string,TMachine> machinetargets,
                     }
                 } else
                 {
-                    cout << " **** no source find for cpuchip: "<<updefs << endl;
+                    cout << " **** no source found for cpuchip: "<<updefs << endl;
                 }
             }
             ofs << "\t)\n";
         }
+#else
+        // - - use cmake vars to activate CPU & Soundchip or not, and source swill be added at the end.
+        // activate sound chips sources
+        for(const auto &defs : machine._sound_defs)
+        {
+            string updefs = defs.first;
+            toUpper(updefs);
+            soundeverused[updefs]=1;
+            ofs << "\tset(MSND_"<<updefs<<" ON)\n";
+        }
+        // active CPU sources
+        for(const auto &defs : machine._cpu_defs)
+        {
+            string updefs = defs.first;
+            toUpper(updefs);
+            cpueverused[updefs]=1;
+            ofs << "\tset(MCPU_"<<updefs<<" ON)\n";
+        }
+#endif
         // - - - add sound defs
         if(machine._sound_defs.size()>0)
         {
@@ -483,6 +513,51 @@ int createCmake(map<string,TMachine> machinetargets,
 
         ofs << "endif()\n";
     }
+#ifndef ADDCPUANDSOUNDINMACHINE
+    // add cpu & soundchip sources
+
+    for(const auto &p : soundeverused )
+    {
+        string soundid = p.first;
+        toUpper(soundid);
+        TChip &schip = soundsources[soundid];
+         // search if sources known for that chip
+        if(schip._vars.find("SOUNDOBJS")!=schip._vars.end() )
+        {
+            ofs << "if(MSND_"<<soundid<<")\n";
+            ofs << "\tlist(APPEND MAME_SOUND_SRC ";
+            for(const string &src : schip._vars["SOUNDOBJS"])
+            {
+                ofs << src << " ";
+            }
+            ofs << ")\nendif()\n";
+        } else
+        {
+            cout << " **** no source found for soundchip: "<<soundid << endl;
+        }
+    }
+    for(const auto &p : cpueverused )
+    {
+        string cpuid = p.first;
+        toUpper(cpuid);
+        TChip &schip = cpusources[cpuid];
+         // search if sources known for that chip
+        if(schip._vars.find("CPUOBJS")!=schip._vars.end() )
+        {
+            ofs << "if(MCPU_"<<cpuid<<")\n";
+            ofs << "\tlist(APPEND MAME_CPU_SRC ";
+            for(const string &src : schip._vars["CPUOBJS"])
+            {
+                ofs << src << " ";
+            }
+            ofs << ")\nendif()\n";
+        } else
+        {
+            cout << " **** no source found for cpu: "<<cpuid << endl;
+        }
+    }
+
+#endif
 
     ofs <<
     "list(REMOVE_DUPLICATES MAME_DRIVERS_SRC)\n"
@@ -599,13 +674,18 @@ int read_mak_sounds(map<string,TChip> &soundsources)
             currentSoundChip = allcurrentsoundchips[0];
         }
 
-        if(line.find("endif")==0 && !currentSoundChip.empty() && allcurrentsoundchips.size()>1)
+        if(line.find("endif")==0 && !currentSoundChip.empty() )
         {
             // means end of currentchip, may apply equivalences (M68020 use same code as M68000, ...)
-            for(size_t ic=1;ic<allcurrentsoundchips.size();ic++)
+            if( allcurrentsoundchips.size()>1)
             {
-                soundsources[allcurrentsoundchips[ic]] = soundsources[currentSoundChip];
+                for(size_t ic=1;ic<allcurrentsoundchips.size();ic++)
+                {
+                    soundsources[allcurrentsoundchips[ic]] = soundsources[currentSoundChip];
+                }
             }
+            allcurrentsoundchips.clear();
+            currentSoundChip.clear();
         }
 
 
@@ -713,6 +793,8 @@ int read_mak_cpus(map<string,TChip> &sources)
             {
                 sources[allcurrentchips[ic]] = sources[currentChip];
             }
+            allcurrentchips.clear();
+            currentChip.clear();
         }
 
         if(line.find("+=") != string::npos){
@@ -745,6 +827,14 @@ int read_mak_cpus(map<string,TChip> &sources)
     }
     return 0;
 }
+
+void completeDefinitionsByHand(map<string,TMachine> &machinetargets)
+{
+    machinetargets["sega"]._sound_defs["YM3438"]=1;
+    machinetargets["sega"]._cpu_defs["I8039"]=1; // sound cpu ? ->no.
+    machinetargets["sega"]._cpu_defs["ADSP21062"]=1; // cpu
+
+}
 int main(int argc, char **argv)
 {
 
@@ -764,10 +854,13 @@ int main(int argc, char **argv)
 
 //    TMachine &tm = machinetargets["sega"];
 
+    completeDefinitionsByHand(machinetargets);
+
     createCmake(machinetargets,soundsources,cpusources);
 
     createMameDrivc(machinetargets);
 
+    cout << "\nEverything went extremely well :).\n" << endl;
 
     return EXIT_SUCCESS;
 }
