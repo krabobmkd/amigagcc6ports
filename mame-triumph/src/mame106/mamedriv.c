@@ -3610,7 +3610,6 @@ const game_driver * const drivers[] =
 	DRIVER( aof3k ) /* 1996 "SNK" "Art of Fighting 3 - The Path of the Warrior (Korean release)" */
 	DRIVER( bakatono ) /* 1991 "Monolith Corp." "Bakatonosama Mahjong Manyuki" */
 	DRIVER( bangbead ) /* 2000 "Visco" "Bang Bead" */
-	DRIVER( bangbedp ) /* 2000 "Visco" "Bang Bead (prototype)" */
 	DRIVER( bjourney ) /* 1990 "Alpha Denshi Co." "Blue's Journey / Raguy" */
 	DRIVER( blazstar ) /* 1998 "Yumekobo" "Blazing Star" */
 	DRIVER( breakers ) /* 1996 "Visco" "Breakers" */

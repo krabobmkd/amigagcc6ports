@@ -140,11 +140,13 @@ int searchDrivers(TMachine &machine, map<string,vector<string>> &vars)
         {
             string line = rgetline(ifssrc);
             trim(line);
+            size_t isComment = line.find("//");
+            if(isComment == 0) continue; // quick escape
             size_t isgamedriverline =line.find("GAME(");
             size_t isgamedriverlineb =line.find("GAMEB(");
             size_t is_soundinclude =line.find("\"sound/");
             size_t is_cpuinclude =line.find("\"cpu/");
-            if(isgamedriverline != string::npos)
+            if(isgamedriverline != string::npos && !(isComment != string::npos && isComment<isgamedriverline ))
             {
                 size_t stend = line.find(")",isgamedriverline+5);
                 if(stend != string::npos) {
@@ -167,7 +169,7 @@ int searchDrivers(TMachine &machine, map<string,vector<string>> &vars)
                     }
                 }
             } else
-            if(isgamedriverlineb != string::npos)
+            if(isgamedriverlineb != string::npos && !(isComment != string::npos && isComment<isgamedriverlineb ))
             {
                 size_t stend = line.find(")",isgamedriverlineb+6);
                 if(stend != string::npos) {
@@ -356,7 +358,8 @@ int createCmake(map<string,TMachine> machinetargets,
         // this is actually a common dependance lib that most machine use.
         if(upname == "SHARED") onShouldBeDefault=true;
         // this is optional
-        if(upname == "SEGA" ) onShouldBeDefault = true;
+//        if(upname == "SEGA" ) onShouldBeDefault = true;
+        if(upname == "NEOGEO" ) onShouldBeDefault = true;
 
         ofs << "option(OPT_"<< upname<< " \"\" "<<(onShouldBeDefault?"ON":"OFF")<< ")\n";
     }
@@ -834,6 +837,8 @@ void completeDefinitionsByHand(map<string,TMachine> &machinetargets)
     machinetargets["sega"]._cpu_defs["I8039"]=1; // sound cpu ? ->no.
     machinetargets["sega"]._cpu_defs["ADSP21062"]=1; // cpu
 
+    machinetargets["neogeo"]._sound_defs["YM2610B"]=1;
+    machinetargets["capcom"]._sound_defs["YM2610B"]=1;
 }
 int main(int argc, char **argv)
 {
