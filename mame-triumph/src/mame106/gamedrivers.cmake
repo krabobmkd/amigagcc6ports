@@ -38,7 +38,7 @@ option(OPT_MIDWAY "" OFF)
 option(OPT_MISC "" OFF)
 option(OPT_NAMCO "" OFF)
 option(OPT_NASCO "" OFF)
-option(OPT_NEOGEO "" OFF)
+option(OPT_NEOGEO "" ON)
 option(OPT_NICHIBUT "" OFF)
 option(OPT_NINTENDO "" OFF)
 option(OPT_NIX "" OFF)
@@ -54,7 +54,7 @@ option(OPT_PSIKYO "" OFF)
 option(OPT_RAMTEK "" OFF)
 option(OPT_RARE "" OFF)
 option(OPT_SANRITSU "" OFF)
-option(OPT_SEGA "" OFF)
+option(OPT_SEGA "" ON)
 option(OPT_SEIBU "" OFF)
 option(OPT_SETA "" OFF)
 option(OPT_SHARED "" ON)
@@ -64,7 +64,7 @@ option(OPT_STERN "" OFF)
 option(OPT_SUN "" OFF)
 option(OPT_SUNA "" OFF)
 option(OPT_TAD "" OFF)
-option(OPT_TAITO "" OFF)
+option(OPT_TAITO "" ON)
 option(OPT_TATSUMI "" OFF)
 option(OPT_TCH "" OFF)
 option(OPT_TECFRI "" OFF)
@@ -256,7 +256,8 @@ if(OPT_CAPCOM)
 		drivers/sonson.c vidhrdw/sonson.c drivers/srumbler.c vidhrdw/srumbler.c 
 		drivers/vulgus.c vidhrdw/vulgus.c drivers/tigeroad.c vidhrdw/tigeroad.c 
 		drivers/zn.c machine/znsec.c machine/at28c16.c machine/mb3773.c 
-		machine/kabuki.c 	)
+		machine/kabuki.c machine/psx.c vidhrdw/psx.c sndhrdw/taitosnd.c 
+	)
 	set(MSND_AY8910 ON)
 	set(MSND_MSM5205 ON)
 	set(MSND_OKIM6295 ON)
@@ -273,6 +274,7 @@ if(OPT_CAPCOM)
 	set(MSND_YMZ280B ON)
 	set(MCPU_M68000 ON)
 	set(MCPU_M6809 ON)
+	set(MCPU_PSXCPU ON)
 	set(MCPU_Z80 ON)
 	list(APPEND CPU_DEFS
 		HAS_AY8910=1 HAS_MSM5205=1 HAS_OKIM6295=1 HAS_PSXSPU=1 
@@ -280,7 +282,8 @@ if(OPT_CAPCOM)
 		HAS_YM2413=1 HAS_YM2610=1 HAS_YM2610B=1 HAS_YM3812=1 
 		HAS_YMF271=1 HAS_YMZ280B=1 	)
 	list(APPEND CPU_DEFS
-		HAS_M68000=1 HAS_M6809=1 HAS_Z80=1 	)
+		HAS_M68000=1 HAS_M6809=1 HAS_PSXCPU=1 HAS_Z80=1 
+	)
 endif()
 if(OPT_CINEMAT)
 	add_compile_definitions(LINK_CINEMAT=1)
@@ -1550,20 +1553,20 @@ if(OPT_TAITO)
 		vidhrdw/othunder.c drivers/pitnrun.c machine/pitnrun.c vidhrdw/pitnrun.c 
 		drivers/qix.c machine/qix.c sndhrdw/qix.c vidhrdw/qix.c 
 		drivers/rainbow.c machine/rainbow.c drivers/rastan.c vidhrdw/rastan.c 
-		drivers/retofinv.c machine/retofinv.c vidhrdw/retofinv.c drivers/rollrace.c 
-		vidhrdw/rollrace.c drivers/sbowling.c drivers/slapshot.c vidhrdw/slapshot.c 
-		drivers/ssrj.c vidhrdw/ssrj.c drivers/superchs.c vidhrdw/superchs.c 
-		drivers/superqix.c vidhrdw/superqix.c drivers/taito_b.c vidhrdw/taito_b.c 
-		drivers/taito_f2.c vidhrdw/taito_f2.c drivers/taito_f3.c vidhrdw/taito_f3.c 
-		sndhrdw/taito_f3.c drivers/taito_h.c vidhrdw/taito_h.c drivers/taito_l.c 
-		vidhrdw/taito_l.c drivers/taito_x.c machine/cchip.c drivers/taito_z.c 
-		vidhrdw/taito_z.c drivers/taitoair.c vidhrdw/taitoair.c drivers/taitojc.c 
-		drivers/taitosj.c machine/taitosj.c vidhrdw/taitosj.c drivers/taitowlf.c 
-		drivers/tnzs.c machine/tnzs.c vidhrdw/tnzs.c drivers/topspeed.c 
-		vidhrdw/topspeed.c drivers/tsamurai.c vidhrdw/tsamurai.c drivers/undrfire.c 
-		vidhrdw/undrfire.c drivers/volfied.c machine/volfied.c vidhrdw/volfied.c 
-		drivers/warriorb.c vidhrdw/warriorb.c drivers/wgp.c vidhrdw/wgp.c 
-		machine/mb87078.c sndhrdw/taitosnd.c vidhrdw/taitoic.c 	)
+		drivers/retofinv.c machine/retofinv.c vidhrdw/retofinv.c drivers/sbowling.c 
+		drivers/slapshot.c vidhrdw/slapshot.c drivers/ssrj.c vidhrdw/ssrj.c 
+		drivers/superchs.c vidhrdw/superchs.c drivers/superqix.c vidhrdw/superqix.c 
+		drivers/taito_b.c vidhrdw/taito_b.c drivers/taito_f2.c vidhrdw/taito_f2.c 
+		drivers/taito_f3.c vidhrdw/taito_f3.c sndhrdw/taito_f3.c drivers/taito_h.c 
+		vidhrdw/taito_h.c drivers/taito_l.c vidhrdw/taito_l.c drivers/taito_x.c 
+		machine/cchip.c drivers/taito_z.c vidhrdw/taito_z.c drivers/taitoair.c 
+		vidhrdw/taitoair.c drivers/taitojc.c drivers/taitosj.c machine/taitosj.c 
+		vidhrdw/taitosj.c drivers/taitowlf.c drivers/tnzs.c machine/tnzs.c 
+		vidhrdw/tnzs.c drivers/topspeed.c vidhrdw/topspeed.c drivers/tsamurai.c 
+		vidhrdw/tsamurai.c drivers/undrfire.c vidhrdw/undrfire.c drivers/volfied.c 
+		machine/volfied.c vidhrdw/volfied.c drivers/warriorb.c vidhrdw/warriorb.c 
+		drivers/wgp.c vidhrdw/wgp.c machine/mb87078.c sndhrdw/taitosnd.c 
+		vidhrdw/taitoic.c drivers/seta.c vidhrdw/seta.c 	)
 	set(MSND_AY8910 ON)
 	set(MSND_CUSTOM ON)
 	set(MSND_DAC ON)
@@ -1579,12 +1582,16 @@ if(OPT_TAITO)
 	set(MSND_YM2151 ON)
 	set(MSND_YM2203 ON)
 	set(MSND_YM2610 ON)
+	set(MSND_YM2610B ON)
+	set(MSND_YM3438 ON)
+	set(MSND_YM3526 ON)
 	set(MSND_YM3812 ON)
 	set(MCPU_I386 ON)
 	set(MCPU_I8039 ON)
 	set(MCPU_I8X41 ON)
 	set(MCPU_M6800 ON)
 	set(MCPU_M68000 ON)
+	set(MCPU_M6802 ON)
 	set(MCPU_M6805 ON)
 	set(MCPU_M6809 ON)
 	set(MCPU_TMS32025 ON)
@@ -1593,12 +1600,12 @@ if(OPT_TAITO)
 		HAS_AY8910=1 HAS_CUSTOM=1 HAS_DAC=1 HAS_DISCRETE=1 
 		HAS_ES5506=1 HAS_MSM5205=1 HAS_MSM5232=1 HAS_OKIM6295=1 
 		HAS_SAMPLES=1 HAS_SN76477=1 HAS_SN76496=1 HAS_X1_010=1 
-		HAS_YM2151=1 HAS_YM2203=1 HAS_YM2610=1 HAS_YM3812=1 
-	)
+		HAS_YM2151=1 HAS_YM2203=1 HAS_YM2610=1 HAS_YM2610B=1 
+		HAS_YM3438=1 HAS_YM3526=1 HAS_YM3812=1 	)
 	list(APPEND CPU_DEFS
 		HAS_I386=1 HAS_I8039=1 HAS_I8X41=1 HAS_M6800=1 
-		HAS_M68000=1 HAS_M6805=1 HAS_M6809=1 HAS_TMS32025=1 
-		HAS_Z80=1 	)
+		HAS_M68000=1 HAS_M6802=1 HAS_M6805=1 HAS_M6809=1 
+		HAS_TMS32025=1 HAS_Z80=1 	)
 endif()
 if(OPT_TATSUMI)
 	add_compile_definitions(LINK_TATSUMI=1)
@@ -2060,6 +2067,9 @@ endif()
 if(MSND_YM3438)
 	list(APPEND MAME_SOUND_SRC sound/2612intf.c sound/ay8910.c sound/fm.c )
 endif()
+if(MSND_YM3526)
+	list(APPEND MAME_SOUND_SRC sound/3812intf.c sound/fmopl.c )
+endif()
 if(MSND_YM3812)
 	list(APPEND MAME_SOUND_SRC sound/3812intf.c sound/fmopl.c )
 endif()
@@ -2141,11 +2151,17 @@ endif()
 if(MCPU_M68000)
 	list(APPEND MAME_CPU_SRC cpu/m68000/m68kcpu.c cpu/m68000/m68kmame.c cpu/m68000/m68kops.c cpu/m68000/m68kopac.c cpu/m68000/m68kopdm.c cpu/m68000/m68kopnz.c )
 endif()
+if(MCPU_M6802)
+	list(APPEND MAME_CPU_SRC cpu/m6800/m6800.c )
+endif()
 if(MCPU_M6805)
 	list(APPEND MAME_CPU_SRC cpu/m6805/m6805.c )
 endif()
 if(MCPU_M6809)
 	list(APPEND MAME_CPU_SRC cpu/m6809/m6809.c )
+endif()
+if(MCPU_PSXCPU)
+	list(APPEND MAME_CPU_SRC cpu/mips/psx.c )
 endif()
 if(MCPU_RSP)
 	list(APPEND MAME_CPU_SRC cpu/rsp/rsp.c )

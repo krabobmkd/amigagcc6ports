@@ -11,7 +11,7 @@
 
 #include "driver.h"
 
-
+#include <stdio.h>
 
 /*************************************
  *
@@ -1623,9 +1623,15 @@ genf *cputype_get_info_fct(int cputype, UINT32 state)
 {
 	union cpuinfo info;
 
+    printf("cputype_get_info_fct:%d totalcpu:%d\n",cputype,totalcpu);
+
 	VERIFY_CPUTYPE(cputype_get_info_fct);
+    printf("cputype_get_info_fct:%d CPU_COUNT:%d\n",cputype,(int)CPU_COUNT);
+    printf("cpuintrf[cputype].get_info:%x08x\n",(int)cpuintrf[cputype].get_info);
 	info.f = NULL;
 	(*cpuintrf[cputype].get_info)(state, &info);
+
+    printf("cputype_get_info_fct: end\n");
 	return info.f;
 }
 

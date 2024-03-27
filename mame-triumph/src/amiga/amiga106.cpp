@@ -274,7 +274,7 @@ void StartGame(void)
   ROMZipName.clear();
   SampleZipName.clear();
   ShowFPS          = 0;
-
+  printf("StartGame2b\n");
   FrameCounter = 0;
 
   osd_set_mastervolume(0);

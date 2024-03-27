@@ -359,8 +359,9 @@ int createCmake(map<string,TMachine> machinetargets,
         if(upname == "SHARED") onShouldBeDefault=true;
         // this is optional
 //        if(upname == "SEGA" ) onShouldBeDefault = true;
-        if(upname == "NEOGEO" ) onShouldBeDefault = true;
-
+//        if(upname == "NEOGEO" ) onShouldBeDefault = true;
+//        if(upname == "CAPCOM" ) onShouldBeDefault = true;
+        if(upname == "TAITO" ) onShouldBeDefault = true;
         ofs << "option(OPT_"<< upname<< " \"\" "<<(onShouldBeDefault?"ON":"OFF")<< ")\n";
     }
 
@@ -831,14 +832,66 @@ int read_mak_cpus(map<string,TChip> &sources)
     return 0;
 }
 
-void completeDefinitionsByHand(map<string,TMachine> &machinetargets)
+void removeInVector(vector<string> &v, string s)
+{
+    vector<string>::iterator it = v.begin();
+    while(it != v.end())
+    {
+        if(*it != s) ++it;
+        else
+        {
+            it = v.erase(it);
+        }
+    }
+}
+
+void completeDefinitionsByHand(
+            map<string,TMachine> &machinetargets,
+            map<string,TChip> &cpusources
+            )
 {
     machinetargets["sega"]._sound_defs["YM3438"]=1;
     machinetargets["sega"]._cpu_defs["I8039"]=1; // sound cpu ? ->no.
     machinetargets["sega"]._cpu_defs["ADSP21062"]=1; // cpu
 
     machinetargets["neogeo"]._sound_defs["YM2610B"]=1;
+
     machinetargets["capcom"]._sound_defs["YM2610B"]=1;
+    machinetargets["capcom"]._cpu_defs["PSXCPU"]=1;
+
+    // original makefile set that in general sources, link it has it is due:
+    machinetargets["capcom"]._sources.push_back("machine/psx.c");
+    machinetargets["capcom"]._sources.push_back("vidhrdw/psx.c");
+    machinetargets["capcom"]._sources.push_back("sndhrdw/taitosnd.c");
+
+    // taito
+    machinetargets["taito"]._cpu_defs["M6802"]=1;
+    machinetargets["taito"]._sound_defs["YM2610B"]=1;
+    machinetargets["taito"]._sound_defs["YM3526"]=1;
+
+    //
+    machinetargets["taito"]._sources.push_back("drivers/seta.c"); // needed by taito_x.c
+    machinetargets["taito"]._sources.push_back("vidhrdw/seta.c");
+    machinetargets["taito"]._sound_defs["YM3438"]=1;
+    //
+    // wiz is actually in "seibu", rollrace picks in it.
+   // machinetargets["taito"]._sources.push_back("vidhrdw/wiz.c");
+    auto &taitosrc =  machinetargets["taito"]._sources;
+    removeInVector(taitosrc,"drivers/rollrace.c");
+    removeInVector(taitosrc,"vidhrdw/rollrace.c");
+    machinetargets["taito"]._gamedrivers.erase("fightrol");
+    machinetargets["taito"]._gamedrivers.erase("rollace");
+    machinetargets["taito"]._gamedrivers.erase("rollace2");
+
+
+// vidhrdw/seta.c
+
+  //  machinetargets["taito"]._sources.push_back("drivers/wiz.c"); // needed by rollrace
+// /
+
+    //cpusources["PSXCPU"]._vars["CPUOBJS"].push_back("machine/psx.c");
+    //cpusources["PSXCPU"]._vars["CPUOBJS"].push_back("vidhrdw/psx.c");
+
 }
 int main(int argc, char **argv)
 {
@@ -859,7 +912,7 @@ int main(int argc, char **argv)
 
 //    TMachine &tm = machinetargets["sega"];
 
-    completeDefinitionsByHand(machinetargets);
+    completeDefinitionsByHand(machinetargets,cpusources);
 
     createCmake(machinetargets,soundsources,cpusources);
 

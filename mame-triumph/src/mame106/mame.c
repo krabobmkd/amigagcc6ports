@@ -86,7 +86,7 @@
 #include <stdarg.h>
 #include <setjmp.h>
 
-
+#include <stdio.h>
 
 /***************************************************************************
     CONSTANTS
@@ -262,16 +262,18 @@ static void logfile_callback(const char *buffer);
 
 int run_game(int game)
 {
+    printf("run_game:%d\n",game);
 	callback_item *cb;
 	int error = 0;
 
 	/* start in the "pre-init phase" */
 	current_phase = MAME_PHASE_PREINIT;
 
+    printf("run_game:a\n");
 	/* perform validity checks before anything else */
 	if (mame_validitychecks(game) != 0)
 		return 1;
-
+    printf("run_game:b before loop\n");
 	/* loop across multiple hard resets */
 	exit_pending = FALSE;
 	while (error == 0 && !exit_pending)
@@ -368,6 +370,7 @@ int run_game(int game)
 		free_callback_list(&reset_callback_list);
 		free_callback_list(&pause_callback_list);
 	}
+
 
 	/* return an error */
 	return error;

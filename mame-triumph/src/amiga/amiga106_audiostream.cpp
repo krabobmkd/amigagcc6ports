@@ -30,7 +30,7 @@ extern "C" {
 #include "audio.h"
 static int MasterVolume=0;
 static int Attenuation=0;
-struct AChannelArray  *ChannelArray[2];
+struct AChannelArray  *ChannelArray[2]={NULL,NULL};
 LONG          CurrentArray  = 0;
 
 /*
@@ -76,25 +76,26 @@ void osd_stop_audio_stream(void)
 
 void osd_set_mastervolume(int attenuation)
 {
-	float volume;
+//	float volume;
 
-	Attenuation = attenuation;
+//	Attenuation = attenuation;
 
- 	volume = 256.0;	/* range is 0-256 */
+// 	volume = 256.0;	/* range is 0-256 */
 
-	while(attenuation++ < 0)
-		volume /= 1.122018454;	/* = (10 ^ (1/20)) = 1dB */
+//	while(attenuation++ < 0)
+//		volume /= 1.122018454;	/* = (10 ^ (1/20)) = 1dB */
 
-  MasterVolume = volume;
+//  MasterVolume = volume;
 
-  if(ChannelArray[0])
-  {
-#ifdef POWERUP
-    if(!ChannelArray[1])
-      return;
-#endif
-    ASetMasterVolume(ChannelArray[CurrentArray], MasterVolume);
-  }
+//printf("osd_set_mastervolume:%08x\n",(int));
+//  if(ChannelArray[0])
+//  {
+//#ifdef POWERUP
+//    if(!ChannelArray[1])
+//      return;
+//#endif
+//    ASetMasterVolume(ChannelArray[CurrentArray], MasterVolume);
+//  }
 }
 
 int osd_get_mastervolume(void)

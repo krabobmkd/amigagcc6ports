@@ -5584,7 +5584,6 @@ const game_driver * const drivers[] =
 	DRIVER( fhawk ) /* 1988 "Taito Corporation Japan" "Fighting Hawk (World)" */
 	DRIVER( fhawkj ) /* 1988 "Taito Corporation" "Fighting Hawk (Japan)" */
 	DRIVER( fieldday ) /* 1984 "Taito Corporation" "Field Day" */
-	DRIVER( fightrol ) /* 1983 "[Kaneko] (Taito license)" "Fighting Roller" */
 	DRIVER( finalb ) /* 1988 "Taito Corporation Japan" "Final Blow (World)" */
 	DRIVER( finalbj ) /* 1988 "Taito Corporation" "Final Blow (Japan)" */
 	DRIVER( finalbu ) /* 1988 "Taito America Corporation" "Final Blow (US)" */
@@ -5793,8 +5792,6 @@ const game_driver * const drivers[] =
 	DRIVER( ringrage ) /* 1992 "Taito Corporation Japan" "Ring Rage (Ver 2.3O 1992/08/09)" */
 	DRIVER( ringragj ) /* 1992 "Taito Corporation" "Ring Rage (Ver 2.3J 1992/08/09)" */
 	DRIVER( ringragu ) /* 1992 "Taito America Corporation" "Ring Rage (Ver 2.3A 1992/08/09)" */
-	DRIVER( rollace ) /* 1983 "[Kaneko] (Williams license)" "Roller Aces (set 1)" */
-	DRIVER( rollace2 ) /* 1983 "[Kaneko] (Williams license)" "Roller Aces (set 2)" */
 	DRIVER( runark ) /* 1990 "Taito Corporation" "Runark (Japan)" */
 	DRIVER( ryujin ) /* 1993 "Taito Corporation" "Ryu Jin (Japan)" */
 	DRIVER( sbm ) /* 1990 "Taito Corporation" "Sonic Blast Man (Japan)" */
