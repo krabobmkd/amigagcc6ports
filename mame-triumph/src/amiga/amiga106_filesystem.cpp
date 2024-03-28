@@ -29,6 +29,8 @@ extern "C" {
 #include <vector>
 #include <sstream>
 
+#include <stdio.h>
+
 using namespace std;
 
 void fileio_init(void)
@@ -40,11 +42,34 @@ void fileio_exit(void)
 
 // api tracing tools
 const vector<string> filetypenames={
-    "none","ROM","SAMPLE","NVRAM","HIGHSCORE",
-    "HIGHSCORE_DB","CONFIG","INPUTLOG","STATE","ARTWORK",
-    "MEMCARD","SCREENSHOT","HISTORY","CHEAT","LANGUAGE"
-    "messr","messrw","end"
+	"RAW",
+	"ROM",
+	"IMAGE",
+	"IMAGE_DIFF",
+	"SAMPLE",
+	"ARTWORK",
+	"NVRAM",
+	"HIGHSCORE",
+	"HIGHSCORE_DB",
+	"CONFIG",
+	"INPUTLOG",
+	"STATE",
+	"MEMCARD",
+	"SCREENSHOT",
+	"MOVIE",
+	"HISTORY",
+	"CHEAT",
+	"LANGUAGE",
+	"CTRLR",
+	"INI",
+	"COMMENT",
+	"DEBUGLOG",
+	"HASH",
+	"end"
 };
+
+
+
 const char *osdfiletypeName(int itype) {
     if(itype<0 || itype>= (int)filetypenames.size()) return "errortype";
     return filetypenames[itype].c_str();
@@ -69,7 +94,7 @@ extern "C" {
 int load_zipped_file (int pathtype, int pathindex, const char* zipfile, const char* filename, unsigned char** buf, unsigned int* length);
 }
 #define FILE_IMPLEMENT_NAME
-//#define PRINTOSDFILESYSTEMCALLS
+#define PRINTOSDFILESYSTEMCALLS
 /** file for reading, will just read all file and
  *   use internal offset to fullfill osd_xxx api.
  *   manage DOS reading and inside zip.
@@ -310,7 +335,7 @@ int _mame_file::openreadinzip(const char *pZipFile,const char *pFileName)
     _path = pZipFile;
 #endif
     //int load_zipped_file (int pathtype, int pathindex, const char* zipfile, const char* filename, unsigned char** buf, unsigned int* length);
-
+ printf("_mame_file::openreadinzip\n");
     if(load_zipped_file(0,0,pZipFile, pFileName,(unsigned char**)&_pData,(unsigned int *) &_Length)!=0)
     {
         return 0;
@@ -398,12 +423,15 @@ void setRomPaths(std::vector<std::string> &extrarompaths,std::vector<std::string
 
 
 // note: only read
+
 mame_file *fopen_archive_or_disk(const char *gamename,const char *filename,int filetype, osd_file_error *error)
 {
     if(error) *error = FILEERR_FAILURE;
     if(!gamename || !filename) return NULL;
     _mame_file *pfile = new _mame_file();
     if(!pfile) return NULL;
+
+ printf("fopen_archive_or_disk:%s %s\n",gamename,filename);
 
     vector<string> &pathlistToSearch= (filetype==FILETYPE_SAMPLE)?_samplepathlist:_rompathlist;
 
@@ -455,6 +483,26 @@ mame_file *fopen_archive_or_disk(const char *gamename,const char *filename,int f
 //	hash_compute(f->hash, f->data(), f->size(), functions);
 
 
+
+    if(error) *error = FILEERR_SUCCESS;
+    return pfile;
+}
+
+mame_file *fopen_simple(const char *filename,int filetype,int write, osd_file_error *error)
+{
+    if(error) *error = FILEERR_FAILURE;
+    if( !filename) return NULL;
+    _mame_file *pfile = new _mame_file();
+    if(!pfile) return NULL;
+
+    pfile->openread(filename);
+
+    if(pfile->size()==0)
+    {
+        delete pfile;
+        if(error) *error = FILEERR_FAILURE;
+        return NULL;
+    }
 
     if(error) *error = FILEERR_SUCCESS;
     return pfile;
@@ -558,13 +606,17 @@ mame_file *mame_fopen(const char *gamename, const char *filename, int filetype, 
 }
 osd_file *osd_fopen(int pathtype, int pathindex, const char *filename, const char *mode, osd_file_error *error)
 {
+
+return (osd_file *) fopen_simple(filename,0,0, error);
     // only used for unzip read...
     if(strchr(mode,'b' )!=NULL)
     {
-        return (osd_file *)mame_fopen(NULL,filename,0,0);
+        printf("mame_fopen for read\n");
+        // note: old API only used from unzip.
+        return (osd_file *)fopen_simple(filename,FILETYPE_ROM,0,error);
     } else
     {
-        return (osd_file *)mame_fopen(NULL,filename,0,1);
+        return (osd_file *)fopen_simple(filename,0,1,error);
     }
 }
 
@@ -585,7 +637,7 @@ mame_file *mame_fopen_error(const char *gamename, const char *filename, int file
 {
     if(error) *error = FILEERR_NOT_FOUND;
 #ifdef PRINTOSDFILESYSTEMCALLS
-    printf("osd_fopen:type:%s:w:%d,%s:%s\n",osdfiletypeName(filetype),write,gamename,filename);
+    printf("osd_fopen:type:%s:w:%d,%s:%s\n",osdfiletypeName(filetype),openforwrite,gamename,filename);
 #endif
     // - - - - -reading a file from disk or zip searching with possible paths.
     if( filetype == FILETYPE_ROM ||
@@ -594,13 +646,16 @@ mame_file *mame_fopen_error(const char *gamename, const char *filename, int file
           filetype == FILETYPE_MOVIE // add dunnowhat
         )
     {
+    printf("use archive or disk\n");
         if(openforwrite) {
             if(error) *error = FILEERR_FAILURE;
             return NULL;
         }
+    printf("use archive or disk2\n");
         return fopen_archive_or_disk(gamename,filename,filetype, error);
     } else
     {
+    printf("use user dir\n");
         return fopen_userdir(gamename,filename,filetype,openforwrite, error);
     }
 }
@@ -622,7 +677,7 @@ UINT32 mame_fread(mame_file *file, void *buffer, UINT32 length)
 {
     if(!file) return 0;
 #ifdef PRINTOSDFILESYSTEMCALLS
-    printf("osd_fread: l:%d %s\n",length,f.cname());
+    printf("osd_fread: l:%d %s\n",length,file->cname());
 #endif
     return file->read(buffer,length);
 }
@@ -630,7 +685,7 @@ UINT32 osd_fread(osd_file *file, void *buffer, UINT32 length)
 {
     if(!file) return 0;
 #ifdef PRINTOSDFILESYSTEMCALLS
-    printf("osd_fread: l:%d %s\n",length,f.cname());
+    //printf("osd_fread: l:%d %s\n",length,file->cname());
 #endif
     return ((mame_file *)file)->read(buffer,length);
 }
@@ -639,7 +694,7 @@ UINT32 mame_fwrite(mame_file *file, const void *buffer, UINT32 length)
 {
     if(!file) return 0;
 #ifdef PRINTOSDFILESYSTEMCALLS
-    printf("osd_fwrite: l:%d %s\n",length,f.cname());
+    printf("osd_fwrite: l:%d %s\n",length,file->cname());
 #endif
     return file->write(buffer,length);
 }
@@ -647,7 +702,7 @@ UINT32 mame_fread_swap(mame_file *file, void *buffer, UINT32 length)
 {
     if(!file) return 0;
 #ifdef PRINTOSDFILESYSTEMCALLS
-    printf("osd_fread_swap: l:%d %s\n",length,f.cname());
+    printf("osd_fread_swap: l:%d %s\n",length,file->cname());
 #endif
 
     return file->readswap(buffer,length);
@@ -657,7 +712,7 @@ UINT32 mame_fwrite_swap(mame_file *file, const void *buffer, UINT32 length)
 {
     if(!file) return 0;
 #ifdef PRINTOSDFILESYSTEMCALLS
-    printf("osd_fwrite_swap: l:%d %s\n",length,f.cname());
+    printf("osd_fwrite_swap: l:%d %s\n",length,file->cname());
 #endif
     return file->writeswap(buffer,length);
 }
@@ -667,7 +722,7 @@ int osd_fread_scatter(void *file,void *buffer,int length,int increment)
     if(!file) return 0;
     _mame_file &f = *((_mame_file *)file);
 #ifdef PRINTOSDFILESYSTEMCALLS
-    printf("osd_fread_scatter: l:%d i:%d %s\n",length,increment,f.cname());
+    printf("osd_fread_scatter: l:%d i:%d %s\n",length,increment,file->cname());
 #endif
 
     return f.readScatter(buffer,length,increment);
@@ -679,7 +734,7 @@ int mame_fseek(mame_file *file, INT64 offset, int whence)
 {
     if(!file) return -1;
 #ifdef PRINTOSDFILESYSTEMCALLS
-    printf("osd_fseek: ofs:%d t:%d %s\n",offset,whence,f.cname());
+    printf("osd_fseek: ofs:%d t:%d %s\n",offset,whence,file->cname());
 #endif
     return file->seek(offset,whence);
 }
@@ -688,7 +743,7 @@ int osd_fseek(osd_file *file, INT64 offset, int whence)
 {
     if(!file) return -1;
     #ifdef PRINTOSDFILESYSTEMCALLS
-        printf("osd_fseek: ofs:%d t:%d %s\n",offset,whence,f.cname());
+        //printf("osd_fseek: ofs:%d t:%d %s\n",offset,whence,file->cname());
     #endif
     return ((mame_file*)file)->seek(offset,whence);
 }
@@ -707,7 +762,7 @@ void osd_fclose(osd_file *file)
 {
     if(!file) return;
 #ifdef PRINTOSDFILESYSTEMCALLS
-    printf("osd_fclose: %s\n",file->cname());
+    //printf("osd_fclose: %s\n",file->cname());
 #endif
     delete (mame_file*)file; // destructor does the job.
 }
@@ -763,7 +818,7 @@ UINT64 mame_fsize(mame_file *file)
 {
     if(!file) return 0;
 #ifdef PRINTOSDFILESYSTEMCALLS
-    printf("osd_fsize:%s\n",f.cname());
+    printf("osd_fsize:%s\n",file->cname());
 #endif
     return (UINT64)file->size();
 }
@@ -772,7 +827,7 @@ UINT64 mame_fsize(mame_file *file)
 //    if(!file) return 0;
 //    _mame_file &f = *((_mame_file *)file);
 //#ifdef PRINTOSDFILESYSTEMCALLS
-//    printf("osd_fcrc:%s\n",f.cname());
+//    printf("osd_fcrc:%s\n",file->cname());
 //#endif
 
 //    return f.crc();
@@ -782,7 +837,7 @@ int mame_fgetc(mame_file *file)
 {
     if(!file) return 0;
 #ifdef PRINTOSDFILESYSTEMCALLS
-    printf("osd_fgetc:%s\n",f.cname());
+    printf("osd_fgetc:%s\n",file->cname());
 #endif
     return file->getc();
 }
@@ -792,7 +847,7 @@ int mame_ungetc(int c, mame_file *file)
     // this is just used to rewind one byte.
     if(!file) return 0;
 #ifdef PRINTOSDFILESYSTEMCALLS
-    printf("osd_ungetc:%s\n",f.cname());
+    printf("osd_ungetc:%s\n",file->cname());
 #endif
 
     return file->ungetc(c);
@@ -803,7 +858,7 @@ char *mame_fgets(char *s, int n, mame_file *file)
 {
     if(!file) return NULL;
 #ifdef PRINTOSDFILESYSTEMCALLS
-    printf("osd_fgets:%s\n",f.cname());
+    printf("osd_fgets:%s\n",file->cname());
 #endif
 
     return file->getstring(s,n);
@@ -813,7 +868,7 @@ int mame_fputs(mame_file *f, const char *s)
 {
     if(!f) return NULL;
 #ifdef PRINTOSDFILESYSTEMCALLS
-    printf("mame_fputs:%s\n",f.cname());
+    //printf("mame_fputs:%s\n",file->cname());
 #endif
     return f->fputs(s);
 }
@@ -824,7 +879,7 @@ int mame_feof(mame_file *file)
 {
     if(!file) return 0;
 #ifdef PRINTOSDFILESYSTEMCALLS
-    printf("osd_feof:%s\n",f.cname());
+    printf("osd_feof:%s\n",file->cname());
 #endif
     return file->eof();
 }
@@ -833,7 +888,7 @@ UINT64 mame_ftell(mame_file *file)
 {
     if(!file) return 0;
 #ifdef PRINTOSDFILESYSTEMCALLS
-     printf("osd_ftell:%s\n",f.cname());
+     printf("osd_ftell:%s\n",file->cname());
 #endif
 
     return file->tell();
@@ -843,7 +898,7 @@ UINT64 osd_ftell(osd_file *file)
 {
     if(!file) return 0;
 #ifdef PRINTOSDFILESYSTEMCALLS
-     printf("osd_ftell:%s\n",f.cname());
+     //printf("osd_ftell:%s\n",file->cname());
 #endif
 
     return ((mame_file *)file)->tell();

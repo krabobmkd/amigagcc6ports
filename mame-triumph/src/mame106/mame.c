@@ -262,7 +262,7 @@ static void logfile_callback(const char *buffer);
 
 int run_game(int game)
 {
-    printf("run_game:%d\n",game);
+    printf("\n\n * * * * run_game:%d * * * **\n\n",game);
 	callback_item *cb;
 	int error = 0;
 
@@ -271,8 +271,10 @@ int run_game(int game)
 
     printf("run_game:a\n");
 	/* perform validity checks before anything else */
+	/*re krb
 	if (mame_validitychecks(game) != 0)
 		return 1;
+    */
     printf("run_game:b before loop\n");
 	/* loop across multiple hard resets */
 	exit_pending = FALSE;
@@ -1034,6 +1036,8 @@ static void destroy_machine(void)
 static void init_machine(void)
 {
 	int num;
+
+	printf("\n ***** init_machine ***** \n\n");
 
 	/* initialize basic can't-fail systems here */
 	cpuintrf_init();

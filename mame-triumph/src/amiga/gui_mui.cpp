@@ -1673,9 +1673,9 @@ static void GetOptions(BOOL get_driver)
 static void SetOptions(BOOL set_driver)
 {
   ULONG i, v;
-  printf("SetOptions() 1\n");
+ // printf("SetOptions() 1\n");
   GetConfig(Config[CFG_DRIVER] + DRIVER_OFFSET, Config);
-  printf("SetOptions() 2\n");
+ // printf("SetOptions() 2\n");
 #ifndef MESS
   if(Config[CFG_DRIVER] < 0)
     Config[CFG_USEDEFAULTS] = FALSE;
@@ -1716,12 +1716,10 @@ static void SetOptions(BOOL set_driver)
 #ifdef POWERUP
   set(CM_AsyncPPC,         MUIA_Selected,        Config[CFG_ASYNCPPC]);
 #endif
-  printf("SetOptions() 3\n");
+ // printf("SetOptions() 3\n");
   ScreenModeTags[SMT_DISPLAYID].ti_Data = Config[CFG_SCREENMODE];
   ScreenModeTags[SMT_DEPTH].ti_Data     = Config[CFG_DEPTH];
-  printf("SetOptions() 3b\n");
   SetDisplayName(Config[CFG_SCREENMODE]);
-  printf("SetOptions() 3c\n");
 
   machine_config machine;
   memset(&machine,0,sizeof(machine));
@@ -1730,7 +1728,7 @@ static void SetOptions(BOOL set_driver)
     {
         Drivers[Config[CFG_DRIVER]]->drv(&machine);
     }
-  printf("SetOptions() 4\n");
+//  printf("SetOptions() 4\n");
   if((Config[CFG_DRIVER] < 0) || (!Config[CFG_USEDEFAULTS]
      && /*(Drivers[Config[CFG_DRIVER]]->drv->video_attributes & VIDEO_SUPPORTS_16BIT)*/      
         (machine.total_colors > 256)
@@ -1773,7 +1771,7 @@ static void SetOptions(BOOL set_driver)
     }
 #endif
   }
-    printf("SetOptions() 5\n");
+ //   printf("SetOptions() 5\n");
 }
 
 static void SetDisplayName(ULONG displayid)

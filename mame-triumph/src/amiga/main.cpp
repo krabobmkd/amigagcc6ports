@@ -50,9 +50,13 @@ extern "C" {
 
 // from mame
 extern "C" {
+//    #include "cpuintrf.h"
+//    #include "sndintrf.h"
+
     #include "osdepend.h"
     #include "driver.h"
     #include "unzip.h"
+
 }
 #include "version.h"
 #include "audio.h"
@@ -87,7 +91,10 @@ void     SaveILBM(void);
 void     ErrorRequest(LONG msg_id, ...);
 
 //}
+
+
 void     StartGame(void);  /* In amiga/amiga.c. */
+
 
 #ifdef POWERUP
 struct _game_driver **Drivers;
@@ -309,7 +316,7 @@ int main(int argc, char **argv)
     AllocGUI();
     LoadConfig(argc, argv);
 
-
+/*
     printf("drivers:\n");
     int idrv=0;
     while(drivers[idrv] != NULL)
@@ -317,7 +324,7 @@ int main(int argc, char **argv)
         if(Drivers[idrv] && Drivers[idrv]->name) printf("driver:%s\n",Drivers[idrv]->name);
         idrv++;
     }
-
+*/
     if(Config[CFG_DRIVER] < 0)
     {
         GetConfig(0, Config);
@@ -326,6 +333,11 @@ int main(int argc, char **argv)
     }
     printf("bef loop\n");
     ULONG quit=FALSE;
+
+
+//    //krb: looks like validation need to init structs:
+//    cpuintrf_init();
+//    sndintrf_init();
 
     // loop per emulation launched
     while(!quit)

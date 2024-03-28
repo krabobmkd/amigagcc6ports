@@ -15,6 +15,8 @@
 #include <assert.h>
 #include <zlib.h>
 
+#include <stdio.h>
+
 /* public globals */
 int	gUnzipQuiet = 0;		/* flag controls error messages */
 
@@ -186,6 +188,8 @@ static int ecd_read(zip_file* zip) {
 */
 zip_file* openzip(int pathtype, int pathindex, const char* zipfile) {
 	osd_file_error error;
+
+ printf("openzip: type:%d index:%d :%s:\n",pathtype,pathindex,zipfile);
 
 	/* allocate */
 	zip_file* zip = (zip_file*)malloc( sizeof(zip_file) );
@@ -637,6 +641,7 @@ static zip_file* cache_openzip(int pathtype, int pathindex, const char* zipfile)
 	zip_file* zip;
 	unsigned i;
 
+printf("cache_openzip:%d %d %s\n ",pathtype,pathindex,zipfile);
 	/* search in the cache buffer */
 	for(i=0;i<ZIP_CACHE_MAX;++i) {
 		if (zip_cache_map[i] && zip_cache_map[i]->pathtype == pathtype && zip_cache_map[i]->pathindex == pathindex && strcmp(zip_cache_map[i]->zip,zipfile)==0) {
@@ -775,6 +780,7 @@ int /* error */ load_zipped_file (int pathtype, int pathindex, const char* zipfi
 	zip_file* zip;
 	zip_entry* ent;
 
+    printf("load_zipped_file:%s %s\n",zipfile,filename);
 	zip = cache_openzip(pathtype, pathindex, zipfile);
 	if (!zip)
 		return -1;

@@ -860,6 +860,9 @@ void cpuintrf_init(void)
 {
 	int mapindex;
 
+	printf("\n\n ***** cpuintrf_init() *****\n\n");
+
+
 	/* reset the cpuintrf array */
 	memset(cpuintrf, 0, sizeof(cpuintrf));
 
@@ -1627,7 +1630,7 @@ genf *cputype_get_info_fct(int cputype, UINT32 state)
 
 	VERIFY_CPUTYPE(cputype_get_info_fct);
     printf("cputype_get_info_fct:%d CPU_COUNT:%d\n",cputype,(int)CPU_COUNT);
-    printf("cpuintrf[cputype].get_info:%x08x\n",(int)cpuintrf[cputype].get_info);
+    printf("cpuintrf[cputype].get_info:%08x\n",(int)cpuintrf[cputype].get_info);
 	info.f = NULL;
 	(*cpuintrf[cputype].get_info)(state, &info);
 
