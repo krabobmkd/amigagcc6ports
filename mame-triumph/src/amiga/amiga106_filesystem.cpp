@@ -95,6 +95,32 @@ int load_zipped_file (int pathtype, int pathindex, const char* zipfile, const ch
 }
 #define FILE_IMPLEMENT_NAME
 #define PRINTOSDFILESYSTEMCALLS
+
+// version that does not preload.
+struct _osd_file {
+    _osd_file() :_hdl(NULL) {}
+    ~_osd_file() { close(); }
+    inline int open(const char *pFilepath, const char *access) {
+        if(_hdl) close();
+        _hdl = fopen(pFilepath,access);
+        return (int)(_hdl != NULL);
+    }
+    inline void close() {
+        if(_hdl) fclose(_hdl);
+        _hdl = NULL;
+    }
+    inline int seek(int offset, int whence) {
+        if(!_hdl) return 0;
+        return fseek(_hdl,offset,whence);
+    }
+    inline int tell() {
+        if(!_hdl) return 0;
+        return ftell(_hdl);
+    }
+protected:
+    FILE *_hdl;
+};
+
 /** file for reading, will just read all file and
  *   use internal offset to fullfill osd_xxx api.
  *   manage DOS reading and inside zip.
@@ -118,6 +144,7 @@ public:
     inline int read(void *buffer, int l) {
         if(!_pData) return 0;
         if(_Length==_offset) return 0;
+
         if((_Length-_offset)<l) l = (_Length-_offset);
         memcpy(buffer,_pData+_offset,(size_t)l);
         _offset +=l;
@@ -317,6 +344,9 @@ int _mame_file::openread(const char *pFilepath)
     Close(hdl);
     return (int)(_Length>0);
 }
+
+
+
 int _mame_file::openwrite(const char *pFilepath)
 {
     if(_pData || _writeHdl) close();
@@ -424,14 +454,14 @@ void setRomPaths(std::vector<std::string> &extrarompaths,std::vector<std::string
 
 // note: only read
 
-mame_file *fopen_archive_or_disk(const char *gamename,const char *filename,int filetype, osd_file_error *error)
+mame_file *fopen_zip_or_disk(const char *gamename,const char *filename,int filetype, osd_file_error *error)
 {
     if(error) *error = FILEERR_FAILURE;
     if(!gamename || !filename) return NULL;
     _mame_file *pfile = new _mame_file();
     if(!pfile) return NULL;
 
- printf("fopen_archive_or_disk:%s %s\n",gamename,filename);
+ printf("fopen_zip_or_disk:%s %s\n",gamename,filename);
 
     vector<string> &pathlistToSearch= (filetype==FILETYPE_SAMPLE)?_samplepathlist:_rompathlist;
 
@@ -488,25 +518,6 @@ mame_file *fopen_archive_or_disk(const char *gamename,const char *filename,int f
     return pfile;
 }
 
-mame_file *fopen_simple(const char *filename,int filetype,int write, osd_file_error *error)
-{
-    if(error) *error = FILEERR_FAILURE;
-    if( !filename) return NULL;
-    _mame_file *pfile = new _mame_file();
-    if(!pfile) return NULL;
-
-    pfile->openread(filename);
-
-    if(pfile->size()==0)
-    {
-        delete pfile;
-        if(error) *error = FILEERR_FAILURE;
-        return NULL;
-    }
-
-    if(error) *error = FILEERR_SUCCESS;
-    return pfile;
-}
 mame_file *fopen_userdir(const char *gamename,const char *filename,int filetype,int write, osd_file_error *error)
 {
     _mame_file *pfile = new _mame_file();
@@ -606,18 +617,16 @@ mame_file *mame_fopen(const char *gamename, const char *filename, int filetype, 
 }
 osd_file *osd_fopen(int pathtype, int pathindex, const char *filename, const char *mode, osd_file_error *error)
 {
-
-return (osd_file *) fopen_simple(filename,0,0, error);
-    // only used for unzip read...
-    if(strchr(mode,'b' )!=NULL)
+    if(error) *error = FILEERR_FAILURE;
+    _osd_file *posd = new _osd_file();
+    if(!posd) return NULL;
+    if(! posd->open(filename,mode))
     {
-        printf("mame_fopen for read\n");
-        // note: old API only used from unzip.
-        return (osd_file *)fopen_simple(filename,FILETYPE_ROM,0,error);
-    } else
-    {
-        return (osd_file *)fopen_simple(filename,0,1,error);
+        delete posd;
+        return NULL;
     }
+    if(error) *error = FILEERR_SUCCESS;
+    return posd;
 }
 
 
@@ -625,7 +634,7 @@ return (osd_file *) fopen_simple(filename,0,0, error);
 
 mame_file *mame_fopen_rom(const char *gamename, const char *filename, const char *exphash)
 {
-    mame_file *f = fopen_archive_or_disk(gamename,filename,FILETYPE_ROM, NULL);
+    mame_file *f = fopen_zip_or_disk(gamename,filename,FILETYPE_ROM, NULL);
     if(f && exphash)
     {
         unsigned int functions = hash_data_used_functions(exphash);
@@ -652,7 +661,7 @@ mame_file *mame_fopen_error(const char *gamename, const char *filename, int file
             return NULL;
         }
     printf("use archive or disk2\n");
-        return fopen_archive_or_disk(gamename,filename,filetype, error);
+        return fopen_zip_or_disk(gamename,filename,filetype, error);
     } else
     {
     printf("use user dir\n");
@@ -734,18 +743,18 @@ int mame_fseek(mame_file *file, INT64 offset, int whence)
 {
     if(!file) return -1;
 #ifdef PRINTOSDFILESYSTEMCALLS
-    printf("osd_fseek: ofs:%d t:%d %s\n",offset,whence,file->cname());
+    printf("mame_fseek: ofs:%d t:%d %s\n",offset,whence,file->cname());
 #endif
     return file->seek(offset,whence);
 }
 /* Seek within a file */
-int osd_fseek(osd_file *file, INT64 offset, int whence)
+int osd_fseek(_osd_file *file, INT64 offset, int whence)
 {
     if(!file) return -1;
     #ifdef PRINTOSDFILESYSTEMCALLS
         //printf("osd_fseek: ofs:%d t:%d %s\n",offset,whence,file->cname());
     #endif
-    return ((mame_file*)file)->seek(offset,whence);
+    return ((_osd_file*)file)->seek(offset,whence);
 }
 
 
@@ -758,13 +767,10 @@ void mame_fclose(mame_file *file)
     delete file; // destructor does the job.
 }
 /* Close an open file */
-void osd_fclose(osd_file *file)
+void osd_fclose(_osd_file *file)
 {
     if(!file) return;
-#ifdef PRINTOSDFILESYSTEMCALLS
-    //printf("osd_fclose: %s\n",file->cname());
-#endif
-    delete (mame_file*)file; // destructor does the job.
+    delete file; // destructor does the job.
 }
 
 
@@ -884,24 +890,23 @@ int mame_feof(mame_file *file)
     return file->eof();
 }
 UINT64 mame_ftell(mame_file *file)
-//int osd_ftell(void *file)
 {
     if(!file) return 0;
 #ifdef PRINTOSDFILESYSTEMCALLS
-     printf("osd_ftell:%s\n",file->cname());
+     printf("mame_ftell:%s\n",file->cname());
 #endif
 
     return file->tell();
 }
 /* Return current file position */
-UINT64 osd_ftell(osd_file *file)
+UINT64 osd_ftell(_osd_file *file)
 {
     if(!file) return 0;
 #ifdef PRINTOSDFILESYSTEMCALLS
      //printf("osd_ftell:%s\n",file->cname());
 #endif
 
-    return ((mame_file *)file)->tell();
+    return file->tell();
 }
 
 

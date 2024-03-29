@@ -18,7 +18,7 @@
 #include "config.h"
 #include <stdarg.h>
 #include <ctype.h>
-
+#include <stdio.h>
 
 //#define LOG_LOAD
 
@@ -466,6 +466,8 @@ static void region_post_process(rom_load_data *romdata, const rom_entry *regiond
 static int open_rom_file(rom_load_data *romdata, const rom_entry *romp)
 {
 	const game_driver *drv;
+
+    printf("open_rom_file -> mame_fopen_rom\n");
 
 	++romdata->romsloaded;
 

@@ -221,6 +221,8 @@ zip_file* openzip(int pathtype, int pathindex, const char* zipfile) {
 		free(zip);
 		return 0;
 	}
+ printf("openzip: length: %d\n",zip->length);
+
 	if (zip->length == 0) {
 		errormsg ("Empty file", ERROR_CORRUPT, zipfile);
 		osd_fclose(zip->fp);
@@ -246,6 +248,10 @@ zip_file* openzip(int pathtype, int pathindex, const char* zipfile) {
 	zip->offset_to_start_of_cent_dir = read_dword (zip->ecd+ZIPEOFST);
 	zip->zipfile_comment_length = read_word (zip->ecd+ZIPECOML);
 	zip->zipfile_comment = zip->ecd+ZIPECOM;
+
+ printf("openzip: info num: %d\n",(int)zip->number_of_this_disk);
+
+
 
 	/* verify that we can work with this zipfile (no disk spanning allowed) */
 	if ((zip->number_of_this_disk != zip->number_of_disk_start_cent_dir) ||
@@ -303,6 +309,7 @@ zip_file* openzip(int pathtype, int pathindex, const char* zipfile) {
 	zip->pathtype = pathtype;
 	zip->pathindex = pathindex;
 
+ printf("openzip: ok\n");
 	return zip;
 }
 
