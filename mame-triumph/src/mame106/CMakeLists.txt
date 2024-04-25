@@ -22,12 +22,11 @@ set(MAME_CORE_SRC
 # chdman.c is an external tool !
 # romcmp.c  is an external tool !
 
-# artwork.c x86drc.c profiler.c tiny.c
-# fileio.c finally not, implemented on amiga side.
-	artwork.c
-
+# x86drc.c profiler.c tiny.c audit.c
+ fileio.c
+ artwork.c
    cpuint.c    inptport.c  palette.c   streams.c   video.c
-	audit.c    cpuintrf.c  input.c     png.c       tilemap.c
+	cpuintrf.c  input.c     png.c       tilemap.c
 	cdrom.c    drawgfx.c   jedparse.c  timer.c     xml2info.c
 	chd.c      driver.c    jedutil.c   xmlfile.c
 	chdcd.c    mame.c      romload.c   ui_text.c

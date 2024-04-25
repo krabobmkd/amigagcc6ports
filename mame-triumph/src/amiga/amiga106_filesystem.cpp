@@ -121,174 +121,8 @@ protected:
     FILE *_hdl;
 };
 
-/** file for reading, will just read all file and
- *   use internal offset to fullfill osd_xxx api.
- *   manage DOS reading and inside zip.
-*/
-struct _mame_file {
-public:
-    _mame_file();
-    ~_mame_file();
-    // for roms dirs:
-    int openread(const char *pFilepath);
-    int openreadinzip(const char *pZipFile,const char *pFileName);
-    // manage read or write of cong files, srceenshots,... in user dir.
-    int openwrite(const char *pFilepath);
-
-#ifdef FILE_IMPLEMENT_NAME
-    inline const char *cname() { return _path.c_str(); }    
-#endif
-    inline const unsigned char *data() const { return _pData; }
-    inline char *hash() { return _hash; }
-    inline int size() { return _Length; }
-    inline int read(void *buffer, int l) {
-        if(!_pData) return 0;
-        if(_Length==_offset) return 0;
-
-        if((_Length-_offset)<l) l = (_Length-_offset);
-        memcpy(buffer,_pData+_offset,(size_t)l);
-        _offset +=l;
-        return l;
-    }
-    /*
-    inline int readScatter(void *buffer, int l, int increment) {
-        if(!_pData) return 0;
-        if(_Length==_offset) return 0;
-        if((_Length-_offset)<l) l = (_Length-_offset);
-        const uint8_t *prd = _pData+_offset;
-        uint8_t *pwr = (uint8_t *)buffer;
-        _offset +=l;
-        for(int i=0;i<l;i++)
-        {
-            *pwr = *prd++;
-            pwr += increment;
-        }
-        return l;
-    }
-    */
-    inline int write(const void *buffer,int length)
-    {
-        if(!_writeHdl) return 0;
-        return (int)Write(_writeHdl,buffer,length);
-    }
-    inline int readswap(void *buffer,int length)
-    {
-        if(!_pData) return 0;
-        if(_Length==_offset) return 0;
-        if((_Length-_offset)<length) length = (_Length-_offset);
-
-        const uint8_t *prd = _pData+_offset+length;
-        uint8_t *pwr = (uint8_t *)buffer;
-
-        for(int i=0;i<length;i++)
-        {   prd--;
-            *pwr++ = *prd;
-        }
-
-        _offset +=length;
-        return length;
-    }
-    inline int writeswap(const void *buffer,int length)
-    {
-        if(!_writeHdl) return 0;
-        int bdone=0;
-        const uint8_t *br = ((const uint8_t*)buffer)+length-1;
-        for(int i=0;i<length;i++)
-        {
-           bdone += (int)Write(_writeHdl,br,1);
-           br--;
-        }
-        return bdone;
-    }
-    inline int getc() {
-        if(!_pData || _Length==_offset) return 0;
-        int c=(int)*(_pData+_offset);
-        _offset++;
-        return c;
-    }
-    // put string
-    inline int fputs(const char *p) {
-        if(!_writeHdl) return -1; // EOF
-        int l = strlen(p);
-        Write(_writeHdl,p,l); // important: term 0 is not copied
-        return 0; // OK
-    }
-    inline int ungetc(int c) {
-        if(!_pData || _offset<=0) return 0;
-        _offset--;
-        *(_pData+_offset)=(uint8_t)c;
-        return c;
-    }
-    inline char *getstring(char *s,int maxlength) {
-        if(!_pData) return NULL;
-        if(_Length==_offset) return NULL;
-        int l=0;
-        uint8_t *pw = (uint8_t *)s;
-        const char *p = (const char *)_pData;
-        while((_offset+l)<_Length && _pData[_offset+l] !=0 && l<maxlength-1)
-        {
-            *pw++ = _pData[_offset+l];
-            l++;
-        }
-        if(l<maxlength) *pw++ = 0;
-        return s;
-    }
-    inline int eof() {
-        if(!_pData) return 0;
-        return (int)(_offset>=_Length);
-    }
-    inline int seek(int offset, int whence) {
-        if(whence == SEEK_SET)
-        {
-            if(offset>_Length) offset = _Length;
-            _offset = offset;
-            return 0;
-        }
-        if(whence == SEEK_CUR)
-        {
-            int ofs = _offset+offset;
-            if(ofs<0) ofs = 0;
-            if(ofs>_Length) ofs = _Length;
-            _offset = ofs;
-            return 0;
-        }
-        if(whence == SEEK_END)
-        {
-            int ofs = _Length+offset;
-            if(ofs<0) ofs = 0;
-            _offset = ofs;
-            return 0;
-        }
-        return 1;
-    }
-    inline int tell() {
-        return _offset;
-    }
-//    inline uint32_t crc() {
-//        if(!_pData && _writeHdl)
-//        {
-//            glog() << "error: ASK CRC FOR WRITE, NOt IMPLEMENTED FILE:"<< cname() << "\n";
-//        }
-//        if(!_pData) return 0;
-//        return crc32(0,_pData,(uint32_t)_Length );
-//    }
-
-protected:
-#ifdef FILE_IMPLEMENT_NAME
-    std::string _path;
-#endif
-    //std::vector<uint8_t> _v; // we have to keep the project's 1999 guiding lines..
-    uint8_t *_pData; // malloc alloc by openXXX() or zip.
-    int32_t _Length;
-    int _offset;
-    BPTR _writeHdl;
-
-	char		_hash[HASH_BUF_SIZE];
-
-    void close();
-};
 //typedef std::shared_ptr<_mame_file> spFile;
-
+/*
 _mame_file::_mame_file()
     : _pData(NULL),_Length(0),_offset(0),_writeHdl(0L)
 {
@@ -453,7 +287,7 @@ void setRomPaths(std::vector<std::string> &extrarompaths,std::vector<std::string
 
 
 // note: only read
-
+/*
 mame_file *fopen_zip_or_disk(const char *gamename,const char *filename,int filetype, osd_file_error *error)
 {
     if(error) *error = FILEERR_FAILURE;
@@ -597,6 +431,7 @@ mame_file *fopen_userdir(const char *gamename,const char *filename,int filetype,
     if(error) *error = FILEERR_SUCCESS;
     return pfile;
 }
+*/
 /*
 enum _osd_file_error
 {
@@ -611,10 +446,10 @@ enum _osd_file_error
 
 */
 //mame_file *mame_fopen(const char *gamename, const char *filename, int filetype, int openforwrite);
-mame_file *mame_fopen(const char *gamename, const char *filename, int filetype, int openforwrite)
+/*mame_file *mame_fopen(const char *gamename, const char *filename, int filetype, int openforwrite)
 {
     return mame_fopen_error(gamename,filename,filetype,openforwrite,NULL);
-}
+}*/
 osd_file *osd_fopen(int pathtype, int pathindex, const char *filename, const char *mode, osd_file_error *error)
 {
     if(error) *error = FILEERR_FAILURE;
@@ -628,10 +463,7 @@ osd_file *osd_fopen(int pathtype, int pathindex, const char *filename, const cha
     if(error) *error = FILEERR_SUCCESS;
     return posd;
 }
-
-
-
-
+/*
 mame_file *mame_fopen_rom(const char *gamename, const char *filename, const char *exphash)
 {
     mame_file *f = fopen_zip_or_disk(gamename,filename,FILETYPE_ROM, NULL);
@@ -678,7 +510,7 @@ int mame_faccess(const char *filename, int filetype)
     if(hdl) Close(hdl);
     return (hdl !=0);
 }
-
+*/
 // return bytes read.
 
 
