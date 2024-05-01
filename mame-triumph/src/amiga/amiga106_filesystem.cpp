@@ -117,6 +117,16 @@ struct _osd_file {
         if(!_hdl) return 0;
         return ftell(_hdl);
     }
+    inline int read(void *ptr,size_t size, size_t count )
+    {
+        if(!_hdl) return 0;
+        return fread(ptr,size,count,_hdl);
+    }
+    inline int write(const void *ptr,size_t size, size_t count )
+    {
+        if(!_hdl) return 0;
+        return fwrite(ptr,size,count,_hdl);
+    }
 protected:
     FILE *_hdl;
 };
@@ -513,7 +523,7 @@ int mame_faccess(const char *filename, int filetype)
 */
 // return bytes read.
 
-
+/*
 UINT32 mame_fread(mame_file *file, void *buffer, UINT32 length)
 {
     if(!file) return 0;
@@ -521,16 +531,17 @@ UINT32 mame_fread(mame_file *file, void *buffer, UINT32 length)
     printf("osd_fread: l:%d %s\n",length,file->cname());
 #endif
     return file->read(buffer,length);
-}
-UINT32 osd_fread(osd_file *file, void *buffer, UINT32 length)
+}*/
+UINT32 osd_fread(_osd_file *file, void *buffer, UINT32 length)
 {
     if(!file) return 0;
 #ifdef PRINTOSDFILESYSTEMCALLS
     //printf("osd_fread: l:%d %s\n",length,file->cname());
 #endif
-    return ((mame_file *)file)->read(buffer,length);
+    return file->read(buffer,length,1);
 }
 
+/*
 UINT32 mame_fwrite(mame_file *file, const void *buffer, UINT32 length)
 {
     if(!file) return 0;
@@ -539,6 +550,8 @@ UINT32 mame_fwrite(mame_file *file, const void *buffer, UINT32 length)
 #endif
     return file->write(buffer,length);
 }
+*/
+/*
 UINT32 mame_fread_swap(mame_file *file, void *buffer, UINT32 length)
 {
     if(!file) return 0;
@@ -556,7 +569,7 @@ UINT32 mame_fwrite_swap(mame_file *file, const void *buffer, UINT32 length)
     printf("osd_fwrite_swap: l:%d %s\n",length,file->cname());
 #endif
     return file->writeswap(buffer,length);
-}
+}*/
 /*
 int osd_fread_scatter(void *file,void *buffer,int length,int increment)
 {
@@ -570,7 +583,7 @@ int osd_fread_scatter(void *file,void *buffer,int length,int increment)
 }
 */
 
-
+/*
 int mame_fseek(mame_file *file, INT64 offset, int whence)
 {
     if(!file) return -1;
@@ -578,7 +591,7 @@ int mame_fseek(mame_file *file, INT64 offset, int whence)
     printf("mame_fseek: ofs:%d t:%d %s\n",offset,whence,file->cname());
 #endif
     return file->seek(offset,whence);
-}
+}*/
 /* Seek within a file */
 int osd_fseek(_osd_file *file, INT64 offset, int whence)
 {
@@ -589,7 +602,7 @@ int osd_fseek(_osd_file *file, INT64 offset, int whence)
     return ((_osd_file*)file)->seek(offset,whence);
 }
 
-
+/*
 void mame_fclose(mame_file *file)
 {
     if(!file) return;
@@ -597,7 +610,7 @@ void mame_fclose(mame_file *file)
     printf("osd_fclose: %s\n",file->cname());
 #endif
     delete file; // destructor does the job.
-}
+}*/
 /* Close an open file */
 void osd_fclose(_osd_file *file)
 {
@@ -605,7 +618,7 @@ void osd_fclose(_osd_file *file)
     delete file; // destructor does the job.
 }
 
-
+/*
 int mame_fchecksum(const char *gamename, const char *filename, unsigned int *length, char *hash)
 {
     // note: other implementations (mame4all odx) just use CRC for checksum...
@@ -627,9 +640,6 @@ int mame_fchecksum(const char *gamename, const char *filename, unsigned int *len
 
     if(!f) return -1;
 
-	/* compute the checksums (only the functions for which we have an expected
-       checksum). Take also care of crconly: if the user asked, we will calculate
-       only the CRC, but only if there is an expected CRC for this file. */
 //	unsigned int functions = hash_data_used_functions(hash);
 //	hash_compute(f->hash, f->data(), f->size(), functions);
 
@@ -659,7 +669,7 @@ UINT64 mame_fsize(mame_file *file)
     printf("osd_fsize:%s\n",file->cname());
 #endif
     return (UINT64)file->size();
-}
+}*/
 //unsigned int osd_fcrc(void *file)
 //{
 //    if(!file) return 0;
@@ -670,6 +680,7 @@ UINT64 mame_fsize(mame_file *file)
 
 //    return f.crc();
 //}
+/*
 int mame_fgetc(mame_file *file)
 //int osd_fgetc(void *file)
 {
@@ -678,7 +689,8 @@ int mame_fgetc(mame_file *file)
     printf("osd_fgetc:%s\n",file->cname());
 #endif
     return file->getc();
-}
+}*/
+/*
 int mame_ungetc(int c, mame_file *file)
 //int osd_ungetc(int c, void *file)
 {
@@ -729,7 +741,7 @@ UINT64 mame_ftell(mame_file *file)
 #endif
 
     return file->tell();
-}
+}*/
 /* Return current file position */
 UINT64 osd_ftell(_osd_file *file)
 {
@@ -742,7 +754,7 @@ UINT64 osd_ftell(_osd_file *file)
 }
 
 
-
+/*
 int mame_fprintf(mame_file *file, const char *fmt, ...)
 {
     va_list args;
@@ -755,7 +767,7 @@ int mame_fprintf(mame_file *file, const char *fmt, ...)
     mame_fputs(file,temp);
     return l;
 }
-
+*/
 
 
 
@@ -766,6 +778,34 @@ int mame_fprintf(mame_file *file, const char *fmt, ...)
 
 
 /* Write bytes to a file */
-//UINT32 osd_fwrite(osd_file *file, const void *buffer, UINT32 length);
+UINT32 osd_fwrite(osd_file *file, const void *buffer, UINT32 length)
+{
+ if(!file) return 0;
+   return file->write(buffer,length,1);
+}
 
+/* Return the number of paths for a given type */
+int osd_get_path_count(int pathtype)
+{
+
+}
+/* These values are returned by osd_get_path_info */
+/*
+enum
+{
+	PATH_NOT_FOUND,
+	PATH_IS_FILE,
+	PATH_IS_DIRECTORY
+};*/
+/* Get information on the existence of a file */
+int osd_get_path_info(int pathtype, int pathindex, const char *filename)
+{
+    return PATH_NOT_FOUND;
+}
+
+/* Create a directory if it doesn't already exist */
+int osd_create_directory(int pathtype, int pathindex, const char *dirname)
+{
+    return 0;
+}
 
