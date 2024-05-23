@@ -981,6 +981,7 @@ UINT32 mame_rand(void)
 
 static void create_machine(int game)
 {
+    printf("");
 	/* first give the machine a good cleaning */
 	Machine = &active_machine;
 	memset(Machine, 0, sizeof(*Machine));
@@ -1081,9 +1082,14 @@ static void init_machine(void)
 	if (memory_init() != 0)
 		fatalerror("memory_init failed");
 
+	printf("before cpuexec_init()\n");
+
 	/* now set up all the CPUs */
 	if (cpuexec_init() != 0)
 		fatalerror("cpuexec_init failed");
+
+	printf("before cpuint_init()\n");
+
 	if (cpuint_init() != 0)
 		fatalerror("cpuint_init failed");
 
@@ -1092,13 +1098,15 @@ static void init_machine(void)
 	if (devices_init(Machine->gamedrv))
 		fatalerror("devices_init failed");
 #endif
-
+printf("before hiscore_init()\n");
 	/* start the hiscore system -- remove me */
 	hiscore_init(Machine->gamedrv->name);
-
+printf("before saveload_init()\n");
 	/* start the save/load system */
 	saveload_init();
 
+
+printf("before gamedrv->driver_init()\n");
 	/* call the game driver's init function */
 	/* this is where decryption is done and memory maps are altered */
 	/* so this location in the init order is important */
@@ -1106,17 +1114,23 @@ static void init_machine(void)
 		(*Machine->gamedrv->driver_init)();
 
 	/* start the audio system */
+printf("before sound_init()\n");
 	if (sound_init() != 0)
 		fatalerror("sound_init failed");
 
 	/* start the video hardware */
+printf("before video_init()\n");
 	if (video_init() != 0)
 		fatalerror("video_init failed");
 
 	/* start the cheat engine */
-	if (options.cheat)
-		cheat_init();
 
+	if (options.cheat)
+	{
+printf("before cheat_init()\n");
+		cheat_init();
+    }
+printf("driver's _START callbacks \n");
 	/* call the driver's _START callbacks */
 	if (Machine->drv->machine_start != NULL && (*Machine->drv->machine_start)() != 0)
 		fatalerror("Unable to start machine emulation");
@@ -1125,11 +1139,12 @@ static void init_machine(void)
 	if (Machine->drv->video_start != NULL && (*Machine->drv->video_start)() != 0)
 		fatalerror("Unable to start video emulation");
 
+printf("REGIONFLAG_DISPOSE \n");
 	/* free memory regions allocated with REGIONFLAG_DISPOSE (typically gfx roms) */
 	for (num = 0; num < MAX_MEMORY_REGIONS; num++)
 		if (mem_region[num].flags & ROMREGION_DISPOSE)
 			free_memory_region(num);
-
+printf("init_machine() end\n");
 #ifdef MAME_DEBUG
 	/* initialize the debugger */
 	if (Machine->debug_mode)

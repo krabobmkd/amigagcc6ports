@@ -431,9 +431,10 @@ static int validate_roms(int drivnum, const machine_config *drv, UINT32 *region_
 
 static int validate_cpu(int drivnum, const machine_config *drv, const UINT32 *region_length)
 {
-    if(drivnum == 484) printf("validate_cpu\n");
+    //if(drivnum == 484)
+//    printf("validate_cpu\n");
 	const game_driver *driver = drivers[drivnum];
-	    if(drivnum == 484) printf("driver:%s\n",driver->description);
+//	    if(drivnum == 484) printf("driver:%s\n",driver->description);
 
 	int error = FALSE;
 	int cpunum;
@@ -441,16 +442,17 @@ static int validate_cpu(int drivnum, const machine_config *drv, const UINT32 *re
 	/* loop over all the CPUs */
 	for (cpunum = 0; cpunum < MAX_CPU; cpunum++)
 	{
+// printf("cpunum:%d\n",cpunum);
 		extern void dummy_get_info(UINT32 state, union cpuinfo *info);
 		const cpu_config *cpu = &drv->cpu[cpunum];
 		int spacenum;
 
-	    if(drivnum == 484) printf("cpunum:%d cpu:%08x\n",cpunum,(int)cpu );
+//	    if(drivnum == 484) printf("cpunum:%d cpu:%08x\n",cpunum,(int)cpu );
 
 		/* skip empty entries */
 		if (cpu->cpu_type == 0)
 			continue;
-	    if(drivnum == 484) printf("a type:%d\n",cpu->cpu_type);
+	//    if(drivnum == 484) printf("a type:%d\n",cpu->cpu_type);
 
 		/* checks to see if this driver is using a dummy CPU */
 		if (cputype_get_interface(cpu->cpu_type)->get_info == dummy_get_info)
@@ -460,23 +462,23 @@ static int validate_cpu(int drivnum, const machine_config *drv, const UINT32 *re
 			continue;
 		}
 
-	    if(drivnum == 484) printf("b\n");
+	 //   if(drivnum == 484) printf("b\n");
 		/* check the CPU for incompleteness */
 		if (!cputype_get_info_fct(cpu->cpu_type, CPUINFO_PTR_GET_CONTEXT)
 			|| !cputype_get_info_fct(cpu->cpu_type, CPUINFO_PTR_SET_CONTEXT)
 			|| !cputype_get_info_fct(cpu->cpu_type, CPUINFO_PTR_RESET)
 			|| !cputype_get_info_fct(cpu->cpu_type, CPUINFO_PTR_EXECUTE))
 		{
-    	    if(drivnum == 484) printf("b2\n");
+    //	    if(drivnum == 484) printf("b2\n");
 			printf("%s: %s uses an incomplete CPU\n", driver->source_file, driver->name);
 			error = TRUE;
 			continue;
 		}
-	    if(drivnum == 484) printf("c\n");
+	//    if(drivnum == 484) printf("c\n");
 		/* loop over all address spaces */
 		for (spacenum = 0; spacenum < ADDRESS_SPACES; spacenum++)
 		{
-            if(drivnum == 484) printf("d spacenum:%d\n",spacenum);
+//            if(drivnum == 484) printf("d spacenum:%d\n",spacenum);
 
 #define SPACE_SHIFT(a)		((addr_shift < 0) ? ((a) << -addr_shift) : ((a) >> addr_shift))
 #define SPACE_SHIFT_END(a)	((addr_shift < 0) ? (((a) << -addr_shift) | ((1 << -addr_shift) - 1)) : ((a) >> addr_shift))
@@ -535,7 +537,7 @@ static int validate_cpu(int drivnum, const machine_config *drv, const UINT32 *re
 					error = TRUE;
 				}
 			}
-            if(drivnum == 484) printf("e \n");
+           // if(drivnum == 484) printf("e \n");
 			/* loop over entries and look for errors */
 			for ( ; !IS_AMENTRY_END(map); map++)
 				if (!IS_AMENTRY_EXTENDED(map))
@@ -1001,7 +1003,7 @@ int mame_validitychecks(int game)
 		UINT32 region_length[REGION_MAX];
 		machine_config drv;
 
-        if(drivnum == 484) printf("inloop a\n");
+     //   if(drivnum == 484) printf("inloop a\n");
 /* ASG -- trying this for a while to see if submission failures increase */
 #if 1
 		/* non-debug builds only care about games in the same driver */
@@ -1010,27 +1012,27 @@ int mame_validitychecks(int game)
 			continue;
         }
 #endif
-        if(drivnum == 484) printf("inloop b\n");
+    //    if(drivnum == 484) printf("inloop b\n");
 		/* expand the machine driver */
 		expansion -= osd_profiling_ticks();
 		expand_machine_driver(driver->drv, &drv);
 		expansion += osd_profiling_ticks();
-        if(drivnum == 484) printf("inloop c\n");
+     //   if(drivnum == 484) printf("inloop c\n");
 		/* validate the driver entry */
 		driver_checks -= osd_profiling_ticks();
 		error = validate_driver(drivnum, &drv) || error;
 		driver_checks += osd_profiling_ticks();
-        if(drivnum == 484) printf("inloop d\n");
+   //     if(drivnum == 484) printf("inloop d\n");
 		/* validate the ROM information */
 		rom_checks -= osd_profiling_ticks();
 		error = validate_roms(drivnum, &drv, region_length) || error;
 		rom_checks += osd_profiling_ticks();
-   if(drivnum == 484) printf("inloop e\n");
+  // if(drivnum == 484) printf("inloop e\n");
 		/* validate the CPU information */
 		cpu_checks -= osd_profiling_ticks();
 		error = validate_cpu(drivnum, &drv, region_length) || error;
 		cpu_checks += osd_profiling_ticks();
-        if(drivnum == 484) printf("inloop f\n");
+   //     if(drivnum == 484) printf("inloop f\n");
 		/* validate the display */
 		display_checks -= osd_profiling_ticks();
 		error = validate_display(drivnum, &drv) || error;
@@ -1040,7 +1042,7 @@ int mame_validitychecks(int game)
 		gfx_checks -= osd_profiling_ticks();
 		error = validate_gfx(drivnum, &drv, region_length) || error;
 		gfx_checks += osd_profiling_ticks();
-        if(drivnum == 484) printf("inloop i\n");
+  //      if(drivnum == 484) printf("inloop i\n");
 		/* validate input ports */
 		input_checks -= osd_profiling_ticks();
 		error = validate_inputs(drivnum, &drv, &inputports) || error;
@@ -1051,7 +1053,7 @@ int mame_validitychecks(int game)
 		error = validate_sound(drivnum, &drv) || error;
 		sound_checks += osd_profiling_ticks();
 	}
-    printf("after validate:\n");
+ //   printf("after validate:\n");
 #ifdef MESS
 	mess_checks -= osd_profiling_ticks();
 	if (mess_validitychecks())

@@ -97,7 +97,7 @@
 #include "debug/debugcpu.h"
 #endif
 #include <stdarg.h>
-
+#include <stdio.h>
 
 #define MEM_DUMP		(0)
 #define VERBOSE			(0)
@@ -418,6 +418,7 @@ static void mem_dump(void)
 int memory_init(void)
 {
 	int i;
+	printf("memory_init\n");
 
 	for (i = 0; i < ADDRESS_SPACES; i++)
 		log_unmap[i] = 1;
@@ -437,6 +438,8 @@ int memory_init(void)
 	/* init the CPUs */
 	if (!init_cpudata())
 		return 1;
+
+	printf("memory_init() a\n");
 	add_exit_callback(memory_exit);
 
 	/* preflight the memory handlers and check banks */
@@ -446,7 +449,7 @@ int memory_init(void)
 	/* then fill in the tables */
 	if (!populate_memory())
 		return 1;
-
+	printf("memory_init() b\n");
 	/* allocate any necessary memory */
 	if (!allocate_memory())
 		return 1;
@@ -455,8 +458,11 @@ int memory_init(void)
 	if (!find_memory())
 		return 1;
 
+	printf("memory_init() c\n");
 	/* dump the final memory configuration */
 	mem_dump();
+
+	printf("memory_init() end\n");
 	return 0;
 }
 
@@ -1162,6 +1168,7 @@ static int init_cpudata(void)
 				return 0;
 		cpudata[cpunum].op_mask = cpudata[cpunum].space[ADDRESS_SPACE_PROGRAM].mask;
 	}
+   printf("init_cpudata() end\n");
 	return 1;
 }
 
@@ -1196,6 +1203,7 @@ static inline void adjust_addresses(addrspace_data *space, int ismatchmask, offs
 
 static int init_addrspace(UINT8 cpunum, UINT8 spacenum)
 {
+printf("init_addrspace() cpunum:%d spacenum:%d\n",cpunum,spacenum);
 	addrspace_data *space = &cpudata[cpunum].space[spacenum];
 	int cputype = Machine->drv->cpu[cpunum].cpu_type;
 	int abits = cputype_addrbus_width(cputype, spacenum);
@@ -1203,6 +1211,8 @@ static int init_addrspace(UINT8 cpunum, UINT8 spacenum)
 	int accessorindex = (dbits == 8) ? 0 : (dbits == 16) ? 1 : (dbits == 32) ? 2 : 3;
 	construct_map_t internal_map = (construct_map_t)cputype_get_info_fct(cputype, CPUINFO_PTR_INTERNAL_MEMORY_MAP + spacenum);
 	int entrynum;
+
+printf("ias a\n");
 
 	/* determine the address and data bits */
 	space->cpunum = cpunum;
@@ -1221,6 +1231,7 @@ static int init_addrspace(UINT8 cpunum, UINT8 spacenum)
 		return 1;
 	cpudata[cpunum].spacemask |= 1 << spacenum;
 
+printf("ias b\n");
 	/* construct the combined memory map */
 	if (internal_map || Machine->drv->cpu[cpunum].construct_map[spacenum][0] || Machine->drv->cpu[cpunum].construct_map[spacenum][1])
 	{
@@ -1282,7 +1293,7 @@ static int init_addrspace(UINT8 cpunum, UINT8 spacenum)
 					fatalerror("Error: CPU %d space %d memory map entry %X-%X extends beyond region %d size (%X)", cpunum, spacenum, map->start, map->end, map->region, length);
 			}
 	}
-
+printf("ias c\n");
 	/* init the static handlers */
 	memset(space->read.handlers, 0, sizeof(space->read.handlers));
 	memset(space->write.handlers, 0, sizeof(space->write.handlers));
@@ -1301,6 +1312,8 @@ static int init_addrspace(UINT8 cpunum, UINT8 spacenum)
 	/* initialize everything to unmapped */
 	memset(space->read.table, STATIC_UNMAP, 1 << LEVEL1_BITS);
 	memset(space->write.table, STATIC_UNMAP, 1 << LEVEL1_BITS);
+
+printf("ias d\n");
 	return 1;
 }
 

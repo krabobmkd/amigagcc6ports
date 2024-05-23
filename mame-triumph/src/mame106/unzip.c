@@ -641,7 +641,7 @@ static zip_file* cache_openzip(int pathtype, int pathindex, const char* zipfile)
 	zip_file* zip;
 	unsigned i;
 
-printf("cache_openzip:%d %d %s\n ",pathtype,pathindex,zipfile);
+//printf("cache_openzip:%d %d %s\n ",pathtype,pathindex,zipfile);
 	/* search in the cache buffer */
 	for(i=0;i<ZIP_CACHE_MAX;++i) {
 		if (zip_cache_map[i] && zip_cache_map[i]->pathtype == pathtype && zip_cache_map[i]->pathindex == pathindex && strcmp(zip_cache_map[i]->zip,zipfile)==0) {
@@ -673,14 +673,14 @@ printf("cache_openzip:%d %d %s\n ",pathtype,pathindex,zipfile);
 /*
     logerror("Zip cache FAIL for %s\n", zipfile);
 */
-printf("cache_openzip: not in cache, go openzip\n ");
+//printf("cache_openzip: not in cache, go openzip\n ");
 	/* open the zip */
 
 	zip = openzip( pathtype, pathindex, zipfile );
 	if (!zip)
 		return 0;
 
-printf("cache_openzip: open ok\n ");
+//printf("cache_openzip: open ok\n ");
 	/* close the oldest entry */
 	if (zip_cache_map[ZIP_CACHE_MAX-1]) {
 		/* close last zip */
@@ -782,7 +782,7 @@ int /* error */ load_zipped_file (int pathtype, int pathindex, const char* zipfi
 	zip_file* zip;
 	zip_entry* ent;
 
-    printf("load_zipped_file:%s %s\n",zipfile,filename);
+ //   printf("load_zipped_file:%s %s\n",zipfile,filename);
 	zip = cache_openzip(pathtype, pathindex, zipfile);
 	if (!zip)
 		return -1;

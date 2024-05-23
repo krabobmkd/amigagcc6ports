@@ -467,7 +467,7 @@ static int open_rom_file(rom_load_data *romdata, const rom_entry *romp)
 {
 	const game_driver *drv;
 
-    printf("open_rom_file -> mame_fopen_rom\n");
+    //printf("open_rom_file -> mame_fopen_rom\n");
 
 	++romdata->romsloaded;
 
