@@ -99,8 +99,8 @@ static int ecd_read(zip_file* zip) {
 		if (!buf) {
 			return -1;
 		}
-
-		if (osd_fread( zip->fp, buf, buf_length ) != buf_length) {
+        int nbread= osd_fread( zip->fp, buf, buf_length );
+		if ( nbread != buf_length) {
 			free(buf);
 			return -1;
 		}
@@ -189,8 +189,6 @@ static int ecd_read(zip_file* zip) {
 zip_file* openzip(int pathtype, int pathindex, const char* zipfile) {
 	osd_file_error error;
 
- printf("openzip: type:%d index:%d :%s:\n",pathtype,pathindex,zipfile);
-
 	/* allocate */
 	zip_file* zip = (zip_file*)malloc( sizeof(zip_file) );
 	if (!zip) {
@@ -221,8 +219,6 @@ zip_file* openzip(int pathtype, int pathindex, const char* zipfile) {
 		free(zip);
 		return 0;
 	}
- printf("openzip: length: %d\n",zip->length);
-
 	if (zip->length == 0) {
 		errormsg ("Empty file", ERROR_CORRUPT, zipfile);
 		osd_fclose(zip->fp);
@@ -249,9 +245,7 @@ zip_file* openzip(int pathtype, int pathindex, const char* zipfile) {
 	zip->zipfile_comment_length = read_word (zip->ecd+ZIPECOML);
 	zip->zipfile_comment = zip->ecd+ZIPECOM;
 
- printf("openzip: info num: %d\n",(int)zip->number_of_this_disk);
-
-
+// printf("openzip: info num: %d\n",(int)zip->number_of_this_disk);
 
 	/* verify that we can work with this zipfile (no disk spanning allowed) */
 	if ((zip->number_of_this_disk != zip->number_of_disk_start_cent_dir) ||
@@ -309,7 +303,6 @@ zip_file* openzip(int pathtype, int pathindex, const char* zipfile) {
 	zip->pathtype = pathtype;
 	zip->pathindex = pathindex;
 
- printf("openzip: ok\n");
 	return zip;
 }
 
@@ -680,12 +673,14 @@ printf("cache_openzip:%d %d %s\n ",pathtype,pathindex,zipfile);
 /*
     logerror("Zip cache FAIL for %s\n", zipfile);
 */
-
+printf("cache_openzip: not in cache, go openzip\n ");
 	/* open the zip */
+
 	zip = openzip( pathtype, pathindex, zipfile );
 	if (!zip)
 		return 0;
 
+printf("cache_openzip: open ok\n ");
 	/* close the oldest entry */
 	if (zip_cache_map[ZIP_CACHE_MAX-1]) {
 		/* close last zip */

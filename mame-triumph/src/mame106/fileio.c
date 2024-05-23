@@ -1052,11 +1052,12 @@ static mame_file *generic_fopen(int pathtype, const char *gamename, const char *
 			*name = 0;
 		}
 #endif
-		if (flags & FILEFLAG_CREATE_GAMEDIR)
-		{
-			if (osd_get_path_info(pathtype, pathindex, name) == PATH_NOT_FOUND)
-				osd_create_directory(pathtype, pathindex, name);
-		}
+// VF: no need
+//		if (flags & FILEFLAG_CREATE_GAMEDIR)
+//		{
+//			if (osd_get_path_info(pathtype, pathindex, name) == PATH_NOT_FOUND)
+//				osd_create_directory(pathtype, pathindex, name);
+//		}
 
 		/* if the directory exists, proceed */
 		if (*name == 0 || osd_get_path_info(pathtype, pathindex, name) == PATH_IS_DIRECTORY)
