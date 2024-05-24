@@ -10,10 +10,16 @@ set(C_STANDARD 11)
 project(AmigaTriumphMame LANGUAGES C CXX VERSION 1.0)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
+option(MAME_USE_HARDFLOAT "compile using direct 68882 FPU, will not work on economic 060" OFF)
+
 if(AMIGA)
 #  -fno-rtti -fno-exceptions -fno-strict-aliasing
-	add_definitions( -m68060 -mhard-float -ffast-math -save-temps )
-	
+	add_definitions( -m68060 -save-temps )
+	if(MAME_USE_HARDFLOAT)
+		add_definitions( -mhard-float -ffast-math )
+	else()
+		add_definitions( -msoft-float )
+	endif()
 endif()
 
 #add_subdirectory(../mame037b/src MameLib)
@@ -59,7 +65,9 @@ add_executable(${PROGNAME} ${AMIGA_SRC} )
 set_property(TARGET ${PROGNAME} PROPERTY C_STANDARD 11)
 set_property(TARGET ${PROGNAME} PROPERTY CXX_STANDARD 11)
 target_compile_definitions(${PROGNAME} PUBLIC MAMEVERSION=106 ZIP_CACHE=1 )
-
+if(MAME_USE_HARDFLOAT)
+	target_compile_definitions(${PROGNAME} PUBLIC MAME_USE_HARD_FLOAT=1 )
+endif()
 # the static libs that are part of this repo: 
 target_link_libraries(${PROGNAME} PUBLIC mamecore z expat)
 

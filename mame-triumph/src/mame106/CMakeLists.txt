@@ -100,6 +100,9 @@ set_property(TARGET mamecore PROPERTY CXX_STANDARD 11)
 target_include_directories(mamecore PUBLIC ${MAME_INCLUDE_DIRS} ${ZLIBPATH} )
 set(MAME_INLINE "static inline")
 target_compile_definitions(mamecore PUBLIC INLINE=${MAME_INLINE} ZIP_CACHE=1 CRLF=2 ${CPU_DEFS} )
+if(MAME_USE_HARDFLOAT)
+	target_compile_definitions(mamecore PUBLIC MAME_USE_HARD_FLOAT=1 )
+endif()
 # -fpermissive
 target_compile_options(mamecore PUBLIC  -Wno-narrowing )
 

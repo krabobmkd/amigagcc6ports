@@ -279,10 +279,45 @@ void main_close()
 #endif
 }
 
+const char *pVersion="$VER: 106 2006 port 0 2024:";
+
+#if defined(MAME_USE_HARD_FLOAT)
+
+int amiga_hasFPU()
+{UWORD attnflags = SysBase->AttnFlags; return (int)((attnflags & (AFF_68881|AFF_68882|AFF_FPU40))!=0);
+}
+void amiga_cpucheck()
+{
+    int hasFPU = amiga_hasFPU();
+    if(!hasFPU) {
+        printf("This tool was compiled for machines with a FPU.\n");
+        exit(1);
+    }
+}
+
+// make it happen before main() with a global constructor, less intrusive to original code.
+struct beforeMainInit
+{
+    beforeMainInit() {
+      amiga_cpucheck();
+    }
+};
+beforeMainInit _ginit;
+
+#endif
 
 
 int main(int argc, char **argv)
 {
+
+    static float testval = 2.5f;
+
+    printf("testdiv\n");
+    float mytest = 1.0f / testval;
+    printf("after testdiv\n");
+    printf("printdiv dbl:%lf\n",(double)mytest);
+    printf("letsgo\n");
+    printf("look:%f\n",testval);
 
 /* krb: looks messy to me, original stack should be restored and alloc freed , in an atexit().
   task  = FindTask(NULL);
