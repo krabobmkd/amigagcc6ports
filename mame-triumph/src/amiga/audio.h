@@ -108,12 +108,12 @@ struct ASound
   struct AHISampleInfo AHISampleInfo;
 };
 
-struct Audio *AllocAudio(Tag,...);
-void FreeAudio(struct Audio *audio);
-struct AChannelArray *AAllocChannelArray(struct Audio *audio, LONG length);
+void AllocAudio(Tag,...);
+void FreeAudio();
+struct AChannelArray *AAllocChannelArray( LONG length);
 void AFreeChannelArray(struct AChannelArray *channelarray);
 void ASetChannelFrame(struct AChannelArray *channelarray);
-struct ASound *ALoadSound(struct Audio *audio, UBYTE *sample, LONG res, LONG len, LONG freq, LONG vol);
+struct ASound *ALoadSound( UBYTE *sample, LONG res, LONG len, LONG freq, LONG vol);
 struct ASound *AReadSound(struct Audio *audio, BPTR file);
 ULONG AResample(ULONG *freq, ULONG maxfreq, ULONG *length, ULONG maxlength);
 

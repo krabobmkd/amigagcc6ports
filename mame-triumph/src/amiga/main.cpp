@@ -125,7 +125,7 @@ struct FileRequester  *FileRequester  = NULL;
 
 LONG          Width;
 LONG          Height;
-struct Audio      *Audio=NULL;
+
 struct Video      *Video=NULL;
 struct Inputs     *Inputs=NULL;
 struct VPixelArray    *PixelArray[2];
@@ -248,8 +248,7 @@ void main_close()
     unzip_cache_clear();
     if(Audio)
     {
-      FreeAudio(Audio);
-      Audio = NULL;
+      osd_stop_audio_stream();
     }
     printf("does main_close\n");
     if(TimerIO)
@@ -398,26 +397,7 @@ int main(int argc, char **argv)
         NewGame     = 1;
         Inputs      = NULL;
         Keys      = NULL;
-        Audio     = NULL;
-        ChannelArray[0] = NULL;
-        ChannelArray[1] = NULL;
 
-    if(!quit && (Config[CFG_SOUND] != CFGS_NO))
-    {
-      Audio = AllocAudio( AA_UseAHI,    (Config[CFG_SOUND] == CFGS_AHI) ? TRUE : FALSE,
-                AA_Channels,  AUDIO_CHANNELS,
-                AA_MaxSounds, 255,
-                AA_MinFreeChip, Config[CFG_MINFREECHIP]*1024,
-                TAG_END);
-
-      if(Audio)
-      {
-        ChannelArray[0] = AAllocChannelArray(Audio, AUDIO_BUFFER_LENGTH);
-    #ifdef POWERUP
-        ChannelArray[1] = AAllocChannelArray(Audio, AUDIO_BUFFER_LENGTH);
-    #endif
-      }
-    }
     printf("bef StartGame\n");
 
     StartGame();
@@ -426,8 +406,7 @@ int main(int argc, char **argv)
 
     if(Audio)
     {
-      FreeAudio(Audio);
-      Audio = NULL;
+      osd_stop_audio_stream();
     }
 
         printf("bef MainGUI\n");

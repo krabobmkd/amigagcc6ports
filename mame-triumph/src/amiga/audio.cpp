@@ -11,12 +11,7 @@
  *
  *************************************************************************/
 
-#include <proto/exec.h>
-#include <proto/dos.h>
-#include <proto/alib.h>
-#include <proto/intuition.h>
-#include <proto/ahi.h>
-#include <proto/utility.h>
+
 
 
 extern "C" {
@@ -27,6 +22,7 @@ extern "C" {
 
 }
 #include <stdlib.h>
+
 
 #include "audio.h"
 

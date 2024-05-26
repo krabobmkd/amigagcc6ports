@@ -38,7 +38,7 @@ set(AMIGA_SRC
 	config_moo.cpp
 #	cgxhooks_re.c
 #	file.cpp
-	audio.cpp
+#	audio.cpp
 	video.cpp
 	amiga_inputs.cpp
 	amiga_locale.cpp
