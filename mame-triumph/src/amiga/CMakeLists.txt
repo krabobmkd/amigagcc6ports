@@ -31,20 +31,15 @@ set(AMIGA_SRC
 	amiga106_audiostream.cpp
 	amiga106_filesystem.cpp
 	amiga106_timer.cpp
+	amiga106_video.cpp
 	main.cpp
-#	romscan.cpp
 	gui_mui.cpp
 	gui_gadtools.cpp
 	config_moo.cpp
-#	cgxhooks_re.c
-#	file.cpp
-#	audio.cpp
-	video.cpp
 	amiga_inputs.cpp
 	amiga_locale.cpp
 	main.h
 	config_moo.h
-#	file.h
 	audio.h
 	video.h
 	amiga_inputs.h
@@ -54,8 +49,8 @@ set(AMIGA_SRC
 	mame_ver.h
 	mame_msg.h
 
-	c2p.s
-	gfx.s
+#	c2p.s
+#	gfx.s
 #	../../lib/c2p.s.o ../../lib/gfx.s.o
 	cgxhooks_re.s
 	)
