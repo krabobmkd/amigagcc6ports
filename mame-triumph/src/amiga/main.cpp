@@ -16,7 +16,13 @@
  mame's input.h and amiga intuition.h collides because of KEYCODE_XXX defines.
  let's make a point not including both in the same files.
 */
+// from mame
+extern "C" {
+    #include "osdepend.h"
+    #include "driver.h"
+    #include "unzip.h"
 
+}
 //#define CATCOMP_BLOCK
 //#include "mame_msg.h" -> called by main.h
 
@@ -48,18 +54,8 @@ extern "C" {
 // end extern "C"
 }
 
-// from mame
-extern "C" {
-//    #include "cpuintrf.h"
-//    #include "sndintrf.h"
 
-    #include "osdepend.h"
-    #include "driver.h"
-    #include "unzip.h"
-
-}
 #include "version.h"
-#include "audio.h"
 #include "video.h"
 #include "amiga_inputs.h"
 #include "amiga_locale.h"
@@ -246,10 +242,9 @@ int libs_init()
 void main_close()
 {
     unzip_cache_clear();
-    if(Audio)
-    {
-      osd_stop_audio_stream();
-    }
+
+    osd_stop_audio_stream();
+
     printf("does main_close\n");
     if(TimerIO)
     {
@@ -403,11 +398,8 @@ int main(int argc, char **argv)
     StartGame();
     printf("aft StartGame\n");
 
+    osd_stop_audio_stream();
 
-    if(Audio)
-    {
-      osd_stop_audio_stream();
-    }
 
         printf("bef MainGUI\n");
     if(NewGame > 0)

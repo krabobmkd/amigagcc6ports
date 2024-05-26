@@ -69,7 +69,7 @@ extern struct Library       *PPCLibBase;
 
 extern LONG                 Width;
 extern LONG                 Height;
-extern struct Audio         *Audio;
+//extern struct Audio         *Audio;
 extern struct Video         *Video;
 extern struct Inputs        *Inputs;
 extern struct AChannelArray *ChannelArray[2];

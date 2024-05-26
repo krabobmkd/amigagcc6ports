@@ -513,11 +513,9 @@ int timer_count_anonymous(void)
 
 static inline mame_timer *_mame_timer_alloc_common(void (*callback)(int), void (*callback_ptr)(void *), void *param, const char *file, int line, const char *func, int temp)
 {
- printf("_mame_timer_alloc_common()\n");
 	mame_time time = get_current_time();
 	mame_timer *timer = timer_new();
 
- printf("_mame_timer_alloc_common() b\n");
 	/* fail if we can't allocate a new entry */
 	if (!timer)
 		return NULL;

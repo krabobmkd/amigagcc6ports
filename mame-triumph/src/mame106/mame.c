@@ -280,6 +280,8 @@ int run_game(int game)
 	exit_pending = FALSE;
 	while (error == 0 && !exit_pending)
 	{
+ printf("run_game hardreset ...\n");
+
 		/* use setjmp/longjmp for deep error recovery */
 		fatal_error_jmpbuf_valid = TRUE;
 		error = setjmp(fatal_error_jmpbuf);
@@ -304,14 +306,16 @@ int run_game(int game)
 			/* then finish setting up our local machine */
 			init_machine();
 
+            printf("config_load_settings() \n");
 			/* load the configuration settings and NVRAM */
 			settingsloaded = config_load_settings();
+            printf("after config_load_settings():%d \n",settingsloaded);
 			nvram_load();
-
+            printf("after nvram_load() \n");
 			/* initialize the UI and display the startup screens */
 			if (ui_init(!settingsloaded && !options.skip_disclaimer, !options.skip_warnings, !options.skip_gameinfo) != 0)
 				fatalerror("User cancelled");
-
+            printf("after ui_init() \n");
 			/* ensure we don't show the opening screens on a reset */
 			options.skip_disclaimer = options.skip_warnings = options.skip_gameinfo = TRUE;
 
@@ -319,14 +323,17 @@ int run_game(int game)
 			/* call end_resource_tracking followed by begin_resource_tracking */
 			/* to clear out resources allocated between resets */
 			begin_resource_tracking();
-
+            printf("after begin_resource_tracking() \n");
 			/* perform a soft reset -- this takes us to the running phase */
 			soft_reset(0);
+
+            printf("run_game before cpu loop ...\n");
 
 			/* run the CPUs until a reset or exit */
 			hard_reset_pending = FALSE;
 			while ((!hard_reset_pending && !exit_pending) || saveload_pending_file != NULL)
 			{
+                //printf("cpu loop ...\n");
 				profiler_mark(PROFILER_EXTRA);
 
 				/* execute CPUs if not paused */
@@ -336,6 +343,7 @@ int run_game(int game)
 				/* otherwise, just pump video updates through */
 				else
 				{
+                printf("go updatescreen ...\n");
 					updatescreen();
 					reset_partial_updates();
 				}
@@ -346,7 +354,7 @@ int run_game(int game)
 
 				profiler_mark(PROFILER_END);
 			}
-
+                printf("after cpu loop...\n");
 			/* and out via the exit phase */
 			current_phase = MAME_PHASE_EXIT;
 
@@ -357,6 +365,8 @@ int run_game(int game)
 			nvram_save();
 			config_save_settings();
 		}
+        printf("after cpu loop, do close list...\n");
+
 		fatal_error_jmpbuf_valid = FALSE;
 
 		/* call all exit callbacks registered */
@@ -373,7 +383,7 @@ int run_game(int game)
 		free_callback_list(&pause_callback_list);
 	}
 
-
+        printf("run_game, return %d\n",error);
 	/* return an error */
 	return error;
 }

@@ -41,7 +41,7 @@ extern "C" {
 
 #include "main.h"
 #include "config_moo.h"
-#include "audio.h"
+
 // from mame since 0.37:
 #include "input.h"
 
@@ -821,327 +821,324 @@ void osd_update_video_and_audio(struct _mame_display *display)
 //void osd_update_video_and_audio(mame_bitmap *bitmap)
 //old void osd_update_video_and_audio(void)
 {
-  unsigned char *line;
-  int       trueorientation;
-  int       fps;
-  LONG      i, j, w, h, l;
-  uint32_t     bpr;
-  uint32_t     mod;
-  uint32_t     srcmod;
-  uint32_t     *src;
-  uint32_t     *pix;
-  uint8_t     **lines;
-  uint8_t     *dst;
-  uint8_t     *newb, *new2, *new3;
-  uint8_t     *old, *old2, *old3;
-  char      buf[30];
+    printf("osd_update_video_and_audio\n");
+//  unsigned char *line;
+//  int       trueorientation;
+//  int       fps;
+//  LONG      i, j, w, h, l;
+//  uint32_t     bpr;
+//  uint32_t     mod;
+//  uint32_t     srcmod;
+//  uint32_t     *src;
+//  uint32_t     *pix;
+//  uint8_t     **lines;
+//  uint8_t     *dst;
+//  uint8_t     *newb, *new2, *new3;
+//  uint8_t     *old, *old2, *old3;
+//  char      buf[30];
 
   mame_bitmap *bitmap = display->game_bitmap;
 
-  static int showfpstemp;
-  int need_to_clear_bitmap = 0;
+  printf("w:%d h:%d depth:%d rowpixels:%d\n", bitmap->width,bitmap->height,bitmap->depth,bitmap->rowpixels);
+  printf("rec:minx:%d miny:%d maxx:%d maxy:%d\n",display->game_visible_area.min_x,display->game_visible_area.min_y,
+         display->game_visible_area.max_x,display->game_visible_area.max_y);
 
-  TRACE_ENTER("osd_update_video_and_audio");
+//  static int showfpstemp;
+//  int need_to_clear_bitmap = 0;
 
-  /* Do not skip frames on the initial information screens. */
+//  TRACE_ENTER("osd_update_video_and_audio");
 
-  if(FrameCounter >= NoFrameSkipCount)
-  {
-    if(FrameCounter < (NoFrameSkipCount + frameskip))
-    {
-      FrameCounter++;
-      
-      return;
-    }
+//  /* Do not skip frames on the initial information screens. */
 
-    FrameCounter = NoFrameSkipCount;
-  }
-  else
-    FrameCounter++;
-
-  if(ChannelArray[0])
-  {
-#ifdef POWERUP
-    if(!ChannelArray[1])
-      return;
-#endif
-    ASetChannelFrame(ChannelArray[CurrentArray]);
-  }
-/*re
-  if(osd_key_pressed_memory(OSD_KEY_THROTTLE))
-    throttle ^= 1;
-
-  if(osd_key_pressed_memory(OSD_KEY_FRAMESKIP_INC))
-  {
-    frameskip   = (frameskip + 1) % 4;
-    showfpstemp = 50;
-  }
-
-  if(osd_key_pressed_memory(OSD_KEY_SHOW_FPS))
-  {
-    ShowFPS ^= 1;
-
-    if(!ShowFPS)
-      need_to_clear_bitmap = 1;
-  }
-*/
-  if(showfpstemp)
-  {
-    showfpstemp--;
-
-    if(!ShowFPS && !showfpstemp)
-      need_to_clear_bitmap = 1;
-  }
-
-//  if(ShowFPS || showfpstemp)
+//  if(FrameCounter >= NoFrameSkipCount)
 //  {
-//    trueorientation = Machine->orientation;
-//    Machine->orientation = ORIENTATION_DEFAULT;
-
-//    fps = VGetFPS(Video);
-//    sprintf(buf," %3d%%(%3d/%d fps)",(int)(100*fps/Machine->drv->frames_per_second),fps,
-//            (int)(Machine->drv->frames_per_second));
-//    l = strlen(buf);
-
-////krb, verify
-//#ifndef DT_COLOR_WHITE
-//#define DT_COLOR_WHITE 0
-//#endif
-//    for (i = 0;i < l;i++)
+//    if(FrameCounter < (NoFrameSkipCount + frameskip))
 //    {
-//      drawgfx(Machine->scrbitmap,Machine->uifont,buf[i], DT_COLOR_WHITE, 0, 0,
-//              Machine->uixmin + Machine->uiwidth - (l-i)*Machine->uifont->width,
-//              Machine->uiymin, 0, TRANSPARENCY_NONE, 0);
+//      FrameCounter++;
+      
+//      return;
 //    }
 
-//    Machine->orientation = trueorientation;
+//    FrameCounter = NoFrameSkipCount;
+//  }
+//  else
+//    FrameCounter++;
+
+///*re
+//  if(osd_key_pressed_memory(OSD_KEY_THROTTLE))
+//    throttle ^= 1;
+
+//  if(osd_key_pressed_memory(OSD_KEY_FRAMESKIP_INC))
+//  {
+//    frameskip   = (frameskip + 1) % 4;
+//    showfpstemp = 50;
 //  }
 
-  if(on_screen_display_timer > 0)
-  {
-    on_screen_display_timer -= (frameskip+1);
+//  if(osd_key_pressed_memory(OSD_KEY_SHOW_FPS))
+//  {
+//    ShowFPS ^= 1;
 
-    if(on_screen_display_timer <= 0)
-    {
-      on_screen_display_timer = 0;
-      need_to_clear_bitmap    = 1;
-    }
-  }
+//    if(!ShowFPS)
+//      need_to_clear_bitmap = 1;
+//  }
+//*/
+//  if(showfpstemp)
+//  {
+//    showfpstemp--;
 
-  VSetFrameSkip(Video, frameskip);
-  VSetLimitSpeed(Video, throttle);
+//    if(!ShowFPS && !showfpstemp)
+//      need_to_clear_bitmap = 1;
+//  }
 
-  if(DirectArray)
-  {
-    VSetDirectFrame(DirectArray);
+////  if(ShowFPS || showfpstemp)
+////  {
+////    trueorientation = Machine->orientation;
+////    Machine->orientation = ORIENTATION_DEFAULT;
 
-    if(Config[CFG_DIRECTMODE] == CFGDM_DRAW)
-    {
-      if(DirectArray->Pixels)
-      {
-        h   = /*BitMap*/bitmap->height;
-        bpr   = DirectArray->BytesPerRow;
-        line  = DirectArray->Pixels + 8 + (8 * bpr);
-        lines = /*BitMap*/(uint8_t **)bitmap->line;
+////    fps = VGetFPS(Video);
+////    sprintf(buf," %3d%%(%3d/%d fps)",(int)(100*fps/Machine->drv->frames_per_second),fps,
+////            (int)(Machine->drv->frames_per_second));
+////    l = strlen(buf);
+
+//////krb, verify
+////#ifndef DT_COLOR_WHITE
+////#define DT_COLOR_WHITE 0
+////#endif
+////    for (i = 0;i < l;i++)
+////    {
+////      drawgfx(Machine->scrbitmap,Machine->uifont,buf[i], DT_COLOR_WHITE, 0, 0,
+////              Machine->uixmin + Machine->uiwidth - (l-i)*Machine->uifont->width,
+////              Machine->uiymin, 0, TRANSPARENCY_NONE, 0);
+////    }
+
+////    Machine->orientation = trueorientation;
+////  }
+
+//  if(on_screen_display_timer > 0)
+//  {
+//    on_screen_display_timer -= (frameskip+1);
+
+//    if(on_screen_display_timer <= 0)
+//    {
+//      on_screen_display_timer = 0;
+//      need_to_clear_bitmap    = 1;
+//    }
+//  }
+
+//  VSetFrameSkip(Video, frameskip);
+//  VSetLimitSpeed(Video, throttle);
+
+//  if(DirectArray)
+//  {
+//    VSetDirectFrame(DirectArray);
+
+//    if(Config[CFG_DIRECTMODE] == CFGDM_DRAW)
+//    {
+//      if(DirectArray->Pixels)
+//      {
+//        h   = /*BitMap*/bitmap->height;
+//        bpr   = DirectArray->BytesPerRow;
+//        line  = DirectArray->Pixels + 8 + (8 * bpr);
+//        lines = /*BitMap*/(uint8_t **)bitmap->line;
   
-        for(i = 0; i < h; i++)
-        {
-          lines[i]    = line;
-          line      += bpr;
-        }
-      }
-      else
-        puts("PANIC! Didn't get direct pointer");
-    }
-    else
-    {
-      if(DirectArray->Pixels)
-      {
-        if(DirtyLines[0])
-        {
-          lines = (uint8_t **)bitmap->line;
-          h   = bitmap->height;
-          w   = bitmap->width >> 2;
-          pix   = (uint32_t *) DirectArray->Pixels;
-          bpr   = DirectArray->BytesPerRow >> 2;
-          mod   = bpr - w;
-          newb   = DirtyLines[0];
-          old   = DirtyLines[1];
+//        for(i = 0; i < h; i++)
+//        {
+//          lines[i]    = line;
+//          line      += bpr;
+//        }
+//      }
+//      else
+//        puts("PANIC! Didn't get direct pointer");
+//    }
+//    else
+//    {
+//      if(DirectArray->Pixels)
+//      {
+//        if(DirtyLines[0])
+//        {
+//          lines = (uint8_t **)bitmap->line;
+//          h   = bitmap->height;
+//          w   = bitmap->width >> 2;
+//          pix   = (uint32_t *) DirectArray->Pixels;
+//          bpr   = DirectArray->BytesPerRow >> 2;
+//          mod   = bpr - w;
+//          newb   = DirtyLines[0];
+//          old   = DirtyLines[1];
 
-          switch(Config[CFG_BUFFERING])
-          {
-            case CFGB_SINGLE:           
-              DirtyLines[0] = old;
-              DirtyLines[1] = newb;
+//          switch(Config[CFG_BUFFERING])
+//          {
+//            case CFGB_SINGLE:
+//              DirtyLines[0] = old;
+//              DirtyLines[1] = newb;
 
-              for(i = 0; i < h; i++)
-              {
-                if((*newb++ | *old++))
-                {
-                  src = (uint32_t *) lines[i];
+//              for(i = 0; i < h; i++)
+//              {
+//                if((*newb++ | *old++))
+//                {
+//                  src = (uint32_t *) lines[i];
               
-                  for(j = 0; j < w; j++)
-                    *pix++ = *src++;
+//                  for(j = 0; j < w; j++)
+//                    *pix++ = *src++;
           
-                  pix += mod;
-                }
-                else
-                  pix += bpr;
-              }
+//                  pix += mod;
+//                }
+//                else
+//                  pix += bpr;
+//              }
               
-              break;
+//              break;
 
-            case CFGB_DOUBLE:             
-              new2 = DirtyLines[2];
-              old2 = DirtyLines[3];
+//            case CFGB_DOUBLE:
+//              new2 = DirtyLines[2];
+//              old2 = DirtyLines[3];
               
-              DirtyLines[0] = old2;
-              DirtyLines[1] = new2;
-              DirtyLines[2] = newb;
-              DirtyLines[3] = old;
+//              DirtyLines[0] = old2;
+//              DirtyLines[1] = new2;
+//              DirtyLines[2] = newb;
+//              DirtyLines[3] = old;
               
-              for(i = 0; i < h; i++)
-              {
-                if((*newb++ | *new2++ | *old++ | *old2++))
-                {
-                  src = (uint32_t *) lines[i];
+//              for(i = 0; i < h; i++)
+//              {
+//                if((*newb++ | *new2++ | *old++ | *old2++))
+//                {
+//                  src = (uint32_t *) lines[i];
               
-                  for(j = 0; j < w; j++)
-                    *pix++ = *src++;
+//                  for(j = 0; j < w; j++)
+//                    *pix++ = *src++;
           
-                  pix += mod;
-                }
-                else
-                  pix += bpr;
-              }
+//                  pix += mod;
+//                }
+//                else
+//                  pix += bpr;
+//              }
               
-              break;
+//              break;
 
-            case CFGB_TRIPLE:
-              new2 = DirtyLines[2];
-              old2 = DirtyLines[3];
-              new3 = DirtyLines[4];
-              old3 = DirtyLines[5];
+//            case CFGB_TRIPLE:
+//              new2 = DirtyLines[2];
+//              old2 = DirtyLines[3];
+//              new3 = DirtyLines[4];
+//              old3 = DirtyLines[5];
               
-              DirtyLines[0] = old3;
-              DirtyLines[1] = new3;
-              DirtyLines[2] = newb;
-              DirtyLines[3] = old;
-              DirtyLines[4] = new2;
-              DirtyLines[5] = old2;
+//              DirtyLines[0] = old3;
+//              DirtyLines[1] = new3;
+//              DirtyLines[2] = newb;
+//              DirtyLines[3] = old;
+//              DirtyLines[4] = new2;
+//              DirtyLines[5] = old2;
               
-              for(i = 0; i < h; i++)
-              {
-                if((*newb++ | *new2++ | *new3++ | *old++ | *old2++ | *old3++))
-                {
-                  src = (uint32_t *) lines[i];
+//              for(i = 0; i < h; i++)
+//              {
+//                if((*newb++ | *new2++ | *new3++ | *old++ | *old2++ | *old3++))
+//                {
+//                  src = (uint32_t *) lines[i];
               
-                  for(j = 0; j < w; j++)
-                    *pix++ = *src++;
+//                  for(j = 0; j < w; j++)
+//                    *pix++ = *src++;
           
-                  pix += mod;
-                }
-                else
-                  pix += bpr;
-              }
+//                  pix += mod;
+//                }
+//                else
+//                  pix += bpr;
+//              }
               
-              break;
-          }
+//              break;
+//          }
 
-          memset(DirtyLines[0], 0, h);
-        }
-        else
-        {
-          lines = (uint8_t **)bitmap->line;
-          h   = bitmap->height;
-          w   = bitmap->width >> 2;
-          pix   = (uint32_t *) DirectArray->Pixels;
-          bpr   = DirectArray->BytesPerRow >> 2;
-          mod   = bpr - w;
-          src   = (uint32_t *) lines[0];
-          srcmod  = (((uint32_t) bitmap->rowpixels) >> 2) - w;
+//          memset(DirtyLines[0], 0, h);
+//        }
+//        else
+//        {
+//          lines = (uint8_t **)bitmap->line;
+//          h   = bitmap->height;
+//          w   = bitmap->width >> 2;
+//          pix   = (uint32_t *) DirectArray->Pixels;
+//          bpr   = DirectArray->BytesPerRow >> 2;
+//          mod   = bpr - w;
+//          src   = (uint32_t *) lines[0];
+//          srcmod  = (((uint32_t) bitmap->rowpixels) >> 2) - w;
 
-          for(i = 0; i < h; i++)
-          {
-            for(j = 0; j < w; j++)
-                *pix++ = *src++;
+//          for(i = 0; i < h; i++)
+//          {
+//            for(j = 0; j < w; j++)
+//                *pix++ = *src++;
               
-            pix += mod;
-            src += srcmod;
-          }
-        }
-      }
-    }
-  }
-  else
-  {
-    PixelArray[CurrentArray]->BackgroundPen = Machine->pens[0];
+//            pix += mod;
+//            src += srcmod;
+//          }
+//        }
+//      }
+//    }
+//  }
+//  else
+//  {
+//    PixelArray[CurrentArray]->BackgroundPen = Machine->pens[0];
 
-    if(DirtyLines[0])
-    {
-      h = bitmap->height;
-      dst = PixelArray[CurrentArray]->DirtyLines + 8;
-      newb = DirtyLines[0];
-      old = DirtyLines[1];
+//    if(DirtyLines[0])
+//    {
+//      h = bitmap->height;
+//      dst = PixelArray[CurrentArray]->DirtyLines + 8;
+//      newb = DirtyLines[0];
+//      old = DirtyLines[1];
 
-      switch(Config[CFG_BUFFERING])
-      {
-        case CFGB_SINGLE:           
-          DirtyLines[0] = old;
-          DirtyLines[1] = newb;
+//      switch(Config[CFG_BUFFERING])
+//      {
+//        case CFGB_SINGLE:
+//          DirtyLines[0] = old;
+//          DirtyLines[1] = newb;
 
-          for(i = 0; i < h; i++)
-            *dst++ = *newb++ | *old++;
+//          for(i = 0; i < h; i++)
+//            *dst++ = *newb++ | *old++;
           
-          break;
+//          break;
 
-        case CFGB_DOUBLE:             
-          new2 = DirtyLines[2];
-          old2 = DirtyLines[3];
+//        case CFGB_DOUBLE:
+//          new2 = DirtyLines[2];
+//          old2 = DirtyLines[3];
           
-          DirtyLines[0] = old2;
-          DirtyLines[1] = new2;
-          DirtyLines[2] = newb;
-          DirtyLines[3] = old;
+//          DirtyLines[0] = old2;
+//          DirtyLines[1] = new2;
+//          DirtyLines[2] = newb;
+//          DirtyLines[3] = old;
           
-          for(i = 0; i < h; i++)
-            *dst++ = *newb++ | *new2++ | *old++ | *old2++;
+//          for(i = 0; i < h; i++)
+//            *dst++ = *newb++ | *new2++ | *old++ | *old2++;
           
-          break;
+//          break;
 
-        case CFGB_TRIPLE:
-          new2 = DirtyLines[2];
-          old2 = DirtyLines[3];
-          new3 = DirtyLines[4];
-          old3 = DirtyLines[5];
+//        case CFGB_TRIPLE:
+//          new2 = DirtyLines[2];
+//          old2 = DirtyLines[3];
+//          new3 = DirtyLines[4];
+//          old3 = DirtyLines[5];
           
-          DirtyLines[0] = old3;
-          DirtyLines[1] = new3;
-          DirtyLines[2] = newb;
-          DirtyLines[3] = old;
-          DirtyLines[4] = new2;
-          DirtyLines[5] = old2;
+//          DirtyLines[0] = old3;
+//          DirtyLines[1] = new3;
+//          DirtyLines[2] = newb;
+//          DirtyLines[3] = old;
+//          DirtyLines[4] = new2;
+//          DirtyLines[5] = old2;
           
-          for(i = 0; i < h; i++)
-            *dst++ = *newb++ | *new2++ | *new3++ | *old++ | *old2++ | *old3++;
+//          for(i = 0; i < h; i++)
+//            *dst++ = *newb++ | *new2++ | *new3++ | *old++ | *old2++ | *old3++;
           
-          break;
-      }
+//          break;
+//      }
 
-      VSetPixelFrame(PixelArray[CurrentArray]);
+//      VSetPixelFrame(PixelArray[CurrentArray]);
 
-      memset(DirtyLines[0], 0, h);
-    }
-    else
-      VSetPixelFrame(PixelArray[CurrentArray]);
-  }
+//      memset(DirtyLines[0], 0, h);
+//    }
+//    else
+//      VSetPixelFrame(PixelArray[CurrentArray]);
+//  }
 
-  frameskip = VGetFrameSkip(Video);
+//  frameskip = VGetFrameSkip(Video);
 
-  if(need_to_clear_bitmap)
-  {
-    //todo osd_clearbitmap(bitmap);
-  }
+//  if(need_to_clear_bitmap)
+//  {
+//    //todo osd_clearbitmap(bitmap);
+//  }
 
   input_update_counter = 0;
   InputUpdate(FALSE);
@@ -1154,31 +1151,31 @@ void osd_set_visible_area(int min_x,int max_x,int min_y,int max_y)
 }
 
 
-void osd_modify_pen(int pen, unsigned char red, unsigned char green, unsigned char blue)
-{
-  TRACE_ENTER("osd_modify_pen");
+//void osd_modify_pen(int pen, unsigned char red, unsigned char green, unsigned char blue)
+//{
+//  TRACE_ENTER("osd_modify_pen");
 
-  if(DirectArray)
-  {
-    DirectArray->Palette[pen][0]  = 1;
-    DirectArray->Palette[pen][1]  = red;
-    DirectArray->Palette[pen][2]  = green;
-    DirectArray->Palette[pen][3]  = blue;
-  }
-  else
-  {
-    PixelArray[CurrentArray]->Palette[pen][0] = 1;
-    PixelArray[CurrentArray]->Palette[pen][1] = red;
-    PixelArray[CurrentArray]->Palette[pen][2] = green;
-    PixelArray[CurrentArray]->Palette[pen][3] = blue;
-  }
+//  if(DirectArray)
+//  {
+//    DirectArray->Palette[pen][0]  = 1;
+//    DirectArray->Palette[pen][1]  = red;
+//    DirectArray->Palette[pen][2]  = green;
+//    DirectArray->Palette[pen][3]  = blue;
+//  }
+//  else
+//  {
+//    PixelArray[CurrentArray]->Palette[pen][0] = 1;
+//    PixelArray[CurrentArray]->Palette[pen][1] = red;
+//    PixelArray[CurrentArray]->Palette[pen][2] = green;
+//    PixelArray[CurrentArray]->Palette[pen][3] = blue;
+//  }
 
-  Palette[pen][0] = red;
-  Palette[pen][1] = green;
-  Palette[pen][2] = blue;
+//  Palette[pen][0] = red;
+//  Palette[pen][1] = green;
+//  Palette[pen][2] = blue;
 
-  TRACE_LEAVE("osd_modify_pen");
-}
+//  TRACE_LEAVE("osd_modify_pen");
+//}
 
 void osd_get_pen(int pen, unsigned char *r, unsigned char *g, unsigned char *b)
 {
@@ -1602,125 +1599,15 @@ int osd_joy_pressed(int joycode)
 }
 */
 
-void osd_play_sample(int channel,signed char *data,int len,int freq,int volume,int loop)
-{
-  if(ChannelArray[0] && (channel < AUDIO_CHANNELS))
-  {
-#ifdef POWERUP
-    if(!ChannelArray[1])
-      return;
-#endif
-    if(len > 0)
-    {
-#ifdef POWERUP
-      if(len > AUDIO_BUFFER_LENGTH)
-      {
-        len = AUDIO_BUFFER_LENGTH;
-        printf("audio clipping\n");
-      }
-
-      memcpy(ChannelArray[CurrentArray]->Channels[channel].Buffer, data, len);
-
-      data = ChannelArray[CurrentArray]->Channels[channel].Buffer;
-#endif
-      APlaySample(ChannelArray[CurrentArray], channel, freq, volume * 100 / 255, len, (UBYTE*)data, loop);
-    }
-    else if(len < 0)
-    {
-      APlaySound(ChannelArray[CurrentArray], channel, freq, volume * 100 / 255, -len, loop);
-    }
-  }
-}
-
-void osd_play_sample_16(int channel,signed short *data,int len,int freq,int volume,int loop)
-{
-}
-
-void osd_play_streamed_sample(int channel,signed char *data,int len,int freq,int volume, int pan)
-{
-  osd_play_sample(channel, data, len, freq, volume, TRUE);
-}
-
-void osd_play_streamed_sample_16(int channel,signed short *data,int len,int freq,int volume, int pan)
-{
-}
-
-void osd_adjust_sample(int channel,int freq,int volume)
-{
-  if(ChannelArray[0] && (channel < AUDIO_CHANNELS))
-  {
-#ifdef POWERUP
-    if(!ChannelArray[1])
-      return;
-#endif
-    ASetFrequency(ChannelArray[CurrentArray], channel, freq);
-    ASetVolume(ChannelArray[CurrentArray], channel, volume * 100 / 255);
-  }
-}
-
-void osd_stop_sample(int channel)
-{
-  if(ChannelArray[0])
-  {
-#ifdef POWERUP
-    if(!ChannelArray[1])
-      return;
-#endif
-    AStopChannel(ChannelArray[CurrentArray], channel);
-  }
-}
-
-void osd_restart_sample(int channel)
-{
-  if(ChannelArray[0])
-  {
-#ifdef POWERUP
-    if(!ChannelArray[1])
-      return;
-#endif
-    ARestartChannel(ChannelArray[CurrentArray], channel);
-  }
-}
-
-int osd_get_sample_status(int channel)
-{
-  return(-1);
-}
-// v0.35 things
-//void osd_ym2203_write(int n, int r, int v)
-//{
-//}
-
-//void osd_ym2203_update(void)
-//{
-//}
-
-//int osd_ym3812_status(void)
-//{
-//  return(0);
-//}
-
-//int osd_ym3812_read(void)
-//{
-//  return(0);
-//}
-// v0.35 things
-//void osd_ym3812_control(int reg)
-//{
-//}
-//void osd_ym3812_write(int data)
-//{
-//}
-
 /* direct access to the Sound Blaster OPL chip  LOL */
-void osd_opl_control(int chip,int reg)
-{
+//void osd_opl_control(int chip,int reg)
+//{
 
-}
-void osd_opl_write(int chip,int data)
-{
+//}
+//void osd_opl_write(int chip,int data)
+//{
 
-}
+//}
 
 
 
@@ -1833,131 +1720,6 @@ int osd_skip_this_frame(void)
 }
 
 #ifdef MESS
-#if 0
-extern int CurrentVolume;
-
-int osd_handle_event(void)
-{
-static  int showvoltemp = 0;
-
-        /* if the user pressed ESC, stop the emulation */
-        if (osd_key_pressed(UI_KEY_ESCAPE))
-                return 1;
-
-        if (osd_key_pressed(UI_KEY_DEC_VOLUME) && osd_key_pressed(OSD_KEY_LSHIFT) == 0)
-        {
-                /* decrease volume */
-                if (CurrentVolume > 0) CurrentVolume--;
-                osd_set_mastervolume(CurrentVolume);
-                showvoltemp = 50;
-        }
-
-        if (osd_key_pressed(UI_KEY_INC_VOLUME) && osd_key_pressed(OSD_KEY_LSHIFT) == 0)
-        {
-                /* increase volume */
-                if (CurrentVolume < 100) CurrentVolume++;
-                osd_set_mastervolume(CurrentVolume);
-                showvoltemp = 50;
-        }                                          /* MAURY_END: new options */
-
-        if (osd_key_pressed(UI_KEY_PAUSE)) /* pause the game */
-        {
-                struct DisplayText dt[2];
-                int count = 0;
-
-
-                dt[0].text = "PAUSED";
-                dt[0].color = DT_COLOR_RED;
-                dt[0].x = (Machine->uiwidth - Machine->uifont->width * strlen(dt[0].text)) / 2;
-                dt[0].y = (Machine->uiheight - Machine->uifont->height) / 2;
-                dt[1].text = 0;
-
-                osd_set_mastervolume(0);
-
-                while (osd_key_pressed(UI_KEY_PAUSE))
-                        osd_update_audio();     /* give time to the sound hardware to apply the volume change */
-
-                while (osd_key_pressed(UI_KEY_PAUSE) == 0 && osd_key_pressed(UI_KEY_ESCAPE) == 0)
-                {
-                        if (osd_key_pressed(UI_KEY_MENU)) setup_menu(); /* call the configuration menu */
-
-                        osd_clearbitmap(Machine->scrbitmap);
-
-                        (*Machine->drv->vh_update)(Machine->scrbitmap, 1);  /* redraw screen */
-
-                        if (count < Machine->drv->frames_per_second / 2)
-                                displaytext(dt,0);      /* make PAUSED blink */
-                        else
-                                osd_update_display();
-
-                        count = (count + 1) % (Machine->drv->frames_per_second / 1);
-                }
-
-                while (osd_key_pressed(UI_KEY_ESCAPE));   /* wait for jey release */
-                while (osd_key_pressed(UI_KEY_PAUSE));     /* ditto */
-
-                osd_set_mastervolume(CurrentVolume);
-                osd_clearbitmap(Machine->scrbitmap);
-        }
-
-        /* if the user pressed TAB, go to the setup menu */
-        if (osd_key_pressed(UI_KEY_MENU))
-        {
-                osd_set_mastervolume(0);
-
-                while (osd_key_pressed(UI_KEY_MENU))
-                        osd_update_audio();     /* give time to the sound hardware to apply the volume change */
-
-                if (setup_menu()) return 1;
-
-                osd_set_mastervolume(CurrentVolume);
-        }
-
-        /* if the user pressed F4, show the character set */
-        if (osd_key_pressed(UI_KEY_CHARSET))
-        {
-                osd_set_mastervolume(0);
-
-                while (osd_key_pressed(UI_KEY_CHARSET))
-                        osd_update_audio();     /* give time to the sound hardware to apply the volume change */
-
-                if (showcharset()) return 1;
-
-                osd_set_mastervolume(CurrentVolume);
-        }
-
-        if (showvoltemp)
-        {
-                showvoltemp--;
-                if (!showvoltemp)
-                {
-                        osd_clearbitmap(Machine->scrbitmap);
-                }
-                else
-                {                     /* volume-meter */
-                int trueorientation;
-                int i,x;
-                char volstr[25];
-                        trueorientation = Machine->orientation;
-                        Machine->orientation = ORIENTATION_DEFAULT;
-
-                        x = (Machine->uiwidth - 24*Machine->uifont->width)/2;
-                        strcpy(volstr,"                      ");
-                        for (i = 0;i < (CurrentVolume/5);i++) volstr[i+1] = '\x15';
-
-                        drawgfx(Machine->scrbitmap,Machine->uifont,16,DT_COLOR_RED,0,0,x,Machine->drv->screen_height/2,0,TRANSPARENCY_NONE,0);
-                        drawgfx(Machine->scrbitmap,Machine->uifont,17,DT_COLOR_RED,0,0,x+23*Machine->uifont->width,Machine->drv->screen_height/2,0,TRANSPARENCY_NONE,0);
-                        for (i = 0;i < 22;i++)
-                            drawgfx(Machine->scrbitmap,Machine->uifont,(unsigned int)volstr[i],DT_COLOR_WHITE,
-                                        0,0,x+(i+1)*Machine->uifont->width+Machine->uixmin,Machine->uiheight/2+Machine->uiymin,0,TRANSPARENCY_NONE,0);
-
-                        Machine->orientation = trueorientation;
-                }
-        }
-
-        return 0;
-}
-#endif
 
 #endif
 
@@ -1989,16 +1751,6 @@ void osd_on_screen_display(const char *text,int percentage)
 #endif
 }
 
-
-
-void osd_set_gamma(float gamma)
-{
-}
-
-float osd_get_gamma(void)
-{
-  return(1.0);
-}
 
 void osd_set_brightness(int brightness)
 {

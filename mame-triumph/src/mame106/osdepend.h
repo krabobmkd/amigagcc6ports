@@ -8,9 +8,6 @@
     Visit http://mamedev.org for licensing and usage restrictions.
 
 ***************************************************************************/
-
-#pragma once
-
 #ifndef __OSDEPEND_H__
 #define __OSDEPEND_H__
 

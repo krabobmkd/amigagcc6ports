@@ -1,16 +1,18 @@
 /**************************************************************************
  *
  * Copyright (C) 2024 Vic Ferry (http://github.com/krabobmkd)
- * forked from 1999 Mats Eirik Hansen (mats.hansen at triumph.no)
- *
- * $Id: amiga.c,v 1.1 1999/04/28 18:50:15 meh Exp meh $
- *
- * $Log: amiga.c,v $
- * Revision 1.1  1999/04/28 18:50:15  meh
- * Initial revision
  *
  *
  *************************************************************************/
+
+// from mame:
+extern "C" {
+    // contains Machine definition
+    #include "mame.h"
+    #include "driver.h"
+    #include "osdepend.h"
+}
+
 // from amiga
 #include <proto/exec.h>
 #include <proto/dos.h>
@@ -20,365 +22,112 @@
 #include <proto/utility.h>
 extern "C" {
     #include "exec/types.h"
+    #include <dos/dos.h>
+    #include <dos/dostags.h>
+    #include <exec/memory.h>
+    #include <dos/dosextens.h>
+    #include <dos/dostags.h>
 }
 
-// from mame:
-extern "C" {
-    #include "osdepend.h"
-}
+
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "audio.h"
 #include "config_moo.h"
-static int MasterVolume=0;
-static int Attenuation=0;
-struct AChannelArray  *ChannelArray[2]={NULL,NULL};
-LONG          CurrentArray  = 0;
-
-struct Audio      *Audio=NULL;
 
 
-#define DEF_BUFFER_SIZE     32768
-#define DEF_MIN_FREE_CHIP   (64*1024)
+// describe a sound buffer to write. Passed to a SoundWriter function to create sound.
+// you should only read values from it and write m_pBuffer and maybe m_Volume.
+struct sSoundToWrite
+{	// write: stereo Writing on leftright buffer (signed short*2)table:
+	SHORT 	    *m_pBuffer;
+	// write: AHI Volume multiplier. should be 0x00010000; or do not touch.
+	ULONG 	    m_Volume;
+	// read: the amount of data to write in pBuffer. *2 for stereo.
+	ULONG m_nbSampleToFill;
+	// read: play frequency (22050,44100,...) should be the one given with AHIS_Init()
+	ULONG	m_PlayFrequency;
+	// Total Amount of sample played from the begining.
+	// seconds should be found with:  m_TotalSampleDone/m_PlayFrequency.
+	unsigned long long	m_TotalSampleDone;
+};
 
-#define MAX_AHI_CHANNEL_TAGS  9
-#define MAX_PAULA_FREQUENCY   28867
-#define MAX_PAULA_LENGTH    65536
+typedef enum {
+	eAHIS_ok=0,
+	eAHIS_Init, // special private value
+	eAHIS_DeviceError,
+	eAHIS_NotEnoughMemory,
+	eAHIS_ThreadError,
+    eAHIS_StreamEnd,
+	eAHIS_NumberOfError // used to extend the error list by other libs.
+} eAHIError;
 
-#define MAKE_PERIOD(f) ((f)?(((ULONG)3579547)/f):(65536))
 
-#define INTELULONG(i) (((i)<<24)|((i)>>24)|(((i)<<8)&0x00ff0000)|(((i)>>8)&0x0000ff00))
+struct Process *mainprocess = NULL;
 
-
-extern struct Library *UtilityBase;
-
-static inline APTR memAlloc(ULONG size)
+// Use  AHIS_Create()  AHIS_Delete() functions below to manage it:
+// private struct returned as handler !
+struct sAHISoundServer
 {
-  return(AllocVec(size, MEMF_PUBLIC|MEMF_CLEAR));
-}
+	// sample per seconds while playing:
+	ULONG 			m_freq;
+	// private system terms for AHI:
+	struct MsgPort 	*m_AHImp;
+	struct AHIRequest  *m_AHIio;
+	struct AHIRequest  *m_AHIio2;
+	struct AHIRequest  *m_join;
+	SHORT *m_pSBuff1, *m_pSBuff2;
+	// private thread handles: - we use volatile keyword to avoid memory coherence problem at interuption -
+	//volatile struct Process *m_hThread; // NULL if thread doesn't exist.
+	//volatile ULONG m_AskThreadDeath; // 0: thread should live. other: should die.
+    unsigned int    m_nextSamples;
+    unsigned int    m_stereo; // set at init.
+    unsigned int    m_leftRightState;
+	unsigned long long	m_TotalSampleDone;
+	int	m_Error;
+};
 
-static inline void memFree(APTR mem)
+//  global
+sAHISoundServer *pAHIS = NULL;
+
+// used by thread itself
+static void AHI_Close( sAHISoundServer *pAHIS )
 {
-  FreeVec(mem);
-}
+	if(pAHIS->m_join) {
 
+        if (!CheckIO((struct IORequest *)(pAHIS->m_join))) {
+               AbortIO((struct IORequest *)(pAHIS->m_join));
+           }
+		WaitIO((struct IORequest *)(pAHIS->m_join));
+	}
 
-struct AChannelArray *AAllocChannelArray(struct Audio *audio, LONG length)
-{
-  struct AChannelArray  *ca;
-  LONG          size;
-  LONG          i;
-  BYTE          *buffer;
+	// close ahi
+	if(pAHIS->m_pSBuff1){ FreeVec(pAHIS->m_pSBuff1); pAHIS->m_pSBuff1=NULL; }
+	if(pAHIS->m_pSBuff2){ FreeVec(pAHIS->m_pSBuff2); pAHIS->m_pSBuff2=NULL; }
 
-  size = sizeof(struct AChannelArray) + (audio->Channels * (sizeof(struct AChannel) + length));
+	if(pAHIS->m_AHIio){
+		CloseDevice((struct IORequest *)(pAHIS->m_AHIio));
+		//FreeSysObject(ASOT_IOREQUEST, pAHIS->m_AHIio);
+ 		DeleteExtIO((struct IORequest *)(pAHIS->m_AHIio));
+        pAHIS->m_AHIio= NULL;
+		}
 
-  ca = (struct AChannelArray *) memAlloc(size);
+	if(pAHIS->m_AHIio2){
+        //FreeSysObject(ASOT_IOREQUEST, pAHIS->m_AHIio2);
+        DeleteExtIO((struct IORequest *)(pAHIS->m_AHIio2));
+ 		pAHIS->m_AHIio2= NULL;
+		}
+	if(pAHIS->m_AHImp){
+        DeletePort(pAHIS->m_AHImp);
+        //FreeSysObject(ASOT_PORT, pAHIS->m_AHImp);
+ 		pAHIS->m_AHImp= NULL;
+		}
 
-  if(ca)
-  {
-    ca->Audio   = audio;
-    ca->Size    = size;
-    ca->Length    = length;
-    ca->Channels  = (struct AChannel *) &ca[1];
-
-    buffer = (BYTE *) & ca->Channels[audio->Channels];
-
-    for(i = 0; i < audio->Channels; i++)
-    {
-      ca->Channels[i].Buffer = buffer;
-
-      buffer += length;
-    }
-
-#ifdef POWERUP
-    PPCCacheClearE(ca, ca->Size, CACRF_ClearD);
-#endif
-  }
-
-  return(ca);
-}
-
-void AFreeChannelArray(struct AChannelArray *ca)
-{
-  if(ca)
-    memFree(ca);
-}
-
-struct Audio *AllocAudio(Tag tags,...)
-{
-  struct Audio  *audio;
-  struct TagItem  *tag, *taglist;
-  LONG      use_ahi;
-  LONG      channels;
-  LONG      max_sounds;
-  LONG      buffer_size;
-  BYTE      map_channels[4];
-  ULONG     min_free_chip;
-  LONG      size;
-  LONG      i;
-
-  taglist = (struct TagItem *) &tags;
-
-  use_ahi     = FALSE;
-  channels    = 4;
-  max_sounds    = 0;
-  min_free_chip = DEF_MIN_FREE_CHIP;
-  buffer_size   = DEF_BUFFER_SIZE;
-  map_channels[0] = 0;
-  map_channels[1] = 1;
-  map_channels[2] = 2;
-  map_channels[3] = 3;
-
-  while((tag = NextTagItem(&taglist)))
-  {
-    switch(tag->ti_Tag)
-    {
-      case AA_UseAHI:
-        use_ahi = tag->ti_Data;
-        break;
-      case AA_Channels:
-        channels = tag->ti_Data;
-        break;
-      case AA_MaxSounds:
-        max_sounds = tag->ti_Data;
-        break;
-      case AA_MapChannel0:
-        map_channels[0] = tag->ti_Data;
-        break;
-      case AA_MapChannel1:
-        map_channels[1] = tag->ti_Data;
-        break;
-      case AA_MapChannel2:
-        map_channels[2] = tag->ti_Data;
-        break;
-      case AA_MapChannel3:
-        map_channels[3] = tag->ti_Data;
-        break;
-      case AA_MinFreeChip:
-        min_free_chip = tag->ti_Data;
-        break;
-    }
-  }
-
-  size = sizeof(struct Audio);
-
-  if(use_ahi)
-    size += ((channels * MAX_AHI_CHANNEL_TAGS) + 1) * sizeof(struct TagItem);
-  else
-    size += 9 * sizeof(struct IOAudio);
-
-  audio = (struct Audio *)AllocVec(size, MEMF_CLEAR|MEMF_PUBLIC);
-
-  if(audio)
-  {
-    NewList((struct List *) &audio->Sounds);
-
-    audio->UseAHI   = use_ahi;
-    audio->Channels   = channels;
-    audio->BufferSize = ((buffer_size + 3) >> 2) << 2;
-    audio->MasterVolume = 100;
-    audio->NextSound  = 1;
-    audio->MinFreeChip  = min_free_chip;
-
-    for(i = 0; i < 4; i++)
-    {
-      if(map_channels[i] < channels)
-        audio->MapChannels[i] = map_channels[i];
-      else
-        audio->MapChannels[i] = i;
-    }
-
-    audio->ChannelArray = AAllocChannelArray(audio, 0);
-
-    if(audio->ChannelArray)
-    {
-      audio->MsgPort  = CreateMsgPort();
-
-      if(audio->MsgPort)
-      {
-        if(use_ahi)
-        {
-          audio->AHITags    = (struct TagItem *) &audio[1];
-          audio->AHIRequest = (struct AHIRequest *) CreateIORequest(audio->MsgPort, sizeof(struct AHIRequest));
-
-          if(audio->AHIRequest)
-          {
-            audio->AHIRequest->ahir_Version = 4;
-
-            if(!OpenDevice(AHINAME, AHI_NO_UNIT, (struct IORequest *) audio->AHIRequest, 0))
-            {
-              audio->AHIBase  = (struct Library *) audio->AHIRequest->ahir_Std.io_Device;
-
-              audio->AHIAudioCtrl = AHI_AllocAudio( AHIA_Channels,  channels,
-                                  AHIA_Sounds,  max_sounds + 1,
-                                  TAG_END);
-
-              if(audio->AHIAudioCtrl)
-              {
-                audio->AHISampleInfo.ahisi_Type   = AHIST_M8S;
-                audio->AHISampleInfo.ahisi_Address  = 0;
-                audio->AHISampleInfo.ahisi_Length = 0xffffffff;
-
-                if(!AHI_LoadSound(0, AHIST_DYNAMICSAMPLE, &audio->AHISampleInfo, audio->AHIAudioCtrl))
-                {
-                  AHI_ControlAudio(audio->AHIAudioCtrl, AHIC_Play, TRUE);
-
-                  audio->AHIEffMasterVolume.ahie_Effect = AHIET_MASTERVOLUME;
-                  audio->AHIEffMasterVolume.ahiemv_Volume = (audio->Channels >> 1) * 0x10000;
-
-                  AHI_SetEffect(&audio->AHIEffMasterVolume, audio->AHIAudioCtrl);
-
-                  return(audio);
-                }
-
-                AHI_FreeAudio(audio->AHIAudioCtrl);
-              }
-
-              CloseDevice((struct IORequest *) audio->AHIRequest);
-            }
-
-            DeleteIORequest((struct IORequest *) audio->AHIRequest);
-          }
-        }
-        else
-        {
-          UBYTE ch;
-
-          audio->AudioRequests = (struct IOAudio *) &audio[1];
-
-          for(i = 0; i < 9; i++)
-          {
-            audio->AudioRequests[i].ioa_Request.io_Message.mn_ReplyPort = audio->MsgPort;
-            audio->AudioRequests[i].ioa_Request.io_Message.mn_Length  = sizeof(struct IOAudio);
-          }
-
-          audio->Buffers = (BYTE *)AllocVec(8 * audio->BufferSize, MEMF_PUBLIC|MEMF_CHIP);
-
-          if(audio->Buffers)
-          {
-            ch = 0xf;
-
-            audio->AudioRequests[0].ioa_Request.io_Command  = ADCMD_ALLOCATE;
-            audio->AudioRequests[0].ioa_Request.io_Flags  = ADIOF_NOWAIT|IOF_QUICK;
-            audio->AudioRequests[0].ioa_Data        = &ch;
-            audio->AudioRequests[0].ioa_Length        = 1;
-
-            if(!OpenDevice("audio.device", 0, (struct IORequest *) audio->AudioRequests, 0))
-            {
-              for(i = 1; i < 9; i++)
-              {
-                audio->AudioRequests[i].ioa_Request.io_Device = audio->AudioRequests->ioa_Request.io_Device;
-                audio->AudioRequests[i].ioa_AllocKey      = audio->AudioRequests->ioa_AllocKey;
-              }
-
-              return(audio);
-            }
-
-            FreeVec(audio->Buffers);
-          }
-        }
-
-        DeleteMsgPort(audio->MsgPort);
-      }
-
-      AFreeChannelArray(audio->ChannelArray);
-    }
-
-    FreeVec(audio);
-  }
-
-  return(NULL);
 }
 
 
-void FreeAudio(struct Audio *audio)
-{
-  struct MinNode  *node;
-  struct IOAudio  *ioa;
-  LONG      i;
-
-  node = audio->Sounds.mlh_Head->mln_Succ;
-
-  while(node)
-  {
-    if(audio->UseAHI)
-      AHI_UnloadSound(((struct ASound *) node->mln_Pred)->Sound, audio->AHIAudioCtrl);
-    else if(((struct ASound *) node->mln_Pred)->AHISampleInfo.ahisi_Address != &((struct ASound *) node->mln_Pred)[1])
-      FreeVec(((struct ASound *) node->mln_Pred)->AHISampleInfo.ahisi_Address);
-
-    memFree(node->mln_Pred);
-
-    node = node->mln_Succ;
-  }
-
-  if(audio->UseAHI)
-  {
-    AHI_UnloadSound(0, audio->AHIAudioCtrl);
-    AHI_FreeAudio(audio->AHIAudioCtrl);
-    CloseDevice((struct IORequest *) audio->AHIRequest);
-    DeleteIORequest((struct IORequest *) audio->AHIRequest);
-    DeleteMsgPort(audio->MsgPort);
-  }
-  else
-  {
-    for(i = 0; i < 4; i++)
-    {
-      if(audio->Status[i] == AS_PLAYING1)
-        AbortIO((struct IORequest *) &audio->AudioRequests[2*i]);
-      else if(audio->Status[i] == AS_PLAYING2)
-        AbortIO((struct IORequest *) &audio->AudioRequests[2*i+1]);
-    }
-
-    while(audio->Status[0] || audio->Status[1] || audio->Status[2] || audio->Status[3])
-    {
-      WaitPort(audio->MsgPort);
-
-      ioa = (struct IOAudio *) GetMsg(audio->MsgPort);
-
-      if(ioa)
-        audio->Status[(((ULONG) ioa) - ((ULONG) audio->AudioRequests)) / (sizeof(struct IOAudio) << 1)] = AS_IDLE;
-    }
-
-    CloseDevice((struct IORequest *) audio->AudioRequests);
-
-    FreeVec(audio->Buffers);
-  }
-
-  AFreeChannelArray(audio->ChannelArray);
-
-  FreeVec(audio);
-}
-
-static inline void ASetMasterVolume(struct AChannelArray *ca, LONG volume)
-{
-  ca->MasterVolume = volume;
-  ca->Flags        = ACF_SetVolume;
-}
-
-static inline void ASetFrequency(struct AChannelArray *ca, LONG channel, LONG frequency)
-{
-  ca->Channels[channel].Frequency =  frequency;
-  ca->Channels[channel].Flags     |= ACF_SetFrequency;
-}
-
-static inline void ASetVolume(struct AChannelArray *ca, LONG channel, LONG volume)
-{
-  ca->Channels[channel].Volume =  volume;
-  ca->Channels[channel].Flags  |= ACF_SetVolume;
-}
-
-static inline void AStopChannel(struct AChannelArray *ca, LONG channel)
-{
-  ca->Channels[channel].Flags = ACF_Stop;
-}
-
-static inline void ARestartChannel(struct AChannelArray *ca, LONG channel)
-{
-  ca->Channels[channel].Flags = ACF_Restart;
-}
 
 // ---------------
 /*
@@ -403,43 +152,183 @@ static inline void ARestartChannel(struct AChannelArray *ca, LONG channel)
 */
 int osd_start_audio_stream(int stereo)
 {
-    if(Audio)
-    {
-        osd_stop_audio_stream();
-    }
-    if(Config[CFG_SOUND] != CFGS_NO)
-    {
-      Audio = AllocAudio( AA_UseAHI,    (Config[CFG_SOUND] == CFGS_AHI) ? TRUE : FALSE,
-                AA_Channels,  AUDIO_CHANNELS,
-                AA_MaxSounds, 255,
-                AA_MinFreeChip, Config[CFG_MINFREECHIP]*1024,
-                TAG_END);
+    if(pAHIS) osd_stop_audio_stream();
 
-      if(Audio)
-      {
-        ChannelArray[0] = AAllocChannelArray(Audio, AUDIO_BUFFER_LENGTH);
-    #ifdef POWERUP
-        ChannelArray[1] = AAllocChannelArray(Audio, AUDIO_BUFFER_LENGTH);
-    #endif
-      }
-    }
+    if(!Machine) return 0; // driver and machine are already inited during this call
 
-    return 0;
+    pAHIS = (sAHISoundServer *)AllocVec(sizeof(sAHISoundServer),
+                              //OS4 MEMF_SHARED|MEMF_CLEAR
+                              MEMF_PUBLIC|MEMF_CLEAR
+                              );
+    if(!pAHIS)
+    {
+
+        return 0;
+    }
+    int freq = Machine->sample_rate;
+    int ifps = (int) Machine->drv->frames_per_second;
+    if(freq ==0 || ifps == 0.0f) return 0;
+
+
+    unsigned int updateLength = freq / ifps;
+    printf("osd_start_audio_stream: msfreq: %d ifps:%d uplength:%d stereo:%d\n",
+           freq,ifps,updateLength,stereo);
+
+    pAHIS->m_freq = freq;
+    pAHIS->m_nextSamples = updateLength;
+    pAHIS->m_stereo = stereo;
+    pAHIS->m_leftRightState = 0;
+    unsigned int buffLength = updateLength<<1;
+    if(stereo) buffLength<<=1;
+
+    BYTE deviceResult;
+	pAHIS->m_AHImp = CreatePort(NULL,0);
+            //AllocSysObject(ASOT_PORT, NULL);
+	pAHIS->m_AHIio = (struct AHIRequest*)CreateExtIO(pAHIS->m_AHImp ,sizeof(struct AHIRequest));
+            /*AllocSysObjectTags(ASOT_IOREQUEST,
+		ASOIOR_Size,		sizeof(struct AHIRequest),
+		ASOIOR_ReplyPort,	pAHIS->m_AHImp,
+		TAG_END);*/
+
+	if (pAHIS->m_AHIio) {
+		pAHIS->m_AHIio->ahir_Version = 4;
+		deviceResult =
+			OpenDevice(AHINAME,0, (struct IORequest *)(pAHIS->m_AHIio), 0);
+	}
+
+    if (deviceResult) {
+		pAHIS->m_Error = eAHIS_DeviceError;
+		AHI_Close(pAHIS);
+		return 0;
+	}
+	pAHIS->m_AHIio2 = (struct AHIRequest *)CreateExtIO(pAHIS->m_AHImp ,sizeof(struct AHIRequest)); /*AllocSysObjectTags(ASOT_IOREQUEST,
+		ASOIOR_Size,		sizeof(struct AHIRequest),
+		ASOIOR_ReplyPort,	pAHIS->m_AHImp,
+		TAG_END);*/
+    if(!pAHIS->m_AHIio2) {
+		pAHIS->m_Error = eAHIS_DeviceError;
+		AHI_Close(pAHIS);
+		return 0;
+    }
+    CopyMem(pAHIS->m_AHIio, pAHIS->m_AHIio2, sizeof(struct AHIRequest));
+
+    pAHIS->m_pSBuff1 = (SHORT *) AllocVec(buffLength, MEMF_PUBLIC|MEMF_CLEAR);
+    pAHIS->m_pSBuff2 = (SHORT *) AllocVec(buffLength, MEMF_PUBLIC|MEMF_CLEAR);
+	if (!pAHIS->m_pSBuff1 || !pAHIS->m_pSBuff2 ) {
+		pAHIS->m_Error = (int) eAHIS_NotEnoughMemory;
+		AHI_Close(pAHIS);
+		return 0;
+	}
+	//ok for ahi init.
+
+	pAHIS->m_Error = eAHIS_ok;
+
+	// prepare struct which is passed to write func:
+//	sSoundToWrite soundToWrite;
+//	soundToWrite.m_nbSampleToFill = BUFFERSIZE>>2; // always
+//	soundToWrite.m_PlayFrequency = pAHIS->m_freq; // always
+//	soundToWrite.m_TotalSampleDone = 0ULL; // 64b.
+
+	// loop still something ask to stop.
+    pAHIS->m_join = NULL; // retain the last one to tell next request we continue this one.
+
+    printf("osd_start_audio_stream: OK, ask %d\n",pAHIS->m_nextSamples);
+
+    // must return samples to do next.
+    return pAHIS->m_nextSamples;
 }
+
+// from mame main thread engine.
 int osd_update_audio_stream(INT16 *buffer)
 {
-    return 0;
+    printf("osd_update_audio_stream %08x\n", (int)pAHIS);
+    if(!pAHIS) return 0;
+    printf("osd_update_audio_stream\n");
+    // buffer length is pAHIS->m_nextSamples.
+
+    SHORT *p1 = pAHIS->m_pSBuff1;
+    struct AHIRequest  *AHIio = pAHIS->m_AHIio;
+
+    if(pAHIS->m_stereo)
+    {
+        // stereo would receive 2 calls for left/right...
+        if(pAHIS->m_leftRightState==0)
+        {
+            // left
+           for(unsigned int i=0;i<pAHIS->m_nextSamples;i++)
+           {
+               *p1 = buffer[i];
+                p1 +=2;
+           }
+           pAHIS->m_leftRightState++;
+           return pAHIS->m_nextSamples;
+        } else
+        {
+            // right
+            SHORT *p1b = p1+1;
+            for(unsigned int i=0;i<pAHIS->m_nextSamples;i++) {
+                *p1b = buffer[i];
+                 p1b +=2;
+            }
+            // then push
+            AHIio->ahir_Std.io_Length = pAHIS->m_nextSamples<<2; // need byte length.
+            AHIio->ahir_Std.io_Data = p1;
+            AHIio->ahir_Type = AHIST_S16S;
+
+            pAHIS->m_leftRightState=0;
+        }
+        // end if stereo
+    } else
+    {
+        // mono
+        AHIio->ahir_Std.io_Length = pAHIS->m_nextSamples<<1; // need byte length.
+        AHIio->ahir_Std.io_Data = buffer;
+        AHIio->ahir_Type = AHIST_M16S;
+    }
+
+
+    AHIio->ahir_Std.io_Message.mn_Node.ln_Pri = 128; //64 //127?
+    AHIio->ahir_Std.io_Command = CMD_WRITE;
+    AHIio->ahir_Std.io_Offset = 0;
+    AHIio->ahir_Version = 4;
+    AHIio->ahir_Frequency = pAHIS->m_freq;
+
+    //Workout mode to set
+    AHIio->ahir_Volume = 0x010000;
+    AHIio->ahir_Position = 0x8000;
+    AHIio->ahir_Link = pAHIS->m_join;
+
+    SendIO((struct IORequest *)AHIio);
+
+    if (pAHIS->m_join) {
+        WaitIO((struct IORequest *)(pAHIS->m_join));
+    }
+
+    pAHIS->m_join = AHIio;
+
+    // switch double buffer:
+    pAHIS->m_AHIio = pAHIS->m_AHIio2;
+    pAHIS->m_AHIio2 = AHIio;
+
+    pAHIS->m_pSBuff1 = pAHIS->m_pSBuff2;
+    pAHIS->m_pSBuff2 = p1;
+
+    // must return length of next sample
+    return pAHIS->m_nextSamples;
 }
+extern "C" {
 void osd_stop_audio_stream(void)
 {
-    printf("");
-    if(!Audio) return;
-    FreeAudio(Audio);
-    ChannelArray[0] = NULL;
-    ChannelArray[1] = NULL;
-    Audio = NULL;
-}
+    printf("osd_stop_audio_stream\n");
+    if(pAHIS)
+    {
+        AHI_Close(pAHIS);
+    	FreeVec(pAHIS);
+        pAHIS = NULL;
+    }
 
+}
+}
 /*
   control master volume. attenuation is the attenuation in dB (a negative
   number). To convert from dB to a linear volume scale do the following:
@@ -450,48 +339,15 @@ void osd_stop_audio_stream(void)
 
 void osd_set_mastervolume(int attenuation)
 {
-//	float volume;
 
-//	Attenuation = attenuation;
-
-// 	volume = 256.0;	/* range is 0-256 */
-
-//	while(attenuation++ < 0)
-//		volume /= 1.122018454;	/* = (10 ^ (1/20)) = 1dB */
-
-//  MasterVolume = volume;
-
-//printf("osd_set_mastervolume:%08x\n",(int));
-//  if(ChannelArray[0])
-//  {
-//#ifdef POWERUP
-//    if(!ChannelArray[1])
-//      return;
-//#endif
-//    ASetMasterVolume(ChannelArray[CurrentArray], MasterVolume);
-//  }
 }
 
 int osd_get_mastervolume(void)
 {
-  return(Attenuation);
+    return 0;
 }
 
 void osd_sound_enable(int enable)
 {
-#ifdef POWERUP
-  if(ChannelArray[0] && ChannelArray[1])
-#else
-  if(ChannelArray[0])
-#endif
-  {
-    if(enable)
-    {
-      ASetMasterVolume(ChannelArray[CurrentArray], MasterVolume);
-    }
-    else
-    {
-      ASetMasterVolume(ChannelArray[CurrentArray], 0);
-    }
-  }
+
 }

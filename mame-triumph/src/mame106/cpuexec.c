@@ -207,7 +207,6 @@ int cpuexec_init(void)
 	/* loop over all our CPUs */
 	for (cpunum = 0; cpunum < MAX_CPU; cpunum++)
 	{
- printf("cpu loop:%d\n",cpunum);
 		int cputype = Machine->drv->cpu[cpunum].cpu_type;
 		int num_regs;
 
@@ -221,8 +220,6 @@ int cpuexec_init(void)
 		cpu[cpunum].clock = Machine->drv->cpu[cpunum].cpu_clock;
 		cpu[cpunum].clockscale = 1.0;
 		cpu[cpunum].localtime = time_zero;
-
- printf("cpu loop:a\n");
 
 		/* compute the cycle times */
 		sec_to_cycles[cpunum] = cpu[cpunum].clockscale * cpu[cpunum].clock;
@@ -246,16 +243,16 @@ int cpuexec_init(void)
 		state_save_register_item("cpu", cpunum, cpu[cpunum].clockscale);
 
 		state_save_register_item("cpu", cpunum, cpu[cpunum].vblankint_countdown);
- printf("cpu loop:b\n");
+
 		/* initialize this CPU */
 		state_save_push_tag(cpunum + 1);
 		num_regs = state_save_get_reg_count();
 		if (cpuintrf_init_cpu(cpunum, cputype, cpu[cpunum].clock, Machine->drv->cpu[cpunum].reset_param, cpu_irq_callbacks[cpunum]))
 			return 1;
- printf("cpu loop:c\n");
+
 		num_regs = state_save_get_reg_count() - num_regs;
 		state_save_pop_tag();
- printf("cpu loop:d\n");
+
 		/* if no state registered for saving, we can't save */
 		if (num_regs == 0)
 		{
