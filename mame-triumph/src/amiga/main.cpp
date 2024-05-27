@@ -184,18 +184,22 @@ int libs_init()
     return(0);
 }
 
-
+extern "C" {
+void exitCleanCtrlC(void);
+}
 // exit code that is executed in all cases:
 // - after main()
 // - when anything call exit()
 // - SIGTERM signal (->to be managed)
 void main_close()
 {
+    printf("does main_close\n");
+
+    exitCleanCtrlC(); // flush game allocs, ahcked from mame.c, in case stopped during game.
+    osd_close_display(); // also useful when ctrl-C
+    osd_stop_audio_stream();
     unzip_cache_clear();
 
-    osd_stop_audio_stream();
-
-    printf("does main_close\n");
     if(TimerIO)
     {
         if(TimerBase)

@@ -27,6 +27,8 @@
 extern "C" {
     #include "osdepend.h"
     #include "input.h"
+    // for schedule_exit()
+    #include "mame.h"
 }
 
 #include "amiga_inputs.h"
@@ -34,7 +36,6 @@ extern "C" {
 #include <stdio.h>
 #include <string>
 #include <stdlib.h>
-struct MameInputs *Inputs=NULL;
 
 // we don't even need to publish it:
 struct MameInputs
@@ -109,6 +110,7 @@ void UpdateInputs(struct MsgPort *pMsgPort)
   UWORD       imcode;
   UWORD       imqual;
 
+ //printf("UpdateInputs: %08x\n",(int)g_pInputs);
     if(!pMsgPort || !g_pInputs) return;
 
     while((im = (struct IntuiMessage *) GetMsg(pMsgPort)))
@@ -119,22 +121,29 @@ void UpdateInputs(struct MsgPort *pMsgPort)
 
         ReplyMsg((struct Message *) im);
 
+        //printf("got mess: %d\n",(int)imclass);
+
         switch(imclass)
         {
             case IDCMP_RAWKEY:
             if(!(imqual & IEQUALIFIER_REPEAT) )
             {
-                g_pInputs->Keys[imcode & IKEY_RAWMASK] = (BYTE)((imcode & IECODE_UP_PREFIX)==0);
-//                if(imcode & IECODE_UP_PREFIX)
-//                {
-//                    inputs->Keys[imcode & IKEY_RAWMASK] = 0;
-//                }
-//                else
-//                {
-//                    inputs->Keys[imcode & IKEY_RAWMASK] = 1;
-//                }
+ //               g_pInputs->Keys[imcode & IKEY_RAWMASK] = (BYTE)((imcode & IECODE_UP_PREFIX)==0);
+                if(imcode & IECODE_UP_PREFIX)
+                {
+                    g_pInputs->Keys[imcode & IKEY_RAWMASK] = 0;
+                }
+                else
+                {
+                    g_pInputs->Keys[imcode & IKEY_RAWMASK] = 1;
+                    printf("key:%d on\n",imcode);
+                }
             }
             break;
+            case IDCMP_CLOSEWINDOW:
+                mame_schedule_exit();
+            break;
+
 
 //        case IDCMP_MENUPICK:
 //        if(inputs->MenuHook)
@@ -232,7 +241,7 @@ inline unsigned int nameToMameKeyEnum(std::string &s)
 const os_code_info *osd_get_code_list(void)
 //const struct KeyboardInfo *osd_get_key_list(void)
 {
-  //  printf(" * * * ** osd_get_key_list  * * * *  *\n");
+    printf(" * * * ** osd_get_key_list  * * * *  *\n");
 
  /* from mame input.h
     struct KeyboardInfo
@@ -375,8 +384,8 @@ const os_code_info *osd_get_code_list(void)
 INT32 osd_get_code_value(os_code oscode)
 {
     // now , always rawkey.
-    if(!Inputs) return 0;
-    if(oscode<128) return (int)Inputs->Keys[oscode];
+    if(!g_pInputs) return 0;
+    if(oscode<128) return (int)g_pInputs->Keys[oscode];
     return 0;
 }
 

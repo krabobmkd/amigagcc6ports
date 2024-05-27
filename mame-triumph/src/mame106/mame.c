@@ -387,7 +387,23 @@ int run_game(int game)
 	/* return an error */
 	return error;
 }
+// added by KRB /2024
+void exitCleanCtrlC(void)
+{
+    callback_item *cb;
+    /* call all exit callbacks registered */
+    for (cb = exit_callback_list; cb; cb = cb->next)
+        (*cb->func.exit)();
 
+    /* close all inner resource tracking */
+    while (resource_tracking_tag != 0)
+        end_resource_tracking();
+
+    /* free our callback lists */
+    free_callback_list(&exit_callback_list);
+    free_callback_list(&reset_callback_list);
+    free_callback_list(&pause_callback_list);
+}
 
 /*-------------------------------------------------
     mame_get_phase - return the current program

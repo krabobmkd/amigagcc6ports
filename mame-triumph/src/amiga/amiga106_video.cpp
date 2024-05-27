@@ -72,6 +72,7 @@ typedef struct DemoScreen_ {
 		unsigned int	ds_MaxHeight;
 		unsigned int	ds_fullscreenWidth; // dimension from modeid
 		unsigned int	ds_fullscreenHeight;
+        unsigned int    ds_fullscreenPixelMode;
 		void			*ds_InvisibleMouseRaster;
 		struct MsgPort *ds_CurrentPort; 	// this port can change if fullscreen mode change.
 		struct Screen 	*ds_IntuitionScreen;
@@ -220,14 +221,14 @@ struct NewWindow mynewwin =
     0,0,     /* Width, Height */
     -1, -1,             /* DetailPen, BlockPen */
     IDCMP_MENUPICK | IDCMP_MOUSEBUTTONS | IDCMP_GADGETUP | IDCMP_GADGETDOWN | IDCMP_MOUSEMOVE |
-   IDCMP_CLOSEWINDOW | IDCMP_REFRESHWINDOW | IDCMP_INTUITICKS, /* IDCMPFlags */
+   IDCMP_CLOSEWINDOW | IDCMP_REFRESHWINDOW | IDCMP_INTUITICKS | IDCMP_RAWKEY, /* IDCMPFlags */
     WFLG_ACTIVATE | WFLG_DRAGBAR | WFLG_DEPTHGADGET | WFLG_CLOSEGADGET | WFLG_SIZEGADGET | WFLG_SIZEBBOTTOM |
    WFLG_SIMPLE_REFRESH | WFLG_GIMMEZEROZERO  /*| WINDOWSIZING | WFLG_SIZEBBOTTOM */  /* WFLG_SIZEBRIGHT*/ ,   /* Flags   */
     // windowsizing added if cybergfx
     // gimmezerozero for coordinates inside the window.
     NULL,      /* FirstGadget */
     NULL,      /* CheckMark */
-    " Ukonx - My World",// /* Title */
+    "MAME",// /* Title */
     NULL,      /* Screen */
     NULL,      /* BitMap */
     100 /*Screen_Width */, 84 /* Screen_Height */ , /* MinWidth, MinHeight */
@@ -335,14 +336,20 @@ DemoScreen *InitDemoScreen( unsigned int maxWidth,
     // get size of modeid screen:
     pDemoScreen->ds_fullscreenWidth = GetCyberIDAttr( CYBRIDATTR_WIDTH, modeid);
     pDemoScreen->ds_fullscreenHeight = GetCyberIDAttr( CYBRIDATTR_HEIGHT, modeid );
-
- printf("final resolution:%d %d render res:%d %d\n",pDemoScreen->ds_fullscreenWidth,pDemoScreen->ds_fullscreenHeight,pDemoScreen->ds_MaxWidth,pDemoScreen->ds_MaxHeight);
+    pDemoScreen->ds_fullscreenPixelMode = GetCyberIDAttr( CYBRIDATTR_PIXFMT, modeid );
+ printf("final resolution:%d %d render res:%d %d pixelmode:%d\n",
+        pDemoScreen->ds_fullscreenWidth,
+        pDemoScreen->ds_fullscreenHeight,
+        pDemoScreen->ds_MaxWidth,
+        pDemoScreen->ds_MaxHeight,
+        pDemoScreen->ds_fullscreenPixelMode);
 
 
 //	printf("modeid:%08x \n",modeid);
 
 	// ---------------- open full screen:
-	if(! DemoScreenOpenFullScreen( pDemoScreen ) ) { CloseDemoScreen(pDemoScreen);  return (NULL); }
+	//if(! DemoScreenOpenFullScreen( pDemoScreen ) ) { CloseDemoScreen(pDemoScreen);  return (NULL); }
+    if(! DemoScreenOpenWBWindow( pDemoScreen ) ) { CloseDemoScreen(pDemoScreen);  return (NULL); }
 
 
 //	p96RequestModeIDTags(  );
@@ -363,8 +370,6 @@ void	CloseDemoScreen( DemoScreen *_pScreenToClose )
 	if( _pScreenToClose->ds_CGXVI  )  DropInterface((struct Interface *) _pScreenToClose->ds_CGXVI );
 	if( _pScreenToClose->ds_CGXVideoLib   )  CloseLibrary( _pScreenToClose->ds_CGXVideoLib );
 */
-	if( CyberGfxBase  )  CloseLibrary( CyberGfxBase );
-    CyberGfxBase = NULL;
 	free( _pScreenToClose );
 }
 /* ======================= */
@@ -591,100 +596,100 @@ int osd_skip_this_frame(void)
 */
 void osd_update_video_and_audio(struct _mame_display *display)
 {
-    printf("osd_update_video_and_audio\n");
+   // printf("osd_update_video_and_audio\n");
     if(!g_pScreen) return;
 
     mame_bitmap *bitmap = display->game_bitmap;
 
-  printf("w:%d h:%d depth:%d rowpixels:%d\n", bitmap->width,bitmap->height,bitmap->depth,bitmap->rowpixels);
-  printf("rec:minx:%d miny:%d maxx:%d maxy:%d\n",display->game_visible_area.min_x,display->game_visible_area.min_y,
-         display->game_visible_area.max_x,display->game_visible_area.max_y);
+//  printf("w:%d h:%d depth:%d rowpixels:%d\n", bitmap->width,bitmap->height,bitmap->depth,bitmap->rowpixels);
+//  printf("rec:minx:%d miny:%d maxx:%d maxy:%d\n",display->game_visible_area.min_x,display->game_visible_area.min_y,
+//         display->game_visible_area.max_x,display->game_visible_area.max_y);
 
 // --- - - - - --
-	if( g_pScreen->ds_ScreenWindow )
-	{
-        g_pScreen->m_pRenderRastPort->BitMap = g_pScreen->m_pBuffer2->sb_BitMap;
+//	if( g_pScreen->ds_ScreenWindow )
+//	{
+//        g_pScreen->m_pRenderRastPort->BitMap = g_pScreen->m_pBuffer2->sb_BitMap;
 
-        if(pRenderInfo->m_srcWidth == g_pScreen->ds_fullscreenWidth)
-        {
-            // in that case no scale
-            uint32_t finalheight = pRenderInfo->m_srcHeight;
-            uint32_t ytop = (g_pScreen->ds_fullscreenHeight-finalheight)>>1;
+//     //re   if(pRenderInfo->m_srcWidth == g_pScreen->ds_fullscreenWidth)
+//        {
+//            // in that case no scale
+//            int32_t finalheight =  bitmap->height;
+//            int32_t ytop = 0;// (g_pScreen->ds_fullscreenHeight-finalheight)>>1;
 
-            WritePixelArray(pRenderInfo->m_pPixelBuffer,
-                            0,0, // starting point in source rectangle
-                            pRenderInfo->m_srcMod, // bytes per row in source
+//            WritePixelArray(bitmap->base, //  pRenderInfo->m_pPixelBuffer,
+//                            0,0, // starting point in source rectangle
+//                           bitmap->rowpixels<<1, //pRenderInfo->m_srcMod, // bytes per row in source
 
-                            g_pScreen->m_pRenderRastPort, // rastport to render
-                            0,ytop, // start point in raster
-                            pRenderInfo->m_srcWidth,
-                            pRenderInfo->m_srcHeight,
-                            pRenderInfo->m_srcFormat
-                            );
-//            /*
-//            ULONG        WritePixelArray(APTR, UWORD, UWORD, UWORD, struct RastPort *, UWORD,
-//                                         UWORD, UWORD, UWORD, UBYTE);
-//        */
-        } else
-        {
-            // scale
-            uint32_t finalheight = (g_pScreen->ds_fullscreenHeight * pRenderInfo->m_RectangleRatio)>>16;
-            uint32_t ytop = (g_pScreen->ds_fullscreenHeight-finalheight)>>1;
+//                            g_pScreen->m_pRenderRastPort, // rastport to render
+//                            0,ytop, // start point in raster
+//                            bitmap->width,
+//                            bitmap->height,
+//                            RECTFMT_ARGB //bitmap->m_srcFormat
+//                            );
+////            /*
+////            ULONG        WritePixelArray(APTR, UWORD, UWORD, UWORD, struct RastPort *, UWORD,
+////                                         UWORD, UWORD, UWORD, UBYTE);
+////        */
+//        }/* else
+//        {
+//            // scale
+//            uint32_t finalheight = (g_pScreen->ds_fullscreenHeight * pRenderInfo->m_RectangleRatio)>>16;
+//            uint32_t ytop = (g_pScreen->ds_fullscreenHeight-finalheight)>>1;
 
-            ScalePixelArray(pRenderInfo->m_pPixelBuffer,
-                pRenderInfo->m_srcWidth,
-                pRenderInfo->m_srcHeight ,
-                pRenderInfo->m_srcMod,
-                //_g_pScreen->ds_ScreenWindow->RPort,
-                g_pScreen->m_pRenderRastPort,
-                            0,ytop,
-                g_pScreen->ds_fullscreenWidth,
-                finalheight,pRenderInfo->m_srcFormat);
-        } // end if scale
+//            ScalePixelArray(pRenderInfo->m_pPixelBuffer,
+//                pRenderInfo->m_srcWidth,
+//                pRenderInfo->m_srcHeight ,
+//                pRenderInfo->m_srcMod,
+//                //_g_pScreen->ds_ScreenWindow->RPort,
+//                g_pScreen->m_pRenderRastPort,
+//                            0,ytop,
+//                g_pScreen->ds_fullscreenWidth,
+//                finalheight,pRenderInfo->m_srcFormat);
+//        } // end if scale
+//*/
+//        //not really enjoyable wait:
+////        WaitBOVP( &(_g_pScreen->ds_IntuitionScreen->ViewPort) );
 
-        //not really enjoyable wait:
-//        WaitBOVP( &(_g_pScreen->ds_IntuitionScreen->ViewPort) );
+//        while( ChangeScreenBuffer(g_pScreen->ds_IntuitionScreen, g_pScreen->m_pBuffer2) == 0 )
+//		{
+// //doesnt tick:
+//            Printf(" double buffer swap error\n");
+//			WaitBOVP( &(g_pScreen->ds_IntuitionScreen->ViewPort) );	// wait again.
+//		}
+//		// swap screen buffers:
+//		{
 
-        while( ChangeScreenBuffer(g_pScreen->ds_IntuitionScreen, g_pScreen->m_pBuffer2) == 0 )
-		{
- //doesnt tick:
-            Printf(" double buffer swap error\n");
-			WaitBOVP( &(g_pScreen->ds_IntuitionScreen->ViewPort) );	// wait again.
-		}
-		// swap screen buffers:
-		{
+//	struct ScreenBuffer *pswap= g_pScreen->m_pBuffer2;
+//	g_pScreen->m_pBuffer2 = g_pScreen->m_pBuffer1;
+//	g_pScreen->m_pBuffer1 = pswap ;
 
-	struct ScreenBuffer *pswap= g_pScreen->m_pBuffer2;
-	g_pScreen->m_pBuffer2 = g_pScreen->m_pBuffer1;
-	g_pScreen->m_pBuffer1 = pswap ;
+//		}
+//	} else
+//	{
+//		// draw to window:
+//		if(  g_pScreen->ds_LittleWindow != NULL )
+//		{
+///*
+//			IP96->p96WritePixelArray( _pRenderInfo,0,0,
+//								_g_pScreen->ds_LittleWindow->RPort,0,0,
+//								_g_pScreen->ds_MaxWidth,
+//								_g_pScreen->ds_MaxHeight	  );
+//*/
+//		LONG width=0,height=0;
+//		width = g_pScreen->ds_LittleWindow->Width;
+//        height = g_pScreen->ds_LittleWindow->Height;
 
-		}
-	} else
-	{
-		// draw to window:
-		if(  g_pScreen->ds_LittleWindow != NULL )
-		{
-/*
-			IP96->p96WritePixelArray( _pRenderInfo,0,0,
-								_g_pScreen->ds_LittleWindow->RPort,0,0,
-								_g_pScreen->ds_MaxWidth,
-								_g_pScreen->ds_MaxHeight	  );
-*/
-		LONG width=0,height=0;
-		width = g_pScreen->ds_LittleWindow->Width;
-        height = g_pScreen->ds_LittleWindow->Height;
+////printf("w:%d h:%d\n",width,height);
+//        ScalePixelArray(pRenderInfo->m_pPixelBuffer,
+//            pRenderInfo->m_srcWidth,
+//            pRenderInfo->m_srcHeight ,
+//            pRenderInfo->m_srcMod,g_pScreen->ds_LittleWindow->RPort,
+//            0,0,width,height,pRenderInfo->m_srcFormat);
 
-//printf("w:%d h:%d\n",width,height);
-        ScalePixelArray(pRenderInfo->m_pPixelBuffer,
-            pRenderInfo->m_srcWidth,
-            pRenderInfo->m_srcHeight ,
-            pRenderInfo->m_srcMod,g_pScreen->ds_LittleWindow->RPort,
-            0,0,width,height,pRenderInfo->m_srcFormat);
-
-		}
-	}
+//		}
+//	}
 // - - - -- - - -
-
+   // printf("currentport:%08x\n",(int)g_pScreen->ds_CurrentPort);
     if(g_pScreen->ds_CurrentPort)
         UpdateInputs(g_pScreen->ds_CurrentPort);
 
