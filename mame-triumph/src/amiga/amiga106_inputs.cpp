@@ -12,19 +12,21 @@
  *
  *************************************************************************/
 // from amiga
+#include <proto/exec.h>
 #include <proto/intuition.h>
+#include <proto/lowlevel.h>
 #include <proto/keymap.h>
+
 #include "intuiuncollide.h"
 
 //#include <devices/keyboard.h>
 //#include <devices/keymap.h>
 
-
 #include <vector>
 // from mame:
 extern "C" {
-#include "osdepend.h"
-#include "input.h"
+    #include "osdepend.h"
+    #include "input.h"
 }
 
 #include "amiga_inputs.h"
@@ -32,9 +34,145 @@ extern "C" {
 #include <stdio.h>
 #include <string>
 #include <stdlib.h>
-extern struct Inputs     *Inputs;
+struct MameInputs *Inputs=NULL;
+
+// we don't even need to publish it:
+struct MameInputs
+{
+    struct MsgPort *pMsgPort;
+    BYTE         Keys[128]; // actual keyboard rawkeys
+
+};
+
+#define IKEY_RAWMASK 0x7f
 
 using namespace std;
+
+MameInputs *g_pInputs=NULL;
+
+extern "C" {
+    struct Library *LowLevelBase = NULL;
+}
+void InitLowLevelLib()
+{
+    if(LowLevelBase) return;
+    LowLevelBase = OpenLibrary("lowlevel.library", 0);
+    if(LowLevelBase)
+    {
+        SystemControl(
+        // Starts creating rawkey codes for the
+	    // joystick/game controller on the given unit.
+            SCON_AddCreateKeys,0,
+            SCON_AddCreateKeys,1,
+            SCON_AddCreateKeys,2,
+            SCON_AddCreateKeys,3,
+            TAG_END,0
+            );
+    }
+}
+void CloseLowLevelLib()
+{
+    if(LowLevelBase == NULL) return;
+
+    SystemControl(
+        // stops rawkey codes for the joystick/game
+        SCON_RemCreateKeys,0,
+        SCON_RemCreateKeys,1,
+        SCON_RemCreateKeys,2,
+        SCON_RemCreateKeys,3,
+        TAG_END,0
+        );
+    if(LowLevelBase) CloseLibrary(LowLevelBase);
+    LowLevelBase = NULL;
+
+}
+
+void AllocInputs()
+{
+    if(g_pInputs) return;
+    g_pInputs = (MameInputs *)calloc(1,sizeof(MameInputs));
+   // if(!g_pInputs) return;
+
+}
+
+void FreeInputs()
+{
+    if(g_pInputs) free(g_pInputs);
+    g_pInputs = NULL;
+}
+// called from video
+void UpdateInputs(struct MsgPort *pMsgPort)
+{
+  struct IntuiMessage *im;
+  struct MenuItem   *mitem;
+  ULONG       imclass;
+  UWORD       imcode;
+  UWORD       imqual;
+
+    if(!pMsgPort || !g_pInputs) return;
+
+    while((im = (struct IntuiMessage *) GetMsg(pMsgPort)))
+    {
+        imclass = im->Class;
+        imcode  = im->Code;
+        imqual  = im->Qualifier;
+
+        ReplyMsg((struct Message *) im);
+
+        switch(imclass)
+        {
+            case IDCMP_RAWKEY:
+            if(!(imqual & IEQUALIFIER_REPEAT) )
+            {
+                g_pInputs->Keys[imcode & IKEY_RAWMASK] = (BYTE)((imcode & IECODE_UP_PREFIX)==0);
+//                if(imcode & IECODE_UP_PREFIX)
+//                {
+//                    inputs->Keys[imcode & IKEY_RAWMASK] = 0;
+//                }
+//                else
+//                {
+//                    inputs->Keys[imcode & IKEY_RAWMASK] = 1;
+//                }
+            }
+            break;
+
+//        case IDCMP_MENUPICK:
+//        if(inputs->MenuHook)
+//        {
+//          while(imcode != MENUNULL)
+//          {
+//            CallHook(inputs->MenuHook, NULL, ITEMNUM(imcode));
+
+//            mitem = ItemAddress(inputs->Window->MenuStrip, imcode);
+//            imcode  = mitem->NextSelect;
+//          }
+//        }
+//        break;
+
+//        case IDCMP_REFRESHWINDOW:
+//        BeginRefresh(inputs->Window);
+//        if(inputs->RefreshHook)
+//          CallHookPkt(inputs->RefreshHook, NULL, NULL);
+//        EndRefresh(inputs->Window, TRUE);
+//        break;
+
+//        case IDCMP_ACTIVEWINDOW:
+//        IEnable(inputs);
+//        break;
+
+//        case IDCMP_INACTIVEWINDOW:
+//        IDisable(inputs);
+//        break;
+
+//        default:
+//        if(inputs->IDCMPHook)
+//          CallHook(inputs->IDCMPHook, NULL, imclass);
+        }
+    }
+}
+
+
+
 /******************************************************************************
 
   Keyboard
@@ -235,8 +373,8 @@ const os_code_info *osd_get_code_list(void)
   code specified in the list returned by osd_get_key_list().
 */
 INT32 osd_get_code_value(os_code oscode)
-//int osd_is_key_pressed(int keycode) // now , always rawkey.
 {
+    // now , always rawkey.
     if(!Inputs) return 0;
     if(oscode<128) return (int)Inputs->Keys[oscode];
     return 0;

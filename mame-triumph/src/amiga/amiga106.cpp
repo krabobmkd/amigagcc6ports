@@ -395,71 +395,10 @@ void osd_mark_dirty(int x1, int y1, int x2, int y2, int ui)
 }
 */
 
-
-/*
-  osd_allocate_colors() is called after osd_create_display(), to create and initialize
-  the palette.
-  palette is an array of 'totalcolors' R,G,B triplets. The function returns
-  in *pens the pen values corresponding to the requested colors.
-  When modifiable is not 0, the palette will be modified later via calls to
-  osd_modify_pen(). Otherwise, the code can assume that the palette will not change,
-  and activate special optimizations (e.g. direct copy for a 16-bit display).
-  The function must also initialize Machine->uifont->colortable[] to get proper
-  white-on-black and black-on-white text.
-  Return 0 for success.
-*/
-
-
-
-
-/*
-  Update video and audio. game_bitmap contains the game display, while
-  debug_bitmap an image of the debugger window (if the debugger is active; NULL
-  otherwise). They can be shown one at a time, or in two separate windows,
-  depending on the OS limitations. If only one is shown, the user must be able
-  to toggle between the two by pressing IPT_UI_TOGGLE_DEBUG; moreover,
-  osd_debugger_focus() will be used by the core to force the display of a
-  specific bitmap, e.g. the debugger one when the debugger becomes active.
-
-  leds_status is a bitmask of lit LEDs, usually player start lamps. They can be
-  simulated using the keyboard LEDs, or in other ways e.g. by placing graphics
-  on the window title bar.
-*/
-void osd_update_video_and_audio(struct _mame_display *display)
-//void osd_update_video_and_audio(mame_bitmap *bitmap)
-//old void osd_update_video_and_audio(void)
-{
-    printf("osd_update_video_and_audio\n");
-
-  mame_bitmap *bitmap = display->game_bitmap;
-
-  printf("w:%d h:%d depth:%d rowpixels:%d\n", bitmap->width,bitmap->height,bitmap->depth,bitmap->rowpixels);
-  printf("rec:minx:%d miny:%d maxx:%d maxy:%d\n",display->game_visible_area.min_x,display->game_visible_area.min_y,
-         display->game_visible_area.max_x,display->game_visible_area.max_y);
-
-  input_update_counter = 0;
-  InputUpdate(FALSE);
-
-  TRACE_LEAVE("osd_update_video_and_audio");
-}
-
-
-//void osd_set_brightness(int brightness)
+//void osd_save_snapshot(mame_bitmap *bitmap)
 //{
+
 //}
-
-//int osd_get_brightness(void)
-//{
-//  return(100);
-//}
-
-void osd_profiler(int type)
-{
-}
-void osd_save_snapshot(mame_bitmap *bitmap)
-{
-
-}
 
 /* called while loading ROMs. It is called a last time with name == 0 to signal */
 /* that the ROM loading process is finished. */
@@ -477,16 +416,6 @@ int osd_display_loading_rom_message(const char *name,rom_load_data *romdata)
 void osd_pause(int paused)
 {
 
-}
-
-/*
-  Provides a hook to allow the OSD system to override processing of a
-  snapshot.  This function will either return a new bitmap, for which the
-  caller is responsible for freeing.
-*/
-mame_bitmap *osd_override_snapshot(mame_bitmap *bitmap, rectangle *bounds)
-{
-    return NULL;
 }
 
 

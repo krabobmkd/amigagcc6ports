@@ -1,20 +1,10 @@
 /**************************************************************************
  *
- * Copyright (C) 1999 Mats Eirik Hansen (mats.hansen@triumph.no)
- *
- * $Id: video.c,v 1.2 1999/04/28 18:55:01 meh Exp $
- *
- * $Log: video.c,v $
- * Revision 1.2  1999/04/28 18:55:01  meh
- * *** empty log message ***
- *
- * Revision 1.1  1999/04/20 18:52:45  meh
- * Initial revision
+ * Copyright (C) 2024 Vic Krb Ferry
  *
  *************************************************************************/
 
-#include <stdio.h>
-
+// Amiga includes, proto manages __cplusplus__
 #include <proto/alib.h>
 #include <proto/exec.h>
 #include <proto/dos.h>
@@ -28,24 +18,29 @@
 extern "C" {
 #include <exec/types.h>
 #include <exec/memory.h>
+
 #include <graphics/gfxbase.h>
 #include <graphics/rastport.h>
+#include <graphics/modeid.h>
+
 #include <intuition/intuition.h>
-#include "intuiuncollide.h"
+//#include "intuiuncollide.h"
 #include <intuition/screens.h>
-#include <libraries/iffparse.h>
-#include <libraries/gadtools.h>
-#include <libraries/asl.h>
+
+//#include <libraries/iffparse.h>
+//#include <libraries/gadtools.h>
+//#include <libraries/asl.h>
 #include <cybergraphx/cybergraphics.h>
-//#include "cgxhooks_re.h"e
-//#define TIMER_BASE_NAME video->TimerBase
-//#include <inline/timer.h>
 
-#include <macros.h>
 }
-
-//#include "video.h"
-
+// from mame
+extern "C" {
+    #include "osdepend.h"
+    #include "video.h"
+    // for logerror
+    #include "mame.h"
+}
+#include "amiga_inputs.h"
 
 #include <stdio.h>
 
@@ -65,16 +60,14 @@ extern "C" {
 #define CYBRIDATTR_DEPTH		(0x80000004)	// returns bits per pixel
 #define CYBRIDATTR_BPPIX		(0x80000005)	// BytesPerPixel shall be returned
 
-#include <graphics/modeid.h>
-#include <intuition/screens.h>
+
 // for calloc/free:
 #include <stdlib.h>
 
-
-
 // structure to handle the demoscreen object:
 typedef struct DemoScreen_ {
-        ULONG		ds_ScreenModeID;
+        ULONG		ds_ScreenModeID; // guessed from bestMode functions
+        ULONG       ds_forcedModeID; // implied by configuration settings.
 		unsigned int	ds_MaxWidth;
 		unsigned int	ds_MaxHeight;
 		unsigned int	ds_fullscreenWidth; // dimension from modeid
@@ -98,9 +91,9 @@ typedef struct DemoScreen_ {
 		struct RastPort	*m_pRenderRastPort;
 } DemoScreen ;
 
-// create a demoscreen with 24bit:
+// create a demoscreen
 extern	DemoScreen *InitDemoScreen( unsigned int _maxWidth,
-				unsigned int _maxHeight ) ;
+				unsigned int _maxHeight, int depth, unsigned int forcedModeId=0 ) ;
 
 // close and kill the demoscreen:
 extern	void	CloseDemoScreen( DemoScreen *_pScreenToClose );
@@ -129,7 +122,7 @@ typedef struct _sRenderInfo {
 extern	void	RefreshDemoScreen( DemoScreen *_pScreenToRefresh, sRenderInfo *_pRenderInfo );
 
 
-struct Library *CyberGfxBase=NULL;
+//extern struct Library *CyberGfxBase;
 
 // private. reopen a fullScreen. -1 OK, 0 failed.
 static int DemoScreenOpenFullScreen( DemoScreen *_pScreen  )
@@ -170,7 +163,7 @@ static int DemoScreenOpenFullScreen( DemoScreen *_pScreen  )
 	// --------- note the Current userPort:
 	_pScreen->ds_CurrentPort = pwindow->UserPort;
 	// ------- set invisible mouse pointer:
-	SetPointer( pwindow , _pScreen->ds_InvisibleMouseRaster, 0,1,0,0);
+	SetPointer( pwindow ,(UWORD *) _pScreen->ds_InvisibleMouseRaster, 0,1,0,0);
 	// amiga double buffer stuff:
 	_pScreen->m_pBufferAlloc = AllocScreenBuffer(pscreen, NULL,0);
 	if(_pScreen->m_pBufferAlloc == NULL) return (0);
@@ -179,7 +172,7 @@ static int DemoScreenOpenFullScreen( DemoScreen *_pScreen  )
 	_pScreen->m_pBuffer2 = _pScreen->m_pBufferAlloc;
 
 	// alloc rastport to render to hidden bitmap:
-	_pScreen->m_pRenderRastPort = AllocVec(sizeof(struct RastPort), MEMF_ANY);
+	_pScreen->m_pRenderRastPort = (RastPort	*) AllocVec(sizeof(struct RastPort), MEMF_ANY);
 	if( _pScreen->m_pRenderRastPort == NULL ) return (0);
 	InitRastPort(_pScreen->m_pRenderRastPort);
 
@@ -241,22 +234,22 @@ struct NewWindow mynewwin =
     -1 /*Screen_Width*/,-1 /*Screen_Height*/,  /* MaxWidth, MaxHeight */
     WBENCHSCREEN, /* Type */
 };
-static int DemoScreenOpenWBWindow( DemoScreen *_pScreen  )
+static int DemoScreenOpenWBWindow( DemoScreen *pScreen  )
 {
 	// get default public screen (workbench?)
 	struct Screen *pWbScreen;
 	if (!(pWbScreen = LockPubScreen(NULL))) return(0); // bad !
 
-	struct Window *pwindow = OpenWindowTags(&mynewwin,
-		WA_PubScreen,pWbScreen,
+	struct Window *pwindow = (Window *)OpenWindowTags(&mynewwin,
+		WA_PubScreen,(ULONG)pWbScreen,
 		WA_IDCMP, /* IDCMP_MOUSEBUTTONS |*/ IDCMP_RAWKEY |
 		IDCMP_CLOSEWINDOW ,
-		WA_InnerWidth,_pScreen->ds_MaxWidth,
-		WA_InnerHeight,_pScreen->ds_MaxHeight,
+		WA_InnerWidth,pScreen->ds_MaxWidth,
+		WA_InnerHeight,pScreen->ds_MaxHeight,
 		TAG_DONE );
 	if( pwindow == NULL ) return(0);
-	_pScreen->ds_LittleWindow = pwindow ;
-	_pScreen->ds_CurrentPort  = pwindow->UserPort ;
+	pScreen->ds_LittleWindow = pwindow ;
+	pScreen->ds_CurrentPort  = pwindow->UserPort ;
 
    /* if cybergraphics  */
  /*   if (CyberGfxBase)
@@ -267,44 +260,46 @@ static int DemoScreenOpenWBWindow( DemoScreen *_pScreen  )
 	return(-1);	//OK !
 }
 // private one. Close the screen for window switch:
-static void DemoScreenCloseWBWindow( DemoScreen *_pScreenToClose  )
+static void DemoScreenCloseWBWindow( DemoScreen *pScreenToClose  )
 {
-	if( _pScreenToClose->ds_LittleWindow )  CloseWindow( _pScreenToClose->ds_LittleWindow );
-	_pScreenToClose->ds_LittleWindow = NULL ;
+	if( pScreenToClose->ds_LittleWindow )  CloseWindow( pScreenToClose->ds_LittleWindow );
+	pScreenToClose->ds_LittleWindow = NULL ;
 }
 
-static void SwitchFullDemoScreen( DemoScreen *_pScreenToSwitch  )
+static void SwitchFullDemoScreen( DemoScreen *pScreenToSwitch  )
 {
-	if( _pScreenToSwitch->ds_ScreenWindow != NULL   )
+	if( pScreenToSwitch->ds_ScreenWindow != NULL   )
 	{
 		// switch from screen mode to window mode:
-		DemoScreenCloseFullScreen( _pScreenToSwitch );
-		DemoScreenOpenWBWindow( _pScreenToSwitch );
+		DemoScreenCloseFullScreen( pScreenToSwitch );
+		DemoScreenOpenWBWindow( pScreenToSwitch );
 	}else
 	{
 		// switch from window mode to screen mode:
-		DemoScreenCloseWBWindow( _pScreenToSwitch );
-		DemoScreenOpenFullScreen( _pScreenToSwitch );
+		DemoScreenCloseWBWindow( pScreenToSwitch );
+		DemoScreenOpenFullScreen( pScreenToSwitch );
 	}
 }
 
-DemoScreen *InitDemoScreen( unsigned int _maxWidth,
-				unsigned int _maxHeight )
+DemoScreen *InitDemoScreen( unsigned int maxWidth,
+				unsigned int maxHeight, int depth, unsigned int forcedModeId )
 {
-	DemoScreen	*pDemoScreen = calloc( sizeof( DemoScreen ) , 1  );
+	DemoScreen	*pDemoScreen = (DemoScreen *) calloc( sizeof( DemoScreen ) , 1  );
 	if( pDemoScreen  == NULL ) return(NULL);
 
 	// prepare window mode new struct:
-	mynewwin.Width  = _maxWidth;
-	mynewwin.Height = _maxHeight;
+	mynewwin.Width  = maxWidth;
+	mynewwin.Height = maxHeight;
+	if(depth == 15 ) depth=16;
+
 //printf("init: %d %d\n", _maxWidth,_maxHeight);
 	// ------------ open Cybergraphics.library:
 
-    if(CyberGfxBase==NULL)
-    {
-        CyberGfxBase =  OpenLibrary(  "cybergraphics.library",39 );
-    }
-    if( CyberGfxBase ==  NULL ){ CloseDemoScreen(pDemoScreen); return(NULL);}
+    if( CyberGfxBase ==  NULL ){
+        CloseDemoScreen(pDemoScreen);
+        logerror("Can't find cybergraphics.library.");
+        return(NULL);
+     }
 
 
 	// ----------- alloc invisible mouse raster for full screen:
@@ -313,32 +308,36 @@ DemoScreen *InitDemoScreen( unsigned int _maxWidth,
 	pDemoScreen->ds_InvisibleMouseRaster = pmouseraster ;
 
 	// ---------------- search screen best mode:
-    printf("search res: %d %d\n",_maxWidth,_maxHeight);
-
+    printf("search res: %d %d\n",maxWidth,maxHeight);
+    ULONG modeid = forcedModeId;
+    if(modeid == INVALID_ID)
 	{
-         unsigned int askedHeight = _maxHeight;
-         if(_maxWidth==512 && askedHeight==256)
-         {  // on pistorm/picasso 512x384 modes are usually available.
-             // try to get this exact reolution, which would avoid scaling.
-             askedHeight = 384;
-         }
  		 struct TagItem cgxtags[]={
-			CYBRBIDTG_NominalWidth,_maxWidth,
-			CYBRBIDTG_NominalHeight,askedHeight,
-			CYBRBIDTG_Depth,16,
+			CYBRBIDTG_NominalWidth,maxWidth,
+			CYBRBIDTG_NominalHeight,maxHeight,
+			CYBRBIDTG_Depth,depth,
 			TAG_DONE,0 };
-		ULONG modeid = BestCModeIDTagList(cgxtags);
-		if( modeid ==  INVALID_ID ){ CloseDemoScreen(pDemoScreen);  return (NULL); }
-		pDemoScreen->ds_ScreenModeID 	= modeid ;
-		pDemoScreen->ds_MaxWidth		= _maxWidth ;
-		pDemoScreen->ds_MaxHeight	= _maxHeight ;
-		// get size of modeid screen:
-		pDemoScreen->ds_fullscreenWidth = GetCyberIDAttr( CYBRIDATTR_WIDTH, modeid);
-		pDemoScreen->ds_fullscreenHeight = GetCyberIDAttr( CYBRIDATTR_HEIGHT, modeid );
+        ULONG guessedid = BestCModeIDTagList(cgxtags);
+        modeid = guessedid;
+    }
+    if(modeid == INVALID_ID)
+    {
+        logerror("Can't find cyber screen mode for %d %d %d ",maxWidth,maxHeight,depth);
+        CloseDemoScreen(pDemoScreen);
+        return (NULL);
+    }
+
+    pDemoScreen->ds_ScreenModeID 	= modeid ;
+    pDemoScreen->ds_forcedModeID 	= forcedModeId ;
+
+    pDemoScreen->ds_MaxWidth    = maxWidth ;
+    pDemoScreen->ds_MaxHeight	= maxHeight ;
+    // get size of modeid screen:
+    pDemoScreen->ds_fullscreenWidth = GetCyberIDAttr( CYBRIDATTR_WIDTH, modeid);
+    pDemoScreen->ds_fullscreenHeight = GetCyberIDAttr( CYBRIDATTR_HEIGHT, modeid );
 
  printf("final resolution:%d %d render res:%d %d\n",pDemoScreen->ds_fullscreenWidth,pDemoScreen->ds_fullscreenHeight,pDemoScreen->ds_MaxWidth,pDemoScreen->ds_MaxHeight);
 
-	}
 
 //	printf("modeid:%08x \n",modeid);
 
@@ -357,7 +356,7 @@ void	CloseDemoScreen( DemoScreen *_pScreenToClose )
 	DemoScreenCloseFullScreen( _pScreenToClose );
 	DemoScreenCloseWBWindow( _pScreenToClose );
 
-	if( _pScreenToClose->ds_InvisibleMouseRaster   ) FreeRaster( _pScreenToClose->ds_InvisibleMouseRaster ,8,8);
+	if( _pScreenToClose->ds_InvisibleMouseRaster   ) FreeRaster( (PLANEPTR) _pScreenToClose->ds_InvisibleMouseRaster ,8,8);
 
 	// close libs:
 /*
@@ -371,10 +370,10 @@ void	CloseDemoScreen( DemoScreen *_pScreenToClose )
 /* ======================= */
 // if mouse button or escape key pressed, return 0, else -1.
 // if 'f' or 'space', change fullscreen/window mode.
-int	CheckDemoScreenState( DemoScreen *_pScreenToCheck )
+int	CheckDemoScreenState( DemoScreen *pScreenToCheck )
 {
 	struct IntuiMessage *iMsg;
-	struct MsgPort *pport = _pScreenToCheck->ds_CurrentPort ;
+	struct MsgPort *pport = pScreenToCheck->ds_CurrentPort ;
 	if( !pport  ) return(0); // shouldn't happen. There should exist a port whatever the screen mode is.
 	if( iMsg = (struct IntuiMessage *)GetMsg( pport  ) )
 	{
@@ -388,7 +387,7 @@ int	CheckDemoScreenState( DemoScreen *_pScreenToCheck )
 			//printf("iclass:%08x\n", ICode );
 			if ( ICode == 0x0045 ) return(0); // esc.
 			// 'f' or 'space' switch window mode:
-			if( ICode == 0x0023 || ICode == 0x0040 ) SwitchFullDemoScreen( _pScreenToCheck );
+			if( ICode == 0x0023 || ICode == 0x0040 ) SwitchFullDemoScreen( pScreenToCheck );
 			// if ( ICode == 0x0021 ) GrabScreen();
 		}
 		// window mode gadget exit case:
@@ -397,28 +396,27 @@ int	CheckDemoScreenState( DemoScreen *_pScreenToCheck )
 	return(-1); // OK to continue.
 }
 /* ======================= */
-void	RefreshDemoScreen( DemoScreen *_pScreenToRefresh,  sRenderInfo *_pRenderInfo )
+void	RefreshDemoScreen( DemoScreen *pScreenToRefresh,  sRenderInfo *pRenderInfo )
 {
-	if( _pScreenToRefresh->ds_ScreenWindow != NULL   )
+	if( pScreenToRefresh->ds_ScreenWindow != NULL   )
 	{
-        _pScreenToRefresh->m_pRenderRastPort->BitMap = _pScreenToRefresh->m_pBuffer2->sb_BitMap;
+        pScreenToRefresh->m_pRenderRastPort->BitMap = pScreenToRefresh->m_pBuffer2->sb_BitMap;
 
-
-        if(_pRenderInfo->m_srcWidth == _pScreenToRefresh->ds_fullscreenWidth)
+        if(pRenderInfo->m_srcWidth == pScreenToRefresh->ds_fullscreenWidth)
         {
             // in that case no scale
-            uint32_t finalheight = _pRenderInfo->m_srcHeight;
-            uint32_t ytop = (_pScreenToRefresh->ds_fullscreenHeight-finalheight)>>1;
+            uint32_t finalheight = pRenderInfo->m_srcHeight;
+            uint32_t ytop = (pScreenToRefresh->ds_fullscreenHeight-finalheight)>>1;
 
-            WritePixelArray(_pRenderInfo->m_pPixelBuffer,
+            WritePixelArray(pRenderInfo->m_pPixelBuffer,
                             0,0, // starting point in source rectangle
-                            _pRenderInfo->m_srcMod, // bytes per row in source
+                            pRenderInfo->m_srcMod, // bytes per row in source
 
-                            _pScreenToRefresh->m_pRenderRastPort, // rastport to render
+                            pScreenToRefresh->m_pRenderRastPort, // rastport to render
                             0,ytop, // start point in raster
-                            _pRenderInfo->m_srcWidth,
-                            _pRenderInfo->m_srcHeight,
-                            _pRenderInfo->m_srcFormat
+                            pRenderInfo->m_srcWidth,
+                            pRenderInfo->m_srcHeight,
+                            pRenderInfo->m_srcFormat
                             );
 //            /*
 //            ULONG        WritePixelArray(APTR, UWORD, UWORD, UWORD, struct RastPort *, UWORD,
@@ -427,41 +425,41 @@ void	RefreshDemoScreen( DemoScreen *_pScreenToRefresh,  sRenderInfo *_pRenderInf
         } else
         {
             // scale
-            uint32_t finalheight = (_pScreenToRefresh->ds_fullscreenHeight * _pRenderInfo->m_RectangleRatio)>>16;
-            uint32_t ytop = (_pScreenToRefresh->ds_fullscreenHeight-finalheight)>>1;
+            uint32_t finalheight = (pScreenToRefresh->ds_fullscreenHeight * pRenderInfo->m_RectangleRatio)>>16;
+            uint32_t ytop = (pScreenToRefresh->ds_fullscreenHeight-finalheight)>>1;
 
-            ScalePixelArray(_pRenderInfo->m_pPixelBuffer,
-                _pRenderInfo->m_srcWidth,
-                _pRenderInfo->m_srcHeight ,
-                _pRenderInfo->m_srcMod,
+            ScalePixelArray(pRenderInfo->m_pPixelBuffer,
+                pRenderInfo->m_srcWidth,
+                pRenderInfo->m_srcHeight ,
+                pRenderInfo->m_srcMod,
                 //_pScreenToRefresh->ds_ScreenWindow->RPort,
-                _pScreenToRefresh->m_pRenderRastPort,
+                pScreenToRefresh->m_pRenderRastPort,
                             0,ytop,
-                _pScreenToRefresh->ds_fullscreenWidth,
-                finalheight,_pRenderInfo->m_srcFormat);
+                pScreenToRefresh->ds_fullscreenWidth,
+                finalheight,pRenderInfo->m_srcFormat);
         } // end if scale
 
         //not really enjoyable wait:
 //        WaitBOVP( &(_pScreenToRefresh->ds_IntuitionScreen->ViewPort) );
 
-        while( ChangeScreenBuffer(_pScreenToRefresh->ds_IntuitionScreen, _pScreenToRefresh->m_pBuffer2) == 0 )
+        while( ChangeScreenBuffer(pScreenToRefresh->ds_IntuitionScreen, pScreenToRefresh->m_pBuffer2) == 0 )
 		{
  //doesnt tick:
             Printf(" double buffer swap error\n");
-			WaitBOVP( &(_pScreenToRefresh->ds_IntuitionScreen->ViewPort) );	// wait again.
+			WaitBOVP( &(pScreenToRefresh->ds_IntuitionScreen->ViewPort) );	// wait again.
 		}
 		// swap screen buffers:
 		{
 
-	struct ScreenBuffer *pswap= _pScreenToRefresh->m_pBuffer2;
-	_pScreenToRefresh->m_pBuffer2 = _pScreenToRefresh->m_pBuffer1;
-	_pScreenToRefresh->m_pBuffer1 = pswap ;
+	struct ScreenBuffer *pswap= pScreenToRefresh->m_pBuffer2;
+	pScreenToRefresh->m_pBuffer2 = pScreenToRefresh->m_pBuffer1;
+	pScreenToRefresh->m_pBuffer1 = pswap ;
 
 		}
 	} else
 	{
 		// draw to window:
-		if(  _pScreenToRefresh->ds_LittleWindow != NULL )
+		if(  pScreenToRefresh->ds_LittleWindow != NULL )
 		{
 /*
 			IP96->p96WritePixelArray( _pRenderInfo,0,0,
@@ -470,17 +468,17 @@ void	RefreshDemoScreen( DemoScreen *_pScreenToRefresh,  sRenderInfo *_pRenderInf
 								_pScreenToRefresh->ds_MaxHeight	  );
 */
 		LONG width=0,height=0;
-		width = _pScreenToRefresh->ds_LittleWindow->Width;
-        height = _pScreenToRefresh->ds_LittleWindow->Height;
+		width = pScreenToRefresh->ds_LittleWindow->Width;
+        height = pScreenToRefresh->ds_LittleWindow->Height;
         //OS4:
         //GetWindowAttr(_pScreenToRefresh->ds_LittleWindow,WA_InnerWidth,&width,sizeof(width));
 		//GetWindowAttr(_pScreenToRefresh->ds_LittleWindow,WA_InnerHeight,&height,sizeof(height));
 //printf("w:%d h:%d\n",width,height);
-        ScalePixelArray(_pRenderInfo->m_pPixelBuffer,
-            _pRenderInfo->m_srcWidth,
-            _pRenderInfo->m_srcHeight ,
-            _pRenderInfo->m_srcMod,_pScreenToRefresh->ds_LittleWindow->RPort,
-            0,0,width,height,_pRenderInfo->m_srcFormat);
+        ScalePixelArray(pRenderInfo->m_pPixelBuffer,
+            pRenderInfo->m_srcWidth,
+            pRenderInfo->m_srcHeight ,
+            pRenderInfo->m_srcMod,pScreenToRefresh->ds_LittleWindow->RPort,
+            0,0,width,height,pRenderInfo->m_srcFormat);
 
 		}
 	}
@@ -512,13 +510,47 @@ void	RefreshDemoScreen( DemoScreen *_pScreenToRefresh,  sRenderInfo *_pRenderInf
 
   Returns 0 on success.
 */
-int osd_create_display(const osd_create_params *params, UINT32 *rgb_components)
-{
+DemoScreen *g_pScreen=NULL;
+struct MsgPort *CurrentPort=NULL; 	//
 
+int osd_create_display(const _osd_create_params *params, UINT32 *rgb_components)
+{
+    if(g_pScreen) osd_close_display();
+/*
+	int width, height;			 width and height
+	int aspect_x, aspect_y;		 aspect ratio X:Y
+	int depth;					 depth, either 16(palette), 15(RGB) or 32(RGB)
+	int colors;					 colors in the palette (including UI)
+	float fps;					 frame rate
+	int video_attributes;		 video flags from driver
+*/
+    printf("osd_create_display: w:%d h:%d d:%d cols:%d\n",
+        params->width, params->height,params->height,params->depth,params->colors
+
+    );
+/* In most cases we assume pixels are square (1:1 aspect ratio) but some games need */
+/* different proportions, e.g. 1:2 for Blasteroids */
+/*
+#define VIDEO_PIXEL_ASPECT_RATIO_MASK	0x0300
+#define VIDEO_PIXEL_ASPECT_RATIO_1_1	0x0000
+#define VIDEO_PIXEL_ASPECT_RATIO_1_2	0x0100
+#define VIDEO_PIXEL_ASPECT_RATIO_2_1	0x0200
+  */
+    //TODO: get forced mode_id from config.
+    g_pScreen = InitDemoScreen( (unsigned int)params->width,
+				(unsigned int) params->height,params->depth,INVALID_ID );
+
+    if(!g_pScreen) return 1;
+
+    AllocInputs();
+    return 0; // success
 }
 void osd_close_display(void)
 {
-
+    FreeInputs();
+    if(!g_pScreen) return;
+    CloseDemoScreen(g_pScreen);
+    g_pScreen = NULL;
 }
 
 /*
@@ -533,11 +565,12 @@ void osd_close_display(void)
 */
 int osd_skip_this_frame(void)
 {
-    if(FrameCounter >= NoFrameSkipCount)
-    {
-      if(FrameCounter < (NoFrameSkipCount + frameskip))
-        return(1);
-    }
+// TODO
+//    if(FrameCounter >= NoFrameSkipCount)
+//    {
+//      if(FrameCounter < (NoFrameSkipCount + frameskip))
+//        return(1);
+//    }
 
     return(0);
 }
@@ -559,15 +592,101 @@ int osd_skip_this_frame(void)
 void osd_update_video_and_audio(struct _mame_display *display)
 {
     printf("osd_update_video_and_audio\n");
+    if(!g_pScreen) return;
 
-  mame_bitmap *bitmap = display->game_bitmap;
+    mame_bitmap *bitmap = display->game_bitmap;
 
   printf("w:%d h:%d depth:%d rowpixels:%d\n", bitmap->width,bitmap->height,bitmap->depth,bitmap->rowpixels);
   printf("rec:minx:%d miny:%d maxx:%d maxy:%d\n",display->game_visible_area.min_x,display->game_visible_area.min_y,
          display->game_visible_area.max_x,display->game_visible_area.max_y);
 
-  input_update_counter = 0;
-  InputUpdate(FALSE);
+// --- - - - - --
+	if( g_pScreen->ds_ScreenWindow )
+	{
+        g_pScreen->m_pRenderRastPort->BitMap = g_pScreen->m_pBuffer2->sb_BitMap;
+
+        if(pRenderInfo->m_srcWidth == g_pScreen->ds_fullscreenWidth)
+        {
+            // in that case no scale
+            uint32_t finalheight = pRenderInfo->m_srcHeight;
+            uint32_t ytop = (g_pScreen->ds_fullscreenHeight-finalheight)>>1;
+
+            WritePixelArray(pRenderInfo->m_pPixelBuffer,
+                            0,0, // starting point in source rectangle
+                            pRenderInfo->m_srcMod, // bytes per row in source
+
+                            g_pScreen->m_pRenderRastPort, // rastport to render
+                            0,ytop, // start point in raster
+                            pRenderInfo->m_srcWidth,
+                            pRenderInfo->m_srcHeight,
+                            pRenderInfo->m_srcFormat
+                            );
+//            /*
+//            ULONG        WritePixelArray(APTR, UWORD, UWORD, UWORD, struct RastPort *, UWORD,
+//                                         UWORD, UWORD, UWORD, UBYTE);
+//        */
+        } else
+        {
+            // scale
+            uint32_t finalheight = (g_pScreen->ds_fullscreenHeight * pRenderInfo->m_RectangleRatio)>>16;
+            uint32_t ytop = (g_pScreen->ds_fullscreenHeight-finalheight)>>1;
+
+            ScalePixelArray(pRenderInfo->m_pPixelBuffer,
+                pRenderInfo->m_srcWidth,
+                pRenderInfo->m_srcHeight ,
+                pRenderInfo->m_srcMod,
+                //_g_pScreen->ds_ScreenWindow->RPort,
+                g_pScreen->m_pRenderRastPort,
+                            0,ytop,
+                g_pScreen->ds_fullscreenWidth,
+                finalheight,pRenderInfo->m_srcFormat);
+        } // end if scale
+
+        //not really enjoyable wait:
+//        WaitBOVP( &(_g_pScreen->ds_IntuitionScreen->ViewPort) );
+
+        while( ChangeScreenBuffer(g_pScreen->ds_IntuitionScreen, g_pScreen->m_pBuffer2) == 0 )
+		{
+ //doesnt tick:
+            Printf(" double buffer swap error\n");
+			WaitBOVP( &(g_pScreen->ds_IntuitionScreen->ViewPort) );	// wait again.
+		}
+		// swap screen buffers:
+		{
+
+	struct ScreenBuffer *pswap= g_pScreen->m_pBuffer2;
+	g_pScreen->m_pBuffer2 = g_pScreen->m_pBuffer1;
+	g_pScreen->m_pBuffer1 = pswap ;
+
+		}
+	} else
+	{
+		// draw to window:
+		if(  g_pScreen->ds_LittleWindow != NULL )
+		{
+/*
+			IP96->p96WritePixelArray( _pRenderInfo,0,0,
+								_g_pScreen->ds_LittleWindow->RPort,0,0,
+								_g_pScreen->ds_MaxWidth,
+								_g_pScreen->ds_MaxHeight	  );
+*/
+		LONG width=0,height=0;
+		width = g_pScreen->ds_LittleWindow->Width;
+        height = g_pScreen->ds_LittleWindow->Height;
+
+//printf("w:%d h:%d\n",width,height);
+        ScalePixelArray(pRenderInfo->m_pPixelBuffer,
+            pRenderInfo->m_srcWidth,
+            pRenderInfo->m_srcHeight ,
+            pRenderInfo->m_srcMod,g_pScreen->ds_LittleWindow->RPort,
+            0,0,width,height,pRenderInfo->m_srcFormat);
+
+		}
+	}
+// - - - -- - - -
+
+    if(g_pScreen->ds_CurrentPort)
+        UpdateInputs(g_pScreen->ds_CurrentPort);
 
 }
 
@@ -579,7 +698,7 @@ void osd_update_video_and_audio(struct _mame_display *display)
 */
 mame_bitmap *osd_override_snapshot(mame_bitmap *bitmap, rectangle *bounds)
 {
-    return bitmap;
+    return NULL;
 }
 
 /*

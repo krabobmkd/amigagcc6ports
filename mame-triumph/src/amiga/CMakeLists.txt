@@ -36,12 +36,11 @@ set(AMIGA_SRC
 	gui_mui.cpp
 	gui_gadtools.cpp
 	config_moo.cpp
-	amiga_inputs.cpp
+#	amiga_inputs.cpp
 	amiga_locale.cpp
 	main.h
 	config_moo.h
 	audio.h
-	video.h
 	amiga_inputs.h
 	amiga_locale.h
 	gui_mui.h

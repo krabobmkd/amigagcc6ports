@@ -67,22 +67,22 @@ extern struct Library       *PPCLibBase;
 #endif
 }
 
-extern LONG                 Width;
-extern LONG                 Height;
-//extern struct Audio         *Audio;
-extern struct Video         *Video;
-extern struct Inputs        *Inputs;
-extern struct AChannelArray *ChannelArray[2];
-extern struct VPixelArray   *PixelArray[2];
-extern struct VDirectArray  *DirectArray;
-extern LONG                 CurrentArray;
-extern BYTE                 *Keys;
+//extern LONG                 Width;
+//extern LONG                 Height;
+////extern struct Audio         *Audio;
+//extern struct Video         *Video;
+//extern struct Inputs        *Inputs;
+//extern struct AChannelArray *ChannelArray[2];
+//extern struct VPixelArray   *PixelArray[2];
+//extern struct VDirectArray  *DirectArray;
+//extern LONG                 CurrentArray;
+//extern BYTE                 *Keys;
 //extern struct IPort         *Port1;
 //extern struct IPort         *Port2;
 
-LONG  VideoOpen(LONG width, LONG height, LONG left, LONG top, LONG right, LONG bottom, LONG dirty);
-void  VideoClose(void);
-void  InputUpdate(LONG wait);
+//LONG  VideoOpen(LONG width, LONG height, LONG left, LONG top, LONG right, LONG bottom, LONG dirty);
+//void  VideoClose(void);
+//void  InputUpdate(LONG wait);
 
 #ifdef POWERUP
 extern struct _game_driver **Drivers;

@@ -1546,16 +1546,16 @@ void AboutGUI(void)
       {
         if(signals)
         {
-          if(Inputs)
+          /*if(Inputs)
             signals = Wait(signals|SIGBREAKF_CTRL_C|Inputs->SignalMask);
-          else
+          else*/
             signals = Wait(signals|SIGBREAKF_CTRL_C);
 
           if((signals & SIGBREAKF_CTRL_C))
             break;
 
-          if(signals & Inputs->SignalMask)
-            IUpdate(Inputs);
+//          if(signals & Inputs->SignalMask)
+//            IUpdate(Inputs);
         }
       }
 
