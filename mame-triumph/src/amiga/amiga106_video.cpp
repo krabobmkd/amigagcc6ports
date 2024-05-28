@@ -259,7 +259,7 @@ static int DemoScreenOpenWBWindow( DemoScreen *pScreen  )
 	pScreen->ds_LittleWindow = pwindow ;
 	pScreen->ds_CurrentPort  = pwindow->UserPort ;
 
-    UnlockPubScreen(pWbScreen);
+    UnlockPubScreen(NULL,pWbScreen);
    /* if cybergraphics  */
  /*   if (CyberGfxBase)
     {
@@ -535,13 +535,13 @@ public:
             WA_InnerWidth,maxWidth,
             WA_InnerHeight,maxHeight,
             TAG_DONE*/ );
-
+        UnlockPubScreen(NULL,pWbScreen);
         if( _pWindow == NULL ) return;
 
         pScreen->ds_LittleWindow = pwindow ;
         pScreen->ds_CurrentPort  = pwindow->UserPort ;
 
-        UnlockPubScreen(NULL,pWbScreen);
+
     }
     ~Display_CGX()
     {

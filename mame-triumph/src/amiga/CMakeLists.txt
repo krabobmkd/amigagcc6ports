@@ -11,6 +11,7 @@ project(AmigaTriumphMame LANGUAGES C CXX VERSION 1.0)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 option(MAME_USE_HARDFLOAT "compile using direct 68882 FPU, will not work on economic 060" OFF)
+option(HOOKTEST "do" ON)
 
 if(AMIGA)
 #  -fno-rtti -fno-exceptions -fno-strict-aliasing
@@ -78,6 +79,10 @@ target_include_directories(${PROGNAME} PUBLIC "../mame106")
 
 # MUI is not provided by gccbebbo6.5 ndk by default, we have it there:
 target_include_directories(${PROGNAME} PUBLIC "../../../extrasdk/MUI/include")
+target_include_directories(${PROGNAME} PUBLIC "../../../extrasdk/P96/include")
+
+add_executable(cgxhooktest cgxhookstest.c cgxhooks.c cgxhooks.h )
+set_property(TARGET cgxhooktest PROPERTY C_STANDARD 11)
 
 #  - - - - - - - - - - 
 ## debug/test phase, no release.
