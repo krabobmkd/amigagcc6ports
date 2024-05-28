@@ -42,6 +42,13 @@ extern "C" {
 }
 #include "amiga_inputs.h"
 
+/** some abstact display management */
+class MameDisplay
+{
+public:
+    virtual void draw(_mame_display *pmame_display) = 0;
+};
+
 #include <stdio.h>
 
 #define CYBRBIDTG_TB	(TAG_USER+0x50000)
@@ -93,15 +100,15 @@ typedef struct DemoScreen_ {
 } DemoScreen ;
 
 // create a demoscreen
-extern	DemoScreen *InitDemoScreen( unsigned int _maxWidth,
-				unsigned int _maxHeight, int depth, unsigned int forcedModeId=0 ) ;
+DemoScreen *InitDemoScreen( unsigned int _maxWidth,
+				unsigned int _maxHeight, int depth, unsigned int forcedModeId=0,int startWithWindow=0 ) ;
 
 // close and kill the demoscreen:
-extern	void	CloseDemoScreen( DemoScreen *_pScreenToClose );
+void	CloseDemoScreen( DemoScreen *_pScreenToClose );
 
 // if mouse button or escape key pressed, return 0, else: -1
 // if 'f' or 'space', change fullscreen/window mode.
-extern	int	CheckDemoScreenState( DemoScreen *_pScreenToCheck );
+//int	CheckDemoScreenState( DemoScreen *_pScreenToCheck );
 
 //#define RECTFMT_RGB		(0)
 //#define RECTFMT_RGBA		(1)
@@ -252,6 +259,7 @@ static int DemoScreenOpenWBWindow( DemoScreen *pScreen  )
 	pScreen->ds_LittleWindow = pwindow ;
 	pScreen->ds_CurrentPort  = pwindow->UserPort ;
 
+    UnlockPubScreen(pWbScreen);
    /* if cybergraphics  */
  /*   if (CyberGfxBase)
     {
@@ -283,7 +291,7 @@ static void SwitchFullDemoScreen( DemoScreen *pScreenToSwitch  )
 }
 
 DemoScreen *InitDemoScreen( unsigned int maxWidth,
-				unsigned int maxHeight, int depth, unsigned int forcedModeId )
+				unsigned int maxHeight, int depth, unsigned int forcedModeId, int startWithWindow )
 {
 	DemoScreen	*pDemoScreen = (DemoScreen *) calloc( sizeof( DemoScreen ) , 1  );
 	if( pDemoScreen  == NULL ) return(NULL);
@@ -347,12 +355,14 @@ DemoScreen *InitDemoScreen( unsigned int maxWidth,
 
 //	printf("modeid:%08x \n",modeid);
 
-	// ---------------- open full screen:
-	//if(! DemoScreenOpenFullScreen( pDemoScreen ) ) { CloseDemoScreen(pDemoScreen);  return (NULL); }
-    if(! DemoScreenOpenWBWindow( pDemoScreen ) ) { CloseDemoScreen(pDemoScreen);  return (NULL); }
-
-
-//	p96RequestModeIDTags(  );
+	// ---------------- open full screen, or window:
+	if(startWithWindow)
+	{
+        if(! DemoScreenOpenWBWindow( pDemoScreen ) ) { CloseDemoScreen(pDemoScreen);  return (NULL); }
+	} else
+	{
+    	if(! DemoScreenOpenFullScreen( pDemoScreen ) ) { CloseDemoScreen(pDemoScreen);  return (NULL); }
+	}
 
 	return( pDemoScreen );
 }
@@ -375,6 +385,7 @@ void	CloseDemoScreen( DemoScreen *_pScreenToClose )
 /* ======================= */
 // if mouse button or escape key pressed, return 0, else -1.
 // if 'f' or 'space', change fullscreen/window mode.
+/* from demo source
 int	CheckDemoScreenState( DemoScreen *pScreenToCheck )
 {
 	struct IntuiMessage *iMsg;
@@ -399,7 +410,7 @@ int	CheckDemoScreenState( DemoScreen *pScreenToCheck )
 		if ( IClass == IDCMP_CLOSEWINDOW ) return(0);
 	}
 	return(-1); // OK to continue.
-}
+}*/
 /* ======================= */
 void	RefreshDemoScreen( DemoScreen *pScreenToRefresh,  sRenderInfo *pRenderInfo )
 {
@@ -489,7 +500,60 @@ void	RefreshDemoScreen( DemoScreen *pScreenToRefresh,  sRenderInfo *pRenderInfo 
 	}
 
 }
+class Display_CGX : public MameDisplay
+{
+public:
+    Display_CGX(unsigned int width,
+				unsigned int height) : MameDisplay() , _pWindow(NULL)
+    {
+        struct Screen *pWbScreen;
+        if (!(pWbScreen = LockPubScreen(NULL))) return;
 
+
+
+        _pWindow = (Window *)OpenWindowTags(NULL,
+            WA_Left,120,
+            WA_Top,120,
+            WA_Width,  width,
+            WA_Height, height,
+        //    WA_MaxWidth,  WIDTH_SUPER,
+        //    WA_MaxHeight, HEIGHT_SUPER,
+            WA_IDCMP, IDCMP_GADGETUP | IDCMP_GADGETDOWN |
+                IDCMP_NEWSIZE | IDCMP_INTUITICKS | IDCMP_CLOSEWINDOW,
+            WA_Flags, WFLG_SIZEGADGET | WFLG_SIZEBRIGHT | WFLG_SIZEBBOTTOM |
+                WFLG_DRAGBAR | WFLG_DEPTHGADGET | WFLG_CLOSEGADGET |
+                WFLG_SUPER_BITMAP | WFLG_GIMMEZEROZERO /*| WFLG_NOCAREREFRESH*/,
+         //   WA_Gadgets, &(SideGad),
+            WA_Title, "Mame", /* take title from version string */
+            WA_PubScreen, pWbScreen,
+            WA_SuperBitMap, bigBitMap,
+            TAG_DONE
+        /*
+            WA_PubScreen,(ULONG)pWbScreen,
+            WA_IDCMP,  IDCMP_RAWKEY |
+            IDCMP_CLOSEWINDOW ,
+            WA_InnerWidth,maxWidth,
+            WA_InnerHeight,maxHeight,
+            TAG_DONE*/ );
+
+        if( _pWindow == NULL ) return;
+
+        pScreen->ds_LittleWindow = pwindow ;
+        pScreen->ds_CurrentPort  = pwindow->UserPort ;
+
+        UnlockPubScreen(NULL,pWbScreen);
+    }
+    ~Display_CGX()
+    {
+        if(_pWindow) CloseWindow(_pWindow);
+    }
+    void draw(_mame_display *pmame_display) override
+    {
+
+    }
+    Window *_pWindow;
+    //DemoScreen *m_pScreen;
+};
 
 /*
   Create a display screen, or window, of the given dimensions (or larger). It is
@@ -515,7 +579,9 @@ void	RefreshDemoScreen( DemoScreen *pScreenToRefresh,  sRenderInfo *pRenderInfo 
 
   Returns 0 on success.
 */
-DemoScreen *g_pScreen=NULL;
+//DemoScreen *g_pScreen=NULL;
+MameDisplay *g_pMameDisplay=NULL;
+
 struct MsgPort *CurrentPort=NULL; 	//
 
 int osd_create_display(const _osd_create_params *params, UINT32 *rgb_components)
@@ -541,21 +607,22 @@ int osd_create_display(const _osd_create_params *params, UINT32 *rgb_components)
 #define VIDEO_PIXEL_ASPECT_RATIO_1_2	0x0100
 #define VIDEO_PIXEL_ASPECT_RATIO_2_1	0x0200
   */
-    //TODO: get forced mode_id from config.
+    //TODO: get forced mode_id from config, or start with winodw mode.
     g_pScreen = InitDemoScreen( (unsigned int)params->width,
-				(unsigned int) params->height,params->depth,INVALID_ID );
+				(unsigned int) params->height,params->depth,INVALID_ID,1 );
 
     if(!g_pScreen) return 1;
 
-    AllocInputs();
+    AllocInputs(); // input object depends of screen or window.
     return 0; // success
 }
 void osd_close_display(void)
 {
     FreeInputs();
-    if(!g_pScreen) return;
+    if(!g_pMameDisplay) return;
+    delete g_pMameDisplay;
     CloseDemoScreen(g_pScreen);
-    g_pScreen = NULL;
+    g_pMameDisplay = NULL;
 }
 
 /*

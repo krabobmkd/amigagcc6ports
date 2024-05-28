@@ -51,6 +51,8 @@ set(AMIGA_SRC
 #	c2p.s
 #	gfx.s
 #	../../lib/c2p.s.o ../../lib/gfx.s.o
+	cgxhooks.c
+	cgxhooks.h
 	cgxhooks_re.s
 	)
 

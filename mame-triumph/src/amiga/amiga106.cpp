@@ -97,11 +97,10 @@ static int input_update_counter = 0;
 void unzip_cache_clear();
 void setRomPaths(std::vector<std::string> &extrarompaths,std::vector<std::string> &extrasamplepaths);
 
-#if (MAMEVERSION > 78 )
 inline void initOptions()
 {
-
     // consider everything null by default.
+    //note: 0 for brightness treated as 1.
     memset(&options, 0,sizeof(global_options));
 
    options.cheat=1;
@@ -120,43 +119,7 @@ inline void initOptions()
 
 
 }
-#else
-inline void initOptions()
-{   // mame versions 037,078,... ...
 
-    // consider everything null by default.
-    memset(&options, 0,sizeof(struct GameOptions));
-   options.cheat=1;
-//   options.gui_host=0; //? not done.
-
-    options.skip_disclaimer = 1; /* 1 to skip the disclaimer screen at startup */
-    options.skip_gameinfo = 1;  /* 1 to skip the game info screen at startup */
-    options.skip_warnings = 0; /* 1 to skip the warnings screen at startup */
-
-   options.samplerate=(Config[CFG_SOUND] == CFGS_NO)?0:22050;
-    Machine->sample_rate = options.samplerate;
-
-   options.use_samples=1; //TODO ?
-
-//   options.color_depth=0;	/* 8 or 16, any other value means auto */
-//   options.vector_width=0;	/* requested width for vector games=0; 0 means default (640) */
-//   options.vector_height=0;	/* requested height for vector games=0; 0 means default (480) */
-//   options.norotate=0; //OK
-
-//   options.ror        = (Config[CFG_ROTATION] == CFGR_RIGHT);
-//   options.rol        = (Config[CFG_ROTATION] == CFGR_RIGHT);
-//   options.flipx      = Config[CFG_FLIPX];
-//   options.flipy      = Config[CFG_FLIPY];
-
-
-//   options.beam=0;
-//   options.flicker=0;
-//   options.translucency=0;
-//   options.antialias=0;
-//   options.use_artwork=0;
-
-}
-#endif
 
 void StartGame(void)
 {

@@ -41,26 +41,21 @@ struct CGXHook
 	ULONG				SrcY;
 	ULONG				DstX;
 	ULONG				DstY;
-	ULONG				Remap[256];
+	//ULONG				Remap[256];
 };
 
 void  FreeCGXHook(struct CGXHook *hook );
 
-struct CGXHook *  AllocCLUT8RemapHook(struct Screen *scr,
-											  ULONG *palette);
+struct CGXHook *  AllocRGB16Hook(struct RastPort *rp);
 
-void  DoCLUT8RemapHook(struct CGXHook *hook,
+void  DoRGB16Hook(struct CGXHook *hook,
 							   UBYTE *chunky, struct RastPort *rp ,
 							   LONG srcx, LONG srcy ,
 							   LONG dstx , LONG dsty ,
 							   LONG width , LONG height ,
 							   LONG srcmod );
 
-//void  PaletteCLUT8RemapHook(struct CGXHook *hook __asm("a0"),
-//									ULONG *palette __asm("a1"));
-
-void  CustomRemapCLUT8RemapHook(struct CGXHook *hook,
-										ULONG *remaptable );
+//void  CustomDrawPixelRGB16Hook(struct CGXHook *hook );
 
 #ifdef __cplusplus
 }
