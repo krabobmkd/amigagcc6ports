@@ -478,6 +478,7 @@ Display_Intuition::Display_Intuition(const _osd_create_params *params) : MameDis
     , _ScreenModeId(INVALID_ID)
     , _fullscreenWidth(0)
     , _fullscreenHeight(0)
+    , _pixelFmt(0)
     , _pMouseRaster(NULL)
     , _pWbWindow(NULL)
     , _machineWidth(params->width),_machineHeight(params->height)
@@ -600,68 +601,183 @@ void Display_Intuition::closeScreen()
 // - - - -
 
 Display_CGX_Paletted::Display_CGX_Paletted(const _osd_create_params *params, ULONG forcedModeID)
-    : Display_Intuition(params)
+    : Display_Intuition(params),_clut(NULL)
 {
-//    printf("Display_CGX_Paletted()\n");
+    printf("Display_CGX_Paletted()\n");
 
-//    if(!CyberGfxBase) return;
-//    int width = params->width;
-//    int height = params->height;
-//    printf(" ***** palette nbc:%d\n",params->colors);
+    if(!CyberGfxBase) return;
+    int width = params->width;
+    int height = params->height;
+    printf(" ***** palette nbc:%d\n",params->colors);
 
-//    int screenDepth = (params->colors<=256)?8:16; // more would be Display_CGX_TrueColor.
+    int screenDepth = (params->colors<=256)?8:16; // more would be Display_CGX_TrueColor.
 
-//    _ScreenModeId = forcedModeID;
-//    if(_ScreenModeId == INVALID_ID)
-//    {
-//         struct TagItem cgxtags[]={
-//                CYBRBIDTG_NominalWidth,width,
-//                CYBRBIDTG_NominalHeight,height,
-//                CYBRBIDTG_Depth,screenDepth,
-//                TAG_DONE,0 };
-//             printf("bef BestCModeIDTagList()\n");
+    _ScreenModeId = forcedModeID;
+    if(_ScreenModeId == INVALID_ID)
+    {
+         struct TagItem cgxtags[]={
+                CYBRBIDTG_NominalWidth,width,
+                CYBRBIDTG_NominalHeight,height,
+                CYBRBIDTG_Depth,screenDepth,
+                TAG_DONE,0 };
+             printf("bef BestCModeIDTagList()\n");
 
-//        _ScreenModeId = BestCModeIDTagList(cgxtags);
-//           printf("aft BestCModeIDTagList()\n");
-//               fflush(stdout);
-//    }
-//    if(_ScreenModeId == INVALID_ID)
-//    {
-//printf("fail1\n");
+        _ScreenModeId = BestCModeIDTagList(cgxtags);
+           printf("aft BestCModeIDTagList()\n");
+               fflush(stdout);
+    }
+    if(_ScreenModeId == INVALID_ID)
+    {
+        logerror("Can't find cyber screen mode for w%d h%d d%d ",width,height,screenDepth);
+        return;
+    }
+    _fullscreenWidth = GetCyberIDAttr( CYBRIDATTR_WIDTH, _ScreenModeId );
+    _fullscreenHeight = GetCyberIDAttr( CYBRIDATTR_HEIGHT, _ScreenModeId );
+    _pixelFmt = GetCyberIDAttr( CYBRIDATTR_PIXFMT, _ScreenModeId );
+    _pixelbytes = GetCyberIDAttr( CYBRIDATTR_BPPIX, _ScreenModeId );
+    if(_pixelbytes==3) _pixelbytes=4;
+    _clut = (UBYTE*)calloc(1,_pixelbytes*params->colors); // once and for all.
+    printf(" ** gw:%d gh:%d final res %d %d\n",width,height,_fullscreenWidth,_fullscreenHeight);
 
-//        logerror("Can't find cyber screen mode for w%d h%d d%d ",width,height,screenDepth);
-//        return;
-//    }
-//    _fullscreenWidth = GetCyberIDAttr( CYBRIDATTR_WIDTH, _ScreenModeId );
-//    _fullscreenHeight = GetCyberIDAttr( CYBRIDATTR_HEIGHT, _ScreenModeId );
-//    printf(" ** gw:%d gh:%d final res %d %d\n",width,height,_fullscreenWidth,_fullscreenHeight);
-
-//   // _fullscreenPixelMode = GetCyberIDAttr( CYBRIDATTR_PIXFMT, _ScreenModeId );
+   // _fullscreenPixelMode = GetCyberIDAttr( CYBRIDATTR_PIXFMT, _ScreenModeId );
 
 
-////	int width, height;			/* width and height */
-////	int aspect_x, aspect_y;		/* aspect ratio X:Y */
-////	int depth;					/* depth, either 16(palette), 15(RGB) or 32(RGB) */
-////	int colors;					/* colors in the palette (including UI) */
-////	float fps;					/* frame rate */
-////	int video_attributes;		/* video flags from driver */
+//	int width, height;			/* width and height */
+//	int aspect_x, aspect_y;		/* aspect ratio X:Y */
+//	int depth;					/* depth, either 16(palette), 15(RGB) or 32(RGB) */
+//	int colors;					/* colors in the palette (including UI) */
+//	float fps;					/* frame rate */
+//	int video_attributes;		/* video flags from driver */
 
 
 }
 Display_CGX_Paletted::~Display_CGX_Paletted()
 {
-
+    if(_clut) free(_clut);
+}
+void Display_CGX_Paletted::updatePaletteRemap(_mame_display *pmame_display)
+{
+    const rgb_t *gpal = pmame_display->game_palette;
+    USHORT *p=(USHORT *)_clut;
+    UBYTE *pb=(UBYTE *)_clut;
+    int i=0;
+    const ULONG nbc= pmame_display->game_palette_entries;
+    switch(_pixelFmt)
+    {
+    // - - - - -15b cases
+     case PIXFMT_RGB15:
+        for(;i<nbc;i++) { ULONG c = *gpal++; *p++ = ((c>>9)&0x7c00)|((c>>6)&0x03e0)|((c>>3)&0x001f); }
+        break;
+     case PIXFMT_BGR15:
+        for(;i<nbc;i++) { ULONG c = *gpal++; *p++ = ((c<<7)&0x7c00)|((c>>6)&0x03e0)|((c>>19)&0x001f); }
+        break;
+     case PIXFMT_RGB15PC:
+        for(;i<nbc;i++) { ULONG c = *gpal++; USHORT d = ((c>>9)&0x7c00)|((c>>6)&0x03e0)|((c>>3)&0x001f);
+            *pb++ = (UBYTE)d; d>>=8;  *pb++ = (UBYTE)d;
+        }
+        break;
+     case PIXFMT_BGR15PC:
+        for(;i<nbc;i++) { ULONG c = *gpal++; USHORT d = ((c<<7)&0x7c00)|((c>>6)&0x03e0)|((c>>19)&0x001f);
+            *pb++ = (UBYTE)d; d>>=8;  *pb++ = (UBYTE)d;
+        }
+        break;
+     // - -- - - - 16b cases
+     case PIXFMT_RGB16:
+        for(;i<nbc;i++) { ULONG c = *gpal++; *p++ = ((c>>8)&0xf800)|((c>>5)&0x07e0)|((c>>3)&0x001f); }
+        break;
+     case PIXFMT_BGR16:
+        for(;i<nbc;i++) { ULONG c = *gpal++; *p++ = ((c<<8)&0xf800)|((c>>5)&0x07e0)|((c>>19)&0x001f); }
+        break;
+     case PIXFMT_RGB16PC:
+        for(;i<nbc;i++) { ULONG c = *gpal++; USHORT d = ((c>>8)&0xf800)|((c>>5)&0x07e0)|((c>>3)&0x001f);
+            *pb++ = (UBYTE)d; d>>=8;  *pb++ = (UBYTE)d;
+        }
+        break;
+     case PIXFMT_BGR16PC:
+        for(;i<nbc;i++) { ULONG c = *gpal++; USHORT d =  ((c<<8)&0xf800)|((c>>5)&0x07e0)|((c>>19)&0x001f);
+            *pb++ = (UBYTE)d; d>>=8;  *pb++ = (UBYTE)d;
+        }
+        break;
+     // - - -24b cases, also use 32bit source
+     case PIXFMT_RGB24:
+     case PIXFMT_BGR24:
+     // - - -32b cases
+     case PIXFMT_ARGB32:
+        // this is the id one, no need for table, direct palette use.
+        break;
+     case PIXFMT_BGRA32:
+     case PIXFMT_RGBA32:
+        break;
+     case PIXFMT_LUT8: // no sense, should just use RGB32 os palette, do not select Display_CGX_Paletted
+    default:
+        break;
+    }
 }
 void Display_CGX_Paletted::draw(_mame_display *pmame_display)
 {
-    mame_bitmap *bitmap = pmame_display->game_bitmap;
-    if(_pWbWindow)
-    {
 
+    /* pixfmt constated:
+     *  UAE picasso : WB PIXFMT_BGRA32 , asked 16b: PIXFMT_RGB16PC
+    */
+    mame_bitmap *bitmap = pmame_display->game_bitmap;
+    if(_pWbWindow && _pWbWindow->RPort->BitMap)
+    {
+        int width,height,depth,pixfmt,bpr;
+        APTR pc;
+        APTR hdl = LockBitMapTags(_pWbWindow->RPort->BitMap,
+                                  LBMI_WIDTH,(ULONG)&width,
+                                  LBMI_HEIGHT,(ULONG)&height,
+                                  LBMI_DEPTH,(ULONG)&depth,
+                                  LBMI_PIXFMT,(ULONG)&pixfmt,
+                                  //LBMI_BYTESPERPIX,(ULONG)&,
+                                  LBMI_BYTESPERROW,(ULONG)&bpr,
+                                  LBMI_BASEADDRESS,(ULONG)&pc,
+                                  TAG_DONE);
+        if(hdl) {
+
+            UnLockBitMap(hdl);
+        }
+        printf("win pixfmt:%d\n",pixfmt);
     }
     if(_pScreen)
     {
+        /*
 
+LBMI_WIDTH
+    (PLongWord) Points to a longword which contains the bitmap width after a succesful call
+LBMI_HEIGHT
+    (PLongWord) Points to a longword which contains the bitmap height after a succesful call
+LBMI_DEPTH
+    (PLongWord) Points to a longword which contains the bitmap depth after a succesful call
+LBMI_PIXFMT
+    (PLongWord) Points to a longword which contains the usedpixel format.
+Possibly returned colormodels are:
+        PIXFMT_LUT8,
+        PIXFMT_RGB15,
+        PIXFMT_BGR15, PIXFMT_RGB15PC, PIXFMT_BGR15PC, PIXFMT_RGB16, PIXFMT_BGR16, PIXFMT_RGB16PC, PIXFMT_BGR16PC, PIXFMT_RGB24, PIXFMT_BGR24, PIXFMT_ARGB32, PIXFMT_BGRA32, PIXFMT_RGBA32
+LBMI_BYTESPERPIX
+    (PLongWord) points to a longword which contains the amount of bytes per pixel data.
+LBMI_BYTESPERROW
+    (PLongWord) points to a longword which contains the number of bytes per row for one bitmap line
+LBMI_BASEADDRESS
+    (PLongWord) points to a longword which contains the bitmap base address. This address is only valid inside of the Lock/UnLockBitmap call!
+*/
+        int width,height,depth,pixfmt,bpr;
+        APTR pc;
+        APTR hdl = LockBitMapTags(_pScreen->RastPort.BitMap,
+                                  LBMI_WIDTH,(ULONG)&width,
+                                  LBMI_HEIGHT,(ULONG)&height,
+                                  LBMI_DEPTH,(ULONG)&depth,
+                                  LBMI_PIXFMT,(ULONG)&pixfmt,
+                                  //LBMI_BYTESPERPIX,(ULONG)&,
+                                  LBMI_BYTESPERROW,(ULONG)&bpr,
+                                  LBMI_BASEADDRESS,(ULONG)&pc,
+                                  TAG_DONE);
+        if(hdl) {
+
+            UnLockBitMap(hdl);
+        }
+        printf("pixfmt:%d\n",pixfmt);
     }
 }
 

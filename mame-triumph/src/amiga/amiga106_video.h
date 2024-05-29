@@ -2,7 +2,7 @@
 #define AMIGA_VIDEO_H
 
 // note: anything exported from amiga_video.cpp is defined in mame/osdepends.h
-
+#include <vector>
 extern "C"
 {
     #include <exec/ports.h>
@@ -46,6 +46,7 @@ protected:
     ULONG   _ScreenModeId;
     int _fullscreenWidth; // guessed from modeid.
     int _fullscreenHeight;
+    ULONG _pixelFmt,_pixelbytes;
     void *_pMouseRaster;
     // - -
     Window *_pWbWindow;
@@ -59,7 +60,8 @@ public:
     ~Display_CGX_Paletted();
     void draw(_mame_display *pmame_display) override;
 protected:
-
+    UBYTE *_clut;
+    void updatePaletteRemap(_mame_display *pmame_display);
 };
 class Display_CGX_TrueColor : public Display_Intuition
 {

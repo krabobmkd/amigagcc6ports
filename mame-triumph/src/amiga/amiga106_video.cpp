@@ -121,7 +121,7 @@ int osd_create_display(const _osd_create_params *params, UINT32 *rgb_components)
         logerror("couldn't find a graphic mode.");
         return 1; // fail.
     }
-    g_pMameDisplay->openWindow();
+    g_pMameDisplay->openScreen();
     AllocInputs(); // input object depends of screen or window.
 
     return 0; // success
