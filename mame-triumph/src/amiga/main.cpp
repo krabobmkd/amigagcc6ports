@@ -44,20 +44,18 @@ extern "C" {
 #include <proto/asl.h>
 #include <proto/utility.h>
 #include <proto/keymap.h>
-//#include <proto/cybergraphics.h>
 
 extern "C" {
-// all C amiga stuffs should be included from C++ in extern "C" paragraph
-#include <cybergraphx/cybergraphics.h>
-#include <macros.h>
+    // all C amiga stuffs should be included from C++ in extern "C" paragraph
+    #include <cybergraphx/cybergraphics.h>
+    #include <macros.h>
 
-// end extern "C"
 }
 
 
 #include "version.h"
 #include "video.h"
-#include "amiga_inputs.h"
+
 #include "amiga_locale.h"
 #include "config_moo.h"
 #include "gui_mui.h"
@@ -113,6 +111,7 @@ struct Library      *AslBase    = NULL;
 struct Library      *KeymapBase   = NULL;
 struct Library      *UtilityBase  = NULL;
 struct Library      *CyberGfxBase = NULL;
+struct Library      *P96Base = NULL;
 
 struct Device      *TimerBase    = NULL;
 }
@@ -163,6 +162,7 @@ int libs_init()
     InitLowLevelLib();
     // optional:
     CyberGfxBase  = OpenLibrary("cybergraphics.library", 1);
+    P96Base  = OpenLibrary("Picasso96API.library", 0);
     GadToolsBase  = OpenLibrary("gadtools.library", 1);
 
     if(GadToolsBase) gui_gadtools_init();
@@ -213,6 +213,7 @@ void main_close()
 
     CloseLowLevelLib();
     if(GadToolsBase) CloseLibrary(GadToolsBase);
+    if(P96Base) CloseLibrary(P96Base);
     if(CyberGfxBase) CloseLibrary(CyberGfxBase);
 
     if(KeymapBase) CloseLibrary(KeymapBase);
@@ -225,7 +226,7 @@ void main_close()
 #endif
 }
 
-const char *pVersion="$VER: 106 2006 port 0 2024:";
+const char *pVersion="$VER: 0.106 a0.1";
 
 #if defined(MAME_USE_HARD_FLOAT)
 
@@ -315,11 +316,6 @@ int main(int argc, char **argv)
     printf("bef loop\n");
     ULONG quit=FALSE;
 
-
-//    //krb: looks like validation need to init structs:
-//    cpuintrf_init();
-//    sndintrf_init();
-
     // loop per emulation launched
     while(!quit)
     {
@@ -362,380 +358,6 @@ int main(int argc, char **argv)
     // end of main
     return(0);
 }
-
-
-//LONG VideoOpen(LONG width, LONG height, LONG left, LONG top, LONG right, LONG bottom, LONG dirty)
-//{
-//    printf("main VideoOpen\n");
-//// #define	GAME_REQUIRES_16BIT			0x0100	/* cannot fit in 256 colors */
-//  static ULONG pixel_formats[] =
-//  {
-//    PIXFMT_RGB16,
-//    PIXFMT_RGB15,
-//    PIXFMT_BGR15,
-//    PIXFMT_RGB15PC,
-//    PIXFMT_BGR15PC,
-//    PIXFMT_BGR16,
-//    PIXFMT_RGB16PC,
-//    PIXFMT_BGR16PC,
-//    PIXFMT_LUT8,
-//    ~0
-//  };
-
-//  int  fail;
-//  LONG visible_width;
-//  LONG visible_height;
-
-
-//  if(Config[CFG_DIRECTMODE] == CFGDM_DRAW)
-//  {
-//    visible_width  = width + 16;
-//    visible_height = height + 16;
-//  }
-//  else
-//  {
-//    visible_width  = right - left + 1;
-//    visible_height = bottom - top + 1;
-//  }
-
-
-//    machine_config machine;
-//    memset(&machine,0,sizeof(machine));
-//    if(Config[CFG_DRIVER]>=0 &&  Drivers[Config[CFG_DRIVER]] != NULL)
-//    {
-//        Drivers[Config[CFG_DRIVER]]->drv(&machine);
-//    }
-
-
-//  /* Disable dirty line support if requested by user. */
-
-//  if(!Config[CFG_DIRTYLINES])
-//    dirty = 0;
-
-//  Video = AllocVideo(VA_UseScreen,     (Config[CFG_SCREENTYPE] != CFGST_WB),
-//                     VA_UseScreenReq,  (Config[CFG_SCREENTYPE] == CFGST_USERSELECT),
-//                     VA_Width,         (Config[CFG_WIDTH] > visible_width)
-//                                       ? Config[CFG_WIDTH]
-//                                       : visible_width,
-//                     VA_Height,        (Config[CFG_HEIGHT] > visible_height)
-//                                       ? Config[CFG_HEIGHT]
-//                                       : visible_height,
-//                     VA_ModeID,        (Config[CFG_SCREENTYPE] == CFGST_CUSTOM)
-//                                       ? (Config[CFG_SCREENMODE])
-//                                       : INVALID_ID,
-//                     VA_Depth,         (Config[CFG_SCREENTYPE] == CFGST_CUSTOM)
-//                                       ? (Config[CFG_DEPTH])
-//                                       : 0,
-//                     VA_Buffers,       Config[CFG_BUFFERING]+1,
-//                     VA_Title,         APPNAME,
-//                     VA_Menu,          g_gtMenu,
-//                     VA_FPS,           (int)machine.frames_per_second,
-//                     VA_MaxColors,     // we only manage 8b or 16b
-//                                        // yet VIDEO_NEEDS_6BITS_PER_GUN would mean better in 24b
-//                                        (machine.total_colors <= 256)
-//                                        ?(machine.total_colors):(1<<16)
-
-//                                        /*(Drivers[Config[CFG_DRIVER]]->drv->total_colors <= 256)
-//                                       ? Drivers[Config[CFG_DRIVER]]->drv->total_colors
-//                                       : ((Drivers[Config[CFG_DRIVER]]->drv->video_attributes & VIDEO_NEEDS_6BITS_PER_GUN)
-//                                         && Config[CFG_ALLOW16BIT])
-//                                         ? (1<<24)
-//                                         : (1<<16)
-
-//                                        */,
-//                     VA_AutoFrameSkip, Config[CFG_AUTOFRAMESKIP],
-//                     VA_MaxFrameSkip,  4,
-//                     TAG_END);
-
-//  if(Video)
-//  {
-//    DirectArray = NULL;
-//    Inputs      = NULL;
-  
-//    if(Config[CFG_DIRECTMODE])
-//    {
-//      DirectArray = VAllocDirectArray(Video, visible_width, visible_height);
-      
-//      if(DirectArray)
-//      {
-//        VSetDirectFrame(DirectArray);
-        
-//        if(!DirectArray->Pixels)
-//        {
-//          VFreeDirectArray(DirectArray);
-//          DirectArray = NULL;
-//        }
-//      }
-//    }
-
-//    fail = 0;
-
-//    if(!DirectArray)
-//    {
-//      /*old0.35: if((Drivers[Config[CFG_DRIVER]]->drv->video_attributes & VIDEO_SUPPORTS_16BIT)
-//         && Config[CFG_ALLOW16BIT])*/
-//      if(machine.total_colors >256)
-//      {
-//        PixelArray[0] = VAllocPixelArray(Video, width+16, height+16, dirty, pixel_formats);
-//      }
-//      else
-//        PixelArray[0] = VAllocPixelArray(Video, width+16, height+16, dirty, NULL);
-      
-//      if(PixelArray[0])
-//      {
-//        VSetPixelArrayBox(PixelArray[0], 8 + left, 8 + top, 8 + right, 8 + bottom);
-//      }
-//      else
-//        fail = 1;
-//    }
-//    else
-//      PixelArray[0] = NULL;
-
-//#ifdef POWERUP
-//    if(!DirectArray)
-//    {
-//      if((Drivers[Config[CFG_DRIVER]]->drv->video_attributes & VIDEO_SUPPORTS_16BIT)
-//         && Config[CFG_ALLOW16BIT])
-//      {
-//        PixelArray[1] = VAllocPixelArray(Video, width+16, height+16, dirty, pixel_formats);
-//      }
-//      else
-//        PixelArray[1] = VAllocPixelArray(Video, width+16, height+16, dirty, NULL);
-
-//      if(PixelArray[1])
-//      {
-//        VSetPixelArrayBox(PixelArray[1], 8 + left, 8 + top, 8 + right, 8 + bottom);
-//      }
-//      else
-//        fail = 1;
-//    }
-//    else
-//      PixelArray[1] = NULL;
-//#endif
-
-//    if(!fail)
-//    {
-//      RefreshHook.h_Entry = (RE_HOOKFUNC) &RefreshHandler;
-//      MenuHook.h_Entry    = (RE_HOOKFUNC) &MenuHandler;
-//      IDCMPHook.h_Entry   = (RE_HOOKFUNC) &IDCMPHandler;
-
-//      Inputs = AllocInputs(IA_Port1,          (Config[CFG_JOY1TYPE] == CFGJ1_MOUSE1)
-//                                              ? IPT_MOUSE
-//                                              : Config[CFG_JOY2TYPE],
-//                           IA_Port2,          (Config[CFG_JOY1TYPE] == CFGJ1_MOUSE1)
-//                                              ? IPT_NONE
-//                                              : Config[CFG_JOY1TYPE],
-//                      //TODO: to be replaced     IA_KeyMap,         (ULONG) KeyMap,
-////                           IA_P1AutoFireRate, (Config[CFG_JOY1TYPE] == CFGJ1_MOUSE1)
-////                                              ? Config[CFG_JOY1AUTOFIRERATE]
-////                                              : Config[CFG_JOY2AUTOFIRERATE],
-////                           IA_P1BlueEmuTime,  (Config[CFG_JOY1TYPE] == CFGJ1_MOUSE1)
-////                                              ? Config[CFG_JOY1BUTTONBTIME]
-////                                              : Config[CFG_JOY2BUTTONBTIME],
-////                           IA_P2AutoFireRate, Config[CFG_JOY1AUTOFIRERATE],
-////                           IA_P2BlueEmuTime,  Config[CFG_JOY1BUTTONBTIME],
-//                           IA_Window,         Video->Window,
-//                           IA_RefreshHook,    (ULONG) &RefreshHook,
-//                           IA_MenuHook,       (ULONG) &MenuHook,
-//                           IA_IDCMPHook,      (ULONG) &IDCMPHook,
-//#ifdef POWERUP
-//                           IA_UseTicks,       TRUE,
-//#endif
-//                           TAG_END);
-
-
-//      if(Inputs)
-//      {
-//        Width  = Video->Width;
-//        Height = Video->Height;
-//        Keys   = Inputs->Keys;
-//        Port1  = &Inputs->Ports[1];
-//        Port2  = &Inputs->Ports[0];
-//        return(1);
-//      }
-//      else
-//        ErrorRequest(MSG_FAILED_TO_ALLOCATE_INPUTS);
-//    }
-//    else
-//      ErrorRequest(MSG_NOT_ENOUGH_MEMORY);
-
-//    if(DirectArray)
-//      VFreeDirectArray(DirectArray);
-//    if(PixelArray[0])
-//      VFreePixelArray(PixelArray[0]);
-//#ifdef POWERUP
-//    if(PixelArray[1])
-//      VFreePixelArray(PixelArray[1]);
-//#endif
-
-//    FreeVideo(Video);
-//  }
-//  else
-//  {
-//    switch(VError)
-//    {
-//      case None:
-//        break;
-        
-//      case OutOfMemory:
-//        ErrorRequest(MSG_NOT_ENOUGH_MEMORY);
-//        break;
-
-//      case OpenScreenFailed:
-//        ErrorRequest(MSG_FAILED_TO_OPEN_SCREEN);
-//        break;
-
-//      case OpenWindowFailed:
-//        ErrorRequest(MSG_FAILED_TO_OPEN_WINDOW);
-//        break;
-//    }
-//  }
-
-//  return(0);
-//}
-
-//void VideoClose(void)
-//{
-//  if(Video)
-//  {
-//    if(DirectArray)
-//      VFreeDirectArray(DirectArray);
-//    if(PixelArray[0])
-//      VFreePixelArray(PixelArray[0]);
-//#ifdef POWERUP
-//    if(PixelArray[1])
-//      VFreePixelArray(PixelArray[1]);
-//#endif
-
-//    if(Inputs)
-//      FreeInputs(Inputs);
-
-//    FreeVideo(Video);
-//    Video = NULL;
-//  }
-//}
-
-//void InputUpdate(LONG wait)
-//{
-//  if(Inputs)
-//  {
-//    if(wait)
-//      Wait(Inputs->SignalMask);
-
-//    IUpdate(Inputs);
-
-//    if(MenuSelect[ITEM_NEW])
-//    {
-//      MenuSelect[ITEM_NEW] = 0;
-
-//      NewGame              = 1;
-//   //re   Keys[OSD_KEY_ESC]    = 1;
-//    }
-
-//    if(MenuSelect[ITEM_SAVE_ILBM])
-//    {
-//      MenuSelect[ITEM_SAVE_ILBM] = 0;
-//      IDisable(Inputs);
-//      SaveILBM();
-//      ScreenToFront(Video->Window->WScreen);
-//      ActivateWindow(Video->Window);
-//      IEnable(Inputs);
-//    }
-
-//    if(MenuSelect[ITEM_ABOUT])
-//    {
-//      MenuSelect[ITEM_ABOUT]  = 0;
-//      IDisable(Inputs);
-//      AboutGUI();
-//      ScreenToFront(Video->Window->WScreen);
-//      ActivateWindow(Video->Window);
-//      IEnable(Inputs);
-//    }
-
-//    if(MenuSelect[ITEM_QUIT])
-//    {
-//      MenuSelect[ITEM_QUIT] = 0;
-
-//      NewGame           = 0;
-//    //old  Keys[OSD_KEY_ESC] = 1;
-//    }
-//  }
-//}
-
-//void ASM RefreshHandler(struct Hook *hook REG(a0))
-//{
-//  VRefresh(Video);
-//}
-
-//void ASM MenuHandler(struct Hook *hook REG(a0), APTR null REG(a2), ULONG *itemnum REG(a1))
-//{
-//  MenuSelect[*itemnum]  = 1;
-//}
-
-//void ASM IDCMPHandler(struct Hook *hook REG(a0), APTR null REG(a2), ULONG *imclass REG(a1))
-//{
-//  if(*imclass == IDCMP_CLOSEWINDOW)
-//  {
-//    NewGame           = 1;
-//  //old  Keys[OSD_KEY_ESC] = 1;
-//  }
-//}
-
-
-/*
-uclock_t uclock(void)
-{
-  static uclock_t old_uclock    = 0;
-  uclock_t    new_uclock;
-  struct timeval  tv;
-
-  if(TimerBase)
-  {
-    GetSysTime(&tv);
-    new_uclock  = (tv.tv_secs * UCLOCKS_PER_SEC) + (tv.tv_micro / (1000000 / UCLOCKS_PER_SEC));
-    if(new_uclock == old_uclock)
-      new_uclock++;
-  }
-  else
-    new_uclock  = old_uclock + UCLOCKS_PER_SEC;
-
-  old_uclock  = new_uclock;
-
-  return(new_uclock);
-}
-*/
-
-//void SaveILBM(void)
-//{
-//  BPTR new_dir;
-//  BPTR old_dir;
-
-//  if(!FileRequester)
-//    FileRequester = (struct FileRequester  *)AllocAslRequest(ASL_FileRequest, NULL);
-  
-//  if(FileRequester)
-//  {
-//    if(AslRequestTags(FileRequester,
-//                      ASLFR_DoSaveMode,  TRUE,
-//                      ASLFR_SleepWindow, TRUE,
-//                      ASLFR_TitleText,   (ULONG) GetMessage(MSG_MENU_SAVE_ILBM),
-//                      TAG_END))
-//    {
-//      new_dir = Lock(FileRequester->fr_Drawer, ACCESS_READ);
-      
-//      if(new_dir)
-//      {
-//        old_dir = CurrentDir(new_dir);
-        
-//        //VSaveILBM(Video, FileRequester->fr_File);
-        
-//        CurrentDir(old_dir);
-        
-//        UnLock(new_dir);
-//      }
-//    }
-//  }
-//}
 
 void ErrorRequest(LONG msg_id, ...)
 {

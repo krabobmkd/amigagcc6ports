@@ -27,22 +27,31 @@ endif()
 add_subdirectory(../mame106 MameLib)
 
 set(AMIGA_SRC
+	main.cpp
+
+	gui_mui.cpp
+	gui_gadtools.cpp
+	config_moo.h
+	config_moo.cpp
+
 	amiga106.cpp
+
+	amiga106_inputs.h
 	amiga106_inputs.cpp
 	amiga106_audiostream.cpp
 	amiga106_filesystem.cpp
 	amiga106_timer.cpp
+
+	amiga106_video.h
 	amiga106_video.cpp
-	main.cpp
-	gui_mui.cpp
-	gui_gadtools.cpp
-	config_moo.cpp
-#	amiga_inputs.cpp
+#	amiga106_video_p96.cpp
+	amiga106_video_cgx.cpp
+
 	amiga_locale.cpp
 	main.h
-	config_moo.h
+
 	audio.h
-	amiga_inputs.h
+
 	amiga_locale.h
 	gui_mui.h
 	gui_gadtools.h
@@ -52,9 +61,9 @@ set(AMIGA_SRC
 #	c2p.s
 #	gfx.s
 #	../../lib/c2p.s.o ../../lib/gfx.s.o
-	cgxhooks.c
-	cgxhooks.h
-	cgxhooks_re.s
+#	cgxhooks.c
+#	cgxhooks.h
+#	cgxhooks_re.s
 	)
 
 set(PROGNAME TriumphMame)
@@ -81,8 +90,8 @@ target_include_directories(${PROGNAME} PUBLIC "../mame106")
 target_include_directories(${PROGNAME} PUBLIC "../../../extrasdk/MUI/include")
 target_include_directories(${PROGNAME} PUBLIC "../../../extrasdk/P96/include")
 
-add_executable(cgxhooktest cgxhookstest.c cgxhooks.c cgxhooks.h )
-set_property(TARGET cgxhooktest PROPERTY C_STANDARD 11)
+# add_executable(cgxhooktest cgxhookstest.c cgxhooks.c cgxhooks.h )
+# set_property(TARGET cgxhooktest PROPERTY C_STANDARD 11)
 
 #  - - - - - - - - - - 
 ## debug/test phase, no release.

@@ -31,7 +31,7 @@ extern "C" {
     #include "mame.h"
 }
 
-#include "amiga_inputs.h"
+#include "amiga106_inputs.h"
 
 #include <stdio.h>
 #include <string>

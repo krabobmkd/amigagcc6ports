@@ -241,9 +241,9 @@ int osd_start_audio_stream(int stereo)
 // from mame main thread engine.
 int osd_update_audio_stream(INT16 *buffer)
 {
-    printf("osd_update_audio_stream %08x\n", (int)pAHIS);
+  //  printf("osd_update_audio_stream %08x\n", (int)pAHIS);
     if(!pAHIS) return 0;
-    printf("osd_update_audio_stream\n");
+  //  printf("osd_update_audio_stream\n");
     // buffer length is pAHIS->m_nextSamples.
 
     SHORT *p1 = pAHIS->m_pSBuff1;

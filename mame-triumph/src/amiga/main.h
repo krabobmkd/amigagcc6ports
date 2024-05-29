@@ -30,7 +30,7 @@
 
 #include "config_moo.h"
 #include "video.h"
-#include "amiga_inputs.h"
+#include "amiga106_inputs.h"
 
 #define AUDIO_CHANNELS      16
 #define AUDIO_BUFFER_LENGTH 2048
