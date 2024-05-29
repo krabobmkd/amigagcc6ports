@@ -29,6 +29,15 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 
+static void waitsec(int s)
+{
+    for(int j=0;j<s;j++)
+    for(int i=0;i<50;i++)
+    {
+        WaitTOF();
+    }
+}
+
 extern struct Library *CyberGfxBase;
 
 // structure to handle the demoscreen object:
@@ -469,6 +478,7 @@ Display_Intuition::Display_Intuition(const _osd_create_params *params) : MameDis
     , _ScreenModeId(INVALID_ID)
     , _fullscreenWidth(0)
     , _fullscreenHeight(0)
+    , _pMouseRaster(NULL)
     , _pWbWindow(NULL)
     , _machineWidth(params->width),_machineHeight(params->height)
 {}
@@ -480,16 +490,21 @@ Display_Intuition::~Display_Intuition()
 void Display_Intuition::openWindow()
 {
     if(_pWbWindow) return;
+
     closeScreen();
 
     Screen *pWbScreen;
     if (!(pWbScreen = LockPubScreen(NULL))) return;
-    int xcen = pWbScreen->Width - _machineWidth;
-    int ycen = pWbScreen->Height - _machineHeight;
-    if(xcen<0) xcen=0;
-    if(ycen<0) ycen=0;
 
-    _pWbWindow = (Window *)OpenWindowTags(NULL,
+    int xcen = (pWbScreen->Width - _machineWidth);
+    int ycen = (pWbScreen->Height - _machineHeight);
+    if(xcen<0) xcen=0;
+    xcen>>=1;
+    if(ycen<0) ycen=0;
+    ycen>>=1;
+    printf("openWindow:_machineWidth:%d _machineHeight:%d xcen:%d ycen:%d \n",_machineWidth,_machineHeight,xcen,ycen);
+
+        _pWbWindow = (Window *)OpenWindowTags(NULL,
         WA_Left,xcen,
         WA_Top,ycen,
         WA_Width, _machineWidth,
@@ -508,6 +523,7 @@ void Display_Intuition::openWindow()
         TAG_DONE
         );
     UnlockPubScreen(NULL,pWbScreen);
+
     if( _pWbWindow == NULL ) return;
     _pUserPort = _pWbWindow->UserPort;
 }
@@ -586,39 +602,49 @@ void Display_Intuition::closeScreen()
 Display_CGX_Paletted::Display_CGX_Paletted(const _osd_create_params *params, ULONG forcedModeID)
     : Display_Intuition(params)
 {
-    if(!CyberGfxBase) return;
-    int width = params->width;
-    int height = params->height;
-    printf("palette nbc:%d\n",params->colors);
+//    printf("Display_CGX_Paletted()\n");
 
-    int screenDepth = (params->colors<=256)?8:16; // more would be Display_CGX_TrueColor.
+//    if(!CyberGfxBase) return;
+//    int width = params->width;
+//    int height = params->height;
+//    printf(" ***** palette nbc:%d\n",params->colors);
 
-    _ScreenModeId = forcedModeID;
-    if(_ScreenModeId == INVALID_ID)
-    {
-         struct TagItem cgxtags[]={
-                CYBRBIDTG_NominalWidth,width,
-                CYBRBIDTG_NominalHeight,height,
-                CYBRBIDTG_Depth,screenDepth,
-                TAG_DONE,0 };
-        _ScreenModeId = BestCModeIDTagList(cgxtags);
-    }
-    if(_ScreenModeId == INVALID_ID)
-    {
-        logerror("Can't find cyber screen mode for w%d h%d d%d ",width,height,screenDepth);
-        return;
-    }
-    _fullscreenWidth = GetCyberIDAttr( CYBRIDATTR_WIDTH, _ScreenModeId );
-    _fullscreenHeight = GetCyberIDAttr( CYBRIDATTR_HEIGHT, _ScreenModeId );
-   // _fullscreenPixelMode = GetCyberIDAttr( CYBRIDATTR_PIXFMT, _ScreenModeId );
+//    int screenDepth = (params->colors<=256)?8:16; // more would be Display_CGX_TrueColor.
+
+//    _ScreenModeId = forcedModeID;
+//    if(_ScreenModeId == INVALID_ID)
+//    {
+//         struct TagItem cgxtags[]={
+//                CYBRBIDTG_NominalWidth,width,
+//                CYBRBIDTG_NominalHeight,height,
+//                CYBRBIDTG_Depth,screenDepth,
+//                TAG_DONE,0 };
+//             printf("bef BestCModeIDTagList()\n");
+
+//        _ScreenModeId = BestCModeIDTagList(cgxtags);
+//           printf("aft BestCModeIDTagList()\n");
+//               fflush(stdout);
+//    }
+//    if(_ScreenModeId == INVALID_ID)
+//    {
+//printf("fail1\n");
+
+//        logerror("Can't find cyber screen mode for w%d h%d d%d ",width,height,screenDepth);
+//        return;
+//    }
+//    _fullscreenWidth = GetCyberIDAttr( CYBRIDATTR_WIDTH, _ScreenModeId );
+//    _fullscreenHeight = GetCyberIDAttr( CYBRIDATTR_HEIGHT, _ScreenModeId );
+//    printf(" ** gw:%d gh:%d final res %d %d\n",width,height,_fullscreenWidth,_fullscreenHeight);
+
+//   // _fullscreenPixelMode = GetCyberIDAttr( CYBRIDATTR_PIXFMT, _ScreenModeId );
 
 
-//	int width, height;			/* width and height */
-//	int aspect_x, aspect_y;		/* aspect ratio X:Y */
-//	int depth;					/* depth, either 16(palette), 15(RGB) or 32(RGB) */
-//	int colors;					/* colors in the palette (including UI) */
-//	float fps;					/* frame rate */
-//	int video_attributes;		/* video flags from driver */
+////	int width, height;			/* width and height */
+////	int aspect_x, aspect_y;		/* aspect ratio X:Y */
+////	int depth;					/* depth, either 16(palette), 15(RGB) or 32(RGB) */
+////	int colors;					/* colors in the palette (including UI) */
+////	float fps;					/* frame rate */
+////	int video_attributes;		/* video flags from driver */
 
 
 }
@@ -644,6 +670,7 @@ void Display_CGX_Paletted::draw(_mame_display *pmame_display)
 Display_CGX_TrueColor::Display_CGX_TrueColor(const _osd_create_params *params, ULONG forcedModeID)
     : Display_Intuition(params)
 {
+
     if(!CyberGfxBase) return;
     int width = params->width;
     int height = params->height;

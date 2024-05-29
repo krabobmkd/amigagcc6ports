@@ -1168,7 +1168,7 @@ static int init_cpudata(void)
 				return 0;
 		cpudata[cpunum].op_mask = cpudata[cpunum].space[ADDRESS_SPACE_PROGRAM].mask;
 	}
-   printf("init_cpudata() end\n");
+
 	return 1;
 }
 
@@ -1203,7 +1203,7 @@ static inline void adjust_addresses(addrspace_data *space, int ismatchmask, offs
 
 static int init_addrspace(UINT8 cpunum, UINT8 spacenum)
 {
-printf("init_addrspace() cpunum:%d spacenum:%d\n",cpunum,spacenum);
+
 	addrspace_data *space = &cpudata[cpunum].space[spacenum];
 	int cputype = Machine->drv->cpu[cpunum].cpu_type;
 	int abits = cputype_addrbus_width(cputype, spacenum);
@@ -1211,8 +1211,6 @@ printf("init_addrspace() cpunum:%d spacenum:%d\n",cpunum,spacenum);
 	int accessorindex = (dbits == 8) ? 0 : (dbits == 16) ? 1 : (dbits == 32) ? 2 : 3;
 	construct_map_t internal_map = (construct_map_t)cputype_get_info_fct(cputype, CPUINFO_PTR_INTERNAL_MEMORY_MAP + spacenum);
 	int entrynum;
-
-printf("ias a\n");
 
 	/* determine the address and data bits */
 	space->cpunum = cpunum;
@@ -1231,7 +1229,6 @@ printf("ias a\n");
 		return 1;
 	cpudata[cpunum].spacemask |= 1 << spacenum;
 
-printf("ias b\n");
 	/* construct the combined memory map */
 	if (internal_map || Machine->drv->cpu[cpunum].construct_map[spacenum][0] || Machine->drv->cpu[cpunum].construct_map[spacenum][1])
 	{
@@ -1293,7 +1290,7 @@ printf("ias b\n");
 					fatalerror("Error: CPU %d space %d memory map entry %X-%X extends beyond region %d size (%X)", cpunum, spacenum, map->start, map->end, map->region, length);
 			}
 	}
-printf("ias c\n");
+
 	/* init the static handlers */
 	memset(space->read.handlers, 0, sizeof(space->read.handlers));
 	memset(space->write.handlers, 0, sizeof(space->write.handlers));
@@ -1313,7 +1310,6 @@ printf("ias c\n");
 	memset(space->read.table, STATIC_UNMAP, 1 << LEVEL1_BITS);
 	memset(space->write.table, STATIC_UNMAP, 1 << LEVEL1_BITS);
 
-printf("ias d\n");
 	return 1;
 }
 

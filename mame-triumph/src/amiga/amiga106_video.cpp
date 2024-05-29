@@ -83,7 +83,14 @@ MameDisplay::~MameDisplay(){}
 
   Returns 0 on success.
 */
-//DemoScreen *g_pScreen=NULL;
+static void waitsec(int s)
+{
+    for(int j=0;j<s;j++)
+    for(int i=0;i<50;i++)
+    {
+        WaitTOF();
+    }
+}
 MameDisplay *g_pMameDisplay=NULL;
 
 int osd_create_display(const _osd_create_params *params, UINT32 *rgb_components)
@@ -95,9 +102,11 @@ int osd_create_display(const _osd_create_params *params, UINT32 *rgb_components)
         if(CyberGfxBase)
         {
             if(params->video_attributes & VIDEO_RGB_DIRECT)
-                g_pMameDisplay = new Display_CGX_TrueColor(params);
+                g_pMameDisplay = NULL; //new Display_CGX_TrueColor(params);
             else
+            {
                 g_pMameDisplay = new Display_CGX_Paletted(params);
+            }
         }
 
     } // end if bitmap
@@ -112,14 +121,15 @@ int osd_create_display(const _osd_create_params *params, UINT32 *rgb_components)
         logerror("couldn't find a graphic mode.");
         return 1; // fail.
     }
+    g_pMameDisplay->openWindow();
     AllocInputs(); // input object depends of screen or window.
+
     return 0; // success
 }
 void osd_close_display(void)
 {
     FreeInputs();
     if(g_pMameDisplay) {
-        printf("osd_close_display do\n");
         delete g_pMameDisplay;
         g_pMameDisplay = NULL;
     }
@@ -144,10 +154,8 @@ void osd_update_video_and_audio(struct _mame_display *display)
    // printf("osd_update_video_and_audio\n");
     if(!g_pMameDisplay) return;
     g_pMameDisplay->draw(display);
-
     MsgPort *userport = g_pMameDisplay->userPort();
     if(userport) UpdateInputs(userport);
-
 }
 
 
