@@ -58,6 +58,7 @@ set(AMIGA_SRC
 	mame_ver.h
 	mame_msg.h
 
+	directdraw.s
 #	c2p.s
 #	gfx.s
 #	../../lib/c2p.s.o ../../lib/gfx.s.o

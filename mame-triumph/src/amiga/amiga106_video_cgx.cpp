@@ -713,12 +713,36 @@ void Display_CGX_Paletted::updatePaletteRemap(_mame_display *pmame_display)
         break;
     }
 }
+struct directDrawScreen {
+    void *_base;
+    ULONG _bpr;
+    WORD _clipX1,_clipY1,_clipX2,_clipY2;
+};
+struct directDrawSource {
+    void *_base;
+    ULONG _bpr;
+    WORD _x1,_y1,_width,_height; // to be drawn.
+};
+extern "C" {
+    // for any of the 8 16b target mode?
+    void directDrawClut16(register directDrawScreen *screen __asm("a0"),
+                    register directDrawSource *source __asm("a1"),
+                    register LONG x1 __asm("d0"),
+                    register LONG y1 __asm("d1"),
+                    register UBYTE *lut __asm("a2") // actually UWORD* or anywhat.
+                );
+}
 void Display_CGX_Paletted::draw(_mame_display *pmame_display)
 {
 
     /* pixfmt constated:
      *  UAE picasso : WB PIXFMT_BGRA32 , asked 16b: PIXFMT_RGB16PC
     */
+
+    if(pmame_display->changed_flags & GAME_PALETTE_CHANGED) {
+        updatePaletteRemap(pmame_display);
+    }
+
     mame_bitmap *bitmap = pmame_display->game_bitmap;
     if(_pWbWindow && _pWbWindow->RPort->BitMap)
     {
@@ -762,21 +786,47 @@ LBMI_BYTESPERROW
 LBMI_BASEADDRESS
     (PLongWord) points to a longword which contains the bitmap base address. This address is only valid inside of the Lock/UnLockBitmap call!
 */
+        directDrawScreen ddscreen;
         int width,height,depth,pixfmt,bpr;
-        APTR pc;
         APTR hdl = LockBitMapTags(_pScreen->RastPort.BitMap,
                                   LBMI_WIDTH,(ULONG)&width,
                                   LBMI_HEIGHT,(ULONG)&height,
                                   LBMI_DEPTH,(ULONG)&depth,
                                   LBMI_PIXFMT,(ULONG)&pixfmt,
                                   //LBMI_BYTESPERPIX,(ULONG)&,
-                                  LBMI_BYTESPERROW,(ULONG)&bpr,
-                                  LBMI_BASEADDRESS,(ULONG)&pc,
+                                  LBMI_BYTESPERROW,(ULONG)&ddscreen._bpr,
+                                  LBMI_BASEADDRESS,(ULONG)&ddscreen._base,
                                   TAG_DONE);
         if(hdl) {
+           ddscreen._clipX1 = 0;
+           ddscreen._clipY1 = 0;
+           ddscreen._clipX2 = (WORD)width;
+           ddscreen._clipY2 = (WORD)height;
+//struct directDrawSource {
+//    void *_base;
+//    ULONG _bpr;
+//    WORD _x1,_y1,_width,_height; // to be drawn.
+//};
+              directDrawSource ddsource={bitmap->base,bitmap->rowbytes,
+                    pmame_display->game_visible_area.min_x,pmame_display->game_visible_area.min_y,
+                    pmame_display->game_visible_area.max_x-pmame_display->game_visible_area.min_x,
+                    pmame_display->game_visible_area.max_y-pmame_display->game_visible_area.min_y,
+              };
+            switch(pixfmt) {
+             case PIXFMT_RGB15:
+             case PIXFMT_BGR15:
+             case PIXFMT_RGB15PC:
+             case PIXFMT_BGR15PC:
+             case PIXFMT_RGB16:
+             case PIXFMT_BGR16:
+             case PIXFMT_RGB16PC:
+             case PIXFMT_BGR16PC:
+                     directDrawClut16(&ddscreen,&ddsource,0,0,_clut);
+                break;
+            }
 
             UnLockBitMap(hdl);
-        }
+        } // end if lock
         printf("pixfmt:%d\n",pixfmt);
     }
 }
