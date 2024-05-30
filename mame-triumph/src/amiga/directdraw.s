@@ -9,10 +9,12 @@
 ;    WORD _x1,_y1,_width,_height; // to be drawn.
 ;};
 ;// for any of the 8 16b target mode?
-;extern void directDrawClut16(register directDrawScreen *screen __asm("a0"),
-;                register directDrawSource *source __asm("a1"),
-;                register UBYTE *lut __asm("a2"), // actually UWORD* or anywhat.
-;            );
+;    void directDrawClut16(register directDrawScreen *screen __asm("a0"),
+;                    register directDrawSource *source __asm("a1"),
+;                    register LONG x1 __asm("d0"),
+;                    register LONG y1 __asm("d1"),
+;                    register UBYTE *lut __asm("a2") // actually UWORD* or anywhat.
+;                );
 ;	incdir	include:
 ;	include	graphics/gfx.i
 	include exec/types.i
@@ -31,8 +33,8 @@
 		ULONG	dso_bpr
 		WORD	dso_x1
 		WORD	dso_y1
-		WORD	dso_width
-		WORD	dso_height
+		WORD	dso_x2
+		WORD	dso_y2
 	LABEL	dso_sizeof
 
 	XDEF	directDrawClut16
@@ -44,10 +46,117 @@
 
 _directDrawClut16:
 directDrawClut16:
-	movem.l	d2-d7/a2-a6,-(sp)
+	;a0 dsc_
+	;a1 dso_
+	;a2 lut .w
+	;d0 xstart
+	;d1 ystart
+ 	movem.l	d2-d7/a2-a6,-(sp)
 
+	; - - - - - y
+	; on source
+	move.w	dso_y1(a1),d3  ; source start
+	move.w	dso_y2(a1),d4 ; source end
 
+	move.w	dsc_clipY1(a0),d2
 
+	; test complete y exit
+	move.w	d1,d5
+	add.w	d4,d5
+	sub.w	d3,d5 ; d5=y1+height
+	cmp.w	d5,d2
+	ble		.endfunc
 
+	cmp.w	d1,d2
+	bge.b	.noclipy1
+		sub.w	d2,d3
+		add.w	d1,d3 ; ystartsource += dif
+
+		move.w	d2,d1 ; screen start
+.noclipy1
+
+	move.w	dsc_clipY2(a0),d2
+	; test complete y exit
+	cmp.w	d1,d2
+	bge		.endfunc
+
+	move.w	d1,d5
+	add.w	d4,d5
+	sub.w	d3,d5 ; d5 end draw y2
+	sub.w	d5,d2 ; d2 +clip dif
+	ble.b	.noclipy2
+		sub.w	d2,d4 ; cut length
+.noclipy2
+	;d0 x1
+	;d1 y1
+	;d3 srcy1
+	;d4 srcy2
+	sub.w	d3,d4 ; d4 height to draw
+	ble	.endfunc
+	; - - - -  - -manage pointers
+	; manage from source
+	move.l	dso_base(a1),a3 ; ptr bm source
+	move.l	dsc_base(a0),a4 ; ptr bm dest
+	; shift source x1
+	move.l	dsc_bpr(a0),d6	; need
+	move.l	dso_bpr(a1),d7	; need
+	mulu.w	d7,d3
+	adda.l	d3,a3
+	mulu.w	d6,d1
+	adda.l	d1,a4
+	; d1 d2 d3 free, d4 height
+	; - -- - - - x
+	move.w	dso_x1(a1),d1  ; source start
+	move.w	dso_x2(a1),d3  ; source end
+
+	move.w	dsc_clipX1(a0),d2
+
+	; test complete x1 exit
+	move.w	d0,d5
+	add.w	d3,d5
+	sub.w	d1,d5 ; d5=x1+width
+	cmp.w	d5,d2
+	ble		.endfunc
+
+	cmp.w	d0,d2
+	bge.b	.noclipx1
+		sub.w	d2,d1
+		add.w	d0,d1 ; ystartsource += dif
+
+		move.w	d2,d0 ; screen start
+.noclipx1
+
+	move.w	dsc_clipX2(a0),d2
+	; test complete x exit
+	cmp.w	d0,d2
+	bge		.endfunc
+
+	move.w	d0,d5
+	add.w	d3,d5
+	sub.w	d1,d5 ; d5 end draw y2
+	sub.w	d5,d2 ; d2 +clip dif
+	ble.b	.noclipx2
+		sub.w	d2,d3 ; cut length
+.noclipx2
+	sub.w	d1,d3 ; width
+	lea		(a3,d1.w*2),a3	; src
+	lea		(a4,d0.w*2),a4	; dest
+
+	sub.w	#1,d4
+	sub.w	#1,d3 ; width
+.lpy
+	move.l	a3,a0	;src
+	move.l	a4,a1	;dest
+	move.w	d3,d0
+.lpx
+		move.w (a0)+,d1
+		move.w (a2,d1.w*2),(a1)+
+	dbf	d0,.lpx
+
+	adda.l	d6,a4
+	adda.l	d7,a3
+	dbf	d4,.lpy
+
+.endfunc
 	movem.l	(sp)+,d2-d7/a2-a6
 	rts

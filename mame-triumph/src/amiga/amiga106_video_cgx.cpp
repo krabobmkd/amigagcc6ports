@@ -601,7 +601,7 @@ void Display_Intuition::closeScreen()
 // - - - -
 
 Display_CGX_Paletted::Display_CGX_Paletted(const _osd_create_params *params, ULONG forcedModeID)
-    : Display_Intuition(params),_clut(NULL)
+    : Display_Intuition(params),_clut(NULL),_needFirstRemap(1)
 {
     printf("Display_CGX_Paletted()\n");
 
@@ -721,7 +721,7 @@ struct directDrawScreen {
 struct directDrawSource {
     void *_base;
     ULONG _bpr;
-    WORD _x1,_y1,_width,_height; // to be drawn.
+    WORD _x1,_y1,_x2,_y2; // to be drawn.
 };
 extern "C" {
     // for any of the 8 16b target mode?
@@ -734,13 +734,17 @@ extern "C" {
 }
 void Display_CGX_Paletted::draw(_mame_display *pmame_display)
 {
-
+    static int counter=0;
+    counter++;
     /* pixfmt constated:
      *  UAE picasso : WB PIXFMT_BGRA32 , asked 16b: PIXFMT_RGB16PC
     */
 
-    if(pmame_display->changed_flags & GAME_PALETTE_CHANGED) {
+    if((pmame_display->changed_flags & GAME_PALETTE_CHANGED) !=0 || _needFirstRemap) {
+        printf("*** DO palette remap:%d\n",counter);
+        counter=0;
         updatePaletteRemap(pmame_display);
+        _needFirstRemap = 0;
     }
 
     mame_bitmap *bitmap = pmame_display->game_bitmap;
@@ -761,7 +765,7 @@ void Display_CGX_Paletted::draw(_mame_display *pmame_display)
 
             UnLockBitMap(hdl);
         }
-        printf("win pixfmt:%d\n",pixfmt);
+       // printf("win pixfmt:%d\n",pixfmt);
     }
     if(_pScreen)
     {
@@ -807,11 +811,20 @@ LBMI_BASEADDRESS
 //    ULONG _bpr;
 //    WORD _x1,_y1,_width,_height; // to be drawn.
 //};
-              directDrawSource ddsource={bitmap->base,bitmap->rowbytes,
-                    pmame_display->game_visible_area.min_x,pmame_display->game_visible_area.min_y,
-                    pmame_display->game_visible_area.max_x-pmame_display->game_visible_area.min_x,
-                    pmame_display->game_visible_area.max_y-pmame_display->game_visible_area.min_y,
-              };
+            int sourcewidth = pmame_display->game_visible_area.max_x-pmame_display->game_visible_area.min_x;
+            int sourceheight = pmame_display->game_visible_area.max_y-pmame_display->game_visible_area.min_y;
+
+            int cenx = width-sourcewidth;
+            int ceny = height-sourceheight;
+            if(cenx<0) cenx = 0;
+            if(ceny<0) ceny = 0;
+            cenx>>=1;
+            ceny>>=1;
+
+            directDrawSource ddsource={bitmap->base,bitmap->rowbytes,
+                pmame_display->game_visible_area.min_x,pmame_display->game_visible_area.min_y,
+                pmame_display->game_visible_area.max_x,pmame_display->game_visible_area.max_y
+            };
             switch(pixfmt) {
              case PIXFMT_RGB15:
              case PIXFMT_BGR15:
@@ -821,13 +834,13 @@ LBMI_BASEADDRESS
              case PIXFMT_BGR16:
              case PIXFMT_RGB16PC:
              case PIXFMT_BGR16PC:
-                     directDrawClut16(&ddscreen,&ddsource,0,0,_clut);
+                     directDrawClut16(&ddscreen,&ddsource,cenx,ceny,_clut);
                 break;
             }
 
             UnLockBitMap(hdl);
         } // end if lock
-        printf("pixfmt:%d\n",pixfmt);
+        //printf("pixfmt:%d\n",pixfmt);
     }
 }
 

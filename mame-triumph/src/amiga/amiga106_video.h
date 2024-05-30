@@ -61,6 +61,7 @@ public:
     void draw(_mame_display *pmame_display) override;
 protected:
     UBYTE *_clut;
+    int   _needFirstRemap;
     void updatePaletteRemap(_mame_display *pmame_display);
 };
 class Display_CGX_TrueColor : public Display_Intuition
