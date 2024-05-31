@@ -12,59 +12,114 @@ struct _osd_create_params;
 struct _mame_display;
 struct Window;
 struct Screen;
+struct RastPort;
+struct BitMap;
 
-/** bas virtual */
+/** full virtual */
 class MameDisplay
 {
 public:
     MameDisplay();
     virtual ~MameDisplay();
+    virtual void open(const _osd_create_params *params,int window, ULONG forcedModeID=~0) = 0;
+    virtual void close()= 0;
     virtual void draw(_mame_display *pmame_display) = 0;
-    virtual void openWindow() = 0;
-    virtual void closeWindow()= 0;
-    virtual void openScreen()= 0;
-    virtual void closeScreen()= 0;
-    inline MsgPort *userPort() { return _pUserPort; }
+    virtual int good() = 0;
+    virtual MsgPort *userPort() = 0;
 protected:
-    MsgPort *_pUserPort;
+};
+//class Paletted {
+//    Paletted();
+//    virtual ~Paletted();
+//    virtual UBYTE *open() = 0;
+//};
+
+/* if game send color indexed bitmap, manage remap to final bitmap pixel format  */
+class Paletted_CGX
+{
+public:
+    Paletted_CGX(const _osd_create_params *params, int screenPixFmt, int bytesPerPix);
+    ~Paletted_CGX();
+    void updatePaletteRemap(_mame_display *display);
+    int needRemap() const { return _needFirstRemap; }
+
+    std::vector<UBYTE> _clut8;
+    std::vector<USHORT> _clut16;
+    std::vector<ULONG> _clut32;
+protected:
+    int _needFirstRemap;
+    int _pixFmt,_bytesPerPix;
 };
 
 /** virtual, at this level manage screen and window opening, not rendering */
-class Display_Intuition : public MameDisplay
+
+class IntuitionDrawable {
+public:
+    IntuitionDrawable();
+    virtual ~IntuitionDrawable();
+    virtual void open() = 0;
+    virtual void close()= 0;
+    virtual MsgPort *userPort() = 0;
+    inline ULONG pixelFmt() const { return _PixelFmt; }
+    inline ULONG pixelBytes() const { return _PixelBytes; }
+
+    void drawRastPort(_mame_display *display,Paletted_CGX *pRemap);
+protected:
+    ULONG _PixelFmt,_PixelBytes;
+    int _dx,_dy; // draw delta (for windows borders)
+    virtual RastPort *rastPort() = 0;
+};
+
+class Intuition_Screen : public IntuitionDrawable
 {
 public:
-    Display_Intuition(const _osd_create_params *params);
-    ~Display_Intuition();
-    void openWindow() override;
-    void closeWindow() override;
-    void openScreen() override;
-    void closeScreen() override;
-//    void draw(_mame_display *pmame_display) override;
+    Intuition_Screen(const _osd_create_params *params);
+    ~Intuition_Screen();
+    void open() override;
+    void close() override;
+    MsgPort *userPort() override;
 protected:
     Screen *_pScreen;
     Window *_pScreenWindow;
     ULONG   _ScreenModeId;
     int _fullscreenWidth; // guessed from modeid.
     int _fullscreenHeight;
-    ULONG _pixelFmt,_pixelbytes;
     void *_pMouseRaster;
-    // - -
-    Window *_pWbWindow;
-
-    int _machineWidth,_machineHeight;
+    RastPort *rastPort() override;
 };
-class Display_CGX_Paletted : public Display_Intuition
+class Intuition_Window : public IntuitionDrawable
 {
 public:
-    Display_CGX_Paletted(const _osd_create_params *params, ULONG forcedModeID=~0);
-    ~Display_CGX_Paletted();
-    void draw(_mame_display *pmame_display) override;
+    Intuition_Window(const _osd_create_params *params);
+    ~Intuition_Window();
+    void open() override;
+    void close() override;
+    MsgPort *userPort() override;
 protected:
-    std::vector<USHORT> _clut16;
-    std::vector<ULONG> _clut32;
-    int   _needFirstRemap;
-    void updatePaletteRemap(_mame_display *pmame_display);
+    Window *_pWbWindow;
+    BitMap *_sWbWinSBitmap;
+    int _machineWidth,_machineHeight;
+    RastPort *rastPort() override;
 };
+
+
+class Display_CGX : public MameDisplay
+{
+public:
+    Display_CGX();
+    ~Display_CGX();
+    void open(const _osd_create_params *params,int window, ULONG forcedModeID=~0) override;
+    void close() override;
+    int good() override;
+    void draw(_mame_display *pmame_display) override;    
+    MsgPort *userPort() override;
+protected:
+    IntuitionDrawable   *_drawable; // screen or window
+    Paletted_CGX        *_remap;    // null if true color app.
+
+ //   void drawRastPort(RastPort *pRPort,_mame_display *pmame_display,int dx,int dy);
+};
+/*
 class Display_CGX_TrueColor : public Display_Intuition
 {
 public:
@@ -73,7 +128,7 @@ public:
     void draw(_mame_display *pmame_display) override;
 protected:
 
-};
+};*/
 // - - - - - - -
 /*
 class Display_P96 : public MameDisplay

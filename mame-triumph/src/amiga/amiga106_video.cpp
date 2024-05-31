@@ -43,7 +43,7 @@ extern "C" {
 extern struct Library *CyberGfxBase;
 extern struct Library *P96Base;
 
-MameDisplay::MameDisplay() : _pUserPort(NULL) {
+MameDisplay::MameDisplay() {
 }
 MameDisplay::~MameDisplay(){}
 
@@ -101,12 +101,8 @@ int osd_create_display(const _osd_create_params *params, UINT32 *rgb_components)
         //try RTG  drivers first:
         if(CyberGfxBase)
         {
-            if(params->video_attributes & VIDEO_RGB_DIRECT)
-                g_pMameDisplay = NULL; //new Display_CGX_TrueColor(params);
-            else
-            {
-                g_pMameDisplay = new Display_CGX_Paletted(params);
-            }
+            g_pMameDisplay = new Display_CGX();
+            g_pMameDisplay->open(params,1);
         }
 
     } // end if bitmap
@@ -115,13 +111,14 @@ int osd_create_display(const _osd_create_params *params, UINT32 *rgb_components)
 //    {
 //        g_pMameDisplay = new Display_P96(params->width, params->height);
 //    }
-    if(!g_pMameDisplay)
+    if(!g_pMameDisplay || !g_pMameDisplay->good())
     {
         //
         logerror("couldn't find a graphic mode.");
         return 1; // fail.
     }
-    g_pMameDisplay->openScreen();
+
+
     AllocInputs(); // input object depends of screen or window.
 
     return 0; // success

@@ -152,6 +152,7 @@ static void AHI_Close( sAHISoundServer *pAHIS )
 */
 int osd_start_audio_stream(int stereo)
 {
+#if defined(COMPILE_AUDIO_AHI)
     if(pAHIS) osd_stop_audio_stream();
 
     if(!Machine) return 0; // driver and machine are already inited during this call
@@ -236,11 +237,15 @@ int osd_start_audio_stream(int stereo)
 
     // must return samples to do next.
     return pAHIS->m_nextSamples;
+#else
+    return 800;
+#endif
 }
 
 // from mame main thread engine.
 int osd_update_audio_stream(INT16 *buffer)
 {
+#if defined(COMPILE_AUDIO_AHI)
   //  printf("osd_update_audio_stream %08x\n", (int)pAHIS);
     if(!pAHIS) return 0;
   //  printf("osd_update_audio_stream\n");
@@ -315,6 +320,9 @@ int osd_update_audio_stream(INT16 *buffer)
 
     // must return length of next sample
     return pAHIS->m_nextSamples;
+#else
+    return 800;
+#endif
 }
 extern "C" {
 void osd_stop_audio_stream(void)

@@ -7,7 +7,7 @@ cmake_minimum_required (VERSION 3.1)
 enable_language( VASM )
 set(CXX_STANDARD 11)
 set(C_STANDARD 11)
-project(AmigaTriumphMame LANGUAGES C CXX VERSION 1.0)
+project(AmigaMame LANGUAGES C CXX VERSION 1.0)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 option(MAME_USE_HARDFLOAT "compile using direct 68882 FPU, will not work on economic 060" OFF)
@@ -67,7 +67,7 @@ set(AMIGA_SRC
 #	cgxhooks_re.s
 	)
 
-set(PROGNAME TriumphMame)
+set(PROGNAME Mame106)
 add_executable(${PROGNAME} ${AMIGA_SRC} )
 set_property(TARGET ${PROGNAME} PROPERTY C_STANDARD 11)
 set_property(TARGET ${PROGNAME} PROPERTY CXX_STANDARD 11)

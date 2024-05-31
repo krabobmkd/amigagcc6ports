@@ -63,7 +63,7 @@ void InitLowLevelLib()
         SystemControl(
         // Starts creating rawkey codes for the
 	    // joystick/game controller on the given unit.
-            SCON_AddCreateKeys,0,
+          //keep mouse  SCON_AddCreateKeys,0,
             SCON_AddCreateKeys,1,
             SCON_AddCreateKeys,2,
             SCON_AddCreateKeys,3,
