@@ -102,7 +102,7 @@ int osd_create_display(const _osd_create_params *params, UINT32 *rgb_components)
         if(CyberGfxBase)
         {
             g_pMameDisplay = new Display_CGX();
-            g_pMameDisplay->open(params,1);
+            g_pMameDisplay->open(params,0);
         }
 
     } // end if bitmap
