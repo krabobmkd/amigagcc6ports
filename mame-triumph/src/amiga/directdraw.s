@@ -40,8 +40,6 @@
 	XDEF	directDrawClut16
 	XDEF	_directDrawClut16
 
-
-
 	section	code,code
 
 _directDrawClut16:
@@ -60,17 +58,21 @@ directDrawClut16:
 
 	move.w	dsc_clipY1(a0),d2
 
+; move.w	d2,asmval+2
+; move.w	d4,asmval2+2
+
+
 	; test complete y exit
 	move.w	d1,d5
 	add.w	d4,d5
 	sub.w	d3,d5 ; d5=y1+height
 	cmp.w	d5,d2
-	ble		.endfunc
+	bge		.endfunc
 
 	cmp.w	d1,d2
-	bge.b	.noclipy1
-		sub.w	d2,d3
-		add.w	d1,d3 ; ystartsource += dif
+	ble.b	.noclipy1
+		add.w	d2,d3
+		sub.w	d1,d3 ; ystartsource += dif
 
 		move.w	d2,d1 ; screen start
 .noclipy1
@@ -78,21 +80,23 @@ directDrawClut16:
 	move.w	dsc_clipY2(a0),d2
 	; test complete y exit
 	cmp.w	d1,d2
-	bge		.endfunc
+	ble		.endfunc
 
 	move.w	d1,d5
 	add.w	d4,d5
 	sub.w	d3,d5 ; d5 end draw y2
 	sub.w	d5,d2 ; d2 +clip dif
-	ble.b	.noclipy2
-		sub.w	d2,d4 ; cut length
+	bge.b	.noclipy2
+		add.w	d2,d4 ; cut length
 .noclipy2
+
 	;d0 x1
 	;d1 y1
 	;d3 srcy1
 	;d4 srcy2
 	sub.w	d3,d4 ; d4 height to draw
 	ble	.endfunc
+
 	; - - - -  - -manage pointers
 	; manage from source
 	move.l	dso_base(a1),a3 ; ptr bm source
@@ -116,12 +120,12 @@ directDrawClut16:
 	add.w	d3,d5
 	sub.w	d1,d5 ; d5=x1+width
 	cmp.w	d5,d2
-	ble		.endfunc
+	bge		.endfunc
 
 	cmp.w	d0,d2
-	bge.b	.noclipx1
-		sub.w	d2,d1
-		add.w	d0,d1 ; ystartsource += dif
+	ble.b	.noclipx1
+		add.w	d2,d1
+		sub.w	d0,d1 ; xstartsource += dif
 
 		move.w	d2,d0 ; screen start
 .noclipx1
@@ -129,28 +133,39 @@ directDrawClut16:
 	move.w	dsc_clipX2(a0),d2
 	; test complete x exit
 	cmp.w	d0,d2
-	bge		.endfunc
+	ble		.endfunc
 
 	move.w	d0,d5
 	add.w	d3,d5
 	sub.w	d1,d5 ; d5 end draw y2
 	sub.w	d5,d2 ; d2 +clip dif
-	ble.b	.noclipx2
-		sub.w	d2,d3 ; cut length
+	bge.b	.noclipx2
+		add.w	d2,d3 ; cut length
 .noclipx2
+
 	sub.w	d1,d3 ; width
 	lea		(a3,d1.w*2),a3	; src
 	lea		(a4,d0.w*2),a4	; dest
 
 	sub.w	#1,d4
 	sub.w	#1,d3 ; width
+
+;	move.w d4,asmval+2
+;	move.w d3,asmval2+2
+;	movem.l	(sp)+,d2-d7/a2-a6
+;	rts
+
 .lpy
 	move.l	a3,a0	;src
 	move.l	a4,a1	;dest
 	move.w	d3,d0
 .lpx
 		move.w (a0)+,d1
-		move.w (a2,d1.w*2),(a1)+
+		;move.w	d1,(a1)+
+		;move.b d1,(a1)+
+		;lsr.w	#8,d1
+		;move.b d1,(a1)+
+		move.w (a2,d1.w*2),(a1)+  ; d1 used as signed, a2 point +32k center of 64k
 	dbf	d0,.lpx
 
 	adda.l	d6,a4
@@ -160,3 +175,17 @@ directDrawClut16:
 .endfunc
 	movem.l	(sp)+,d2-d7/a2-a6
 	rts
+
+;	XDEF asmval
+;	XDEF _asmval
+
+;asmval:
+;_asmval:
+;		dc.l	0
+
+;		XDEF asmval2
+;		XDEF _asmval2
+
+;asmval2:
+;_asmval2:
+;			dc.l	0

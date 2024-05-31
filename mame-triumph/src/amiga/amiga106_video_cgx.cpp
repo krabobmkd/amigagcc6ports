@@ -25,6 +25,7 @@ extern "C" {
     #include "video.h"
     #include "mamecore.h"
     #include "osdepend.h"
+    #include "palette.h"
 }
 #include <stdio.h>
 #include <stdlib.h>
@@ -280,7 +281,6 @@ DemoScreen *InitDemoScreen( unsigned int maxWidth,
         logerror("Can't find cybergraphics.library.");
         return(NULL);
      }
-
 
 	// ----------- alloc invisible mouse raster for full screen:
 	void *pmouseraster =  AllocRaster(8 ,8) ;
@@ -601,7 +601,7 @@ void Display_Intuition::closeScreen()
 // - - - -
 
 Display_CGX_Paletted::Display_CGX_Paletted(const _osd_create_params *params, ULONG forcedModeID)
-    : Display_Intuition(params),_clut(NULL),_needFirstRemap(1)
+    : Display_Intuition(params),_needFirstRemap(1)
 {
     printf("Display_CGX_Paletted()\n");
 
@@ -636,9 +636,26 @@ Display_CGX_Paletted::Display_CGX_Paletted(const _osd_create_params *params, ULO
     _pixelFmt = GetCyberIDAttr( CYBRIDATTR_PIXFMT, _ScreenModeId );
     _pixelbytes = GetCyberIDAttr( CYBRIDATTR_BPPIX, _ScreenModeId );
     if(_pixelbytes==3) _pixelbytes=4;
-    _clut = (UBYTE*)calloc(1,_pixelbytes*params->colors); // once and for all.
-    printf(" ** gw:%d gh:%d final res %d %d\n",width,height,_fullscreenWidth,_fullscreenHeight);
+    // actually always work this way it seems:
+    _clut16.reserve(65536);
+    _clut16.resize(65536); // exact alloc
+    // initialize the palette to a fixed 5-5-5 mapping
+	for (int r = 0; r < 32; r++)
+		for (int g = 0; g < 32; g++)
+			for (int b = 0; b < 32; b++)
+			{
+				int idx = (((r << 10) | (g << 5) | b)+32768)& 0x0000ffff;
 
+                // according to pixfmt:
+                USHORT d = (((USHORT)r<<11)&0xf800)|(((USHORT)g<<5)&0x07e0)|((USHORT)b&0x001f);
+
+				_clut16[idx] = ((d>>8)&0x00ff)|((d<<8)&0xff00); // win_color16(rr, gg, bb) * 0x10001;
+				//palette_32bit_lookup[idx] = win_color32(rr, gg, bb);
+			}
+    //_clut16.reserve(params->colors);
+
+    printf(" ** gw:%d gh:%d final res %d %d\n",width,height,_fullscreenWidth,_fullscreenHeight);
+    printf(" ** reseve clut:%d\n",params->colors);
    // _fullscreenPixelMode = GetCyberIDAttr( CYBRIDATTR_PIXFMT, _ScreenModeId );
 
 
@@ -653,11 +670,111 @@ Display_CGX_Paletted::Display_CGX_Paletted(const _osd_create_params *params, ULO
 }
 Display_CGX_Paletted::~Display_CGX_Paletted()
 {
-    if(_clut) free(_clut);
+
 }
-void Display_CGX_Paletted::updatePaletteRemap(_mame_display *pmame_display)
+void Display_CGX_Paletted::updatePaletteRemap(_mame_display *display)
 {
+    int i, j;
+ //no   if(_needFirstRemap && _clut16.size()<display->game_palette_entries) _clut16.resize(display->game_palette_entries);
+	// loop over dirty colors in batches of 32
+	for (i = 0; i < display->game_palette_entries; i += 32)
+	{
+		UINT32 dirtyflags = _needFirstRemap ? ~0 : display->game_palette_dirty[i>>5];
+		if (dirtyflags)
+		{
+			display->game_palette_dirty[i>>5] = 0;
+            const rgb_t *gpal = display->game_palette + i ;
+
+            switch(_pixelFmt)
+            {
+            // - - - - -15b cases
+//             case PIXFMT_RGB15:
+//                for(;i<nbc;i++) { ULONG c = *gpal++; *p++ = ((c>>9)&0x7c00)|((c>>6)&0x03e0)|((c>>3)&0x001f); }
+//                break;
+//             case PIXFMT_BGR15:
+//                for(;i<nbc;i++) { ULONG c = *gpal++; *p++ = ((c<<7)&0x7c00)|((c>>6)&0x03e0)|((c>>19)&0x001f); }
+//                break;
+//             case PIXFMT_RGB15PC:
+//                for(;i<nbc;i++) { ULONG c = *gpal++; USHORT d = ((c>>9)&0x7c00)|((c>>6)&0x03e0)|((c>>3)&0x001f);
+//                    *pb++ = (UBYTE)d; d>>=8;  *pb++ = (UBYTE)d;
+//                }
+//                break;
+//             case PIXFMT_BGR15PC:
+//                for(;i<nbc;i++) { ULONG c = *gpal++; USHORT d = ((c<<7)&0x7c00)|((c>>6)&0x03e0)|((c>>19)&0x001f);
+//                    *pb++ = (UBYTE)d; d>>=8;  *pb++ = (UBYTE)d;
+//                }
+//                break;
+             // - -- - - - 16b cases
+             case PIXFMT_RGB16:
+//                for(;i<nbc;i++) { ULONG c = *gpal++; *p++ = ((c>>8)&0xf800)|((c>>5)&0x07e0)|((c>>3)&0x001f); }
+//                break;
+             case PIXFMT_BGR16:
+//                for(;i<nbc;i++) { ULONG c = *gpal++; *p++ = ((c<<8)&0xf800)|((c>>5)&0x07e0)|((c>>19)&0x001f); }
+//                break;
+             case PIXFMT_RGB16PC:          //  *p++ = d;
+//                for(;i<nbc;i++) { ULONG c = *gpal++; USHORT d = ((c>>8)&0xf800)|((c>>5)&0x07e0)|((c>>3)&0x001f);
+//        //           USHORT d = ((c>>9)&0xf800);
+//        //            *pb++ = (UBYTE)d; *pb++ = (UBYTE)(d>>8);
+//                }
+                for (j = 0; (j < 32) && (i+j < display->game_palette_entries); j++, dirtyflags >>= 1)
+                    if (dirtyflags & 1)
+                    {
+                        ULONG c = *gpal++; USHORT d = ((c>>8)&0xf800)|(((USHORT)c>>5)&0x07e0)|(((USHORT)c>>3)&0x001f);
+                       _clut16[i+j+32768]=((d>>8)&0x00ff)|((d<<8)&0xff00);
+                       // _clut16[32768+i+j]=d;
+                        // extract the RGB values
+//                        rgb_t rgbvalue = display->game_palette[i + j];
+//                        int r = RGB_RED(rgbvalue);
+//                        int g = RGB_GREEN(rgbvalue);
+//                        int b = RGB_BLUE(rgbvalue);
+                        // update both lookup tables
+                        //palette_16bit_lookup[i + j] = win_color16(r, g, b) * 0x10001;
+                        //palette_32bit_lookup[i + j] = win_color32(r, g, b);
+                    }
+                break;
+             case PIXFMT_BGR16PC:
+//                for(;i<nbc;i++) { ULONG c = *gpal++; USHORT d =  ((c<<8)&0xf800)|((c>>5)&0x07e0)|((c>>19)&0x001f);
+//                    *pb++ = (UBYTE)d; d>>=8;  *pb++ = (UBYTE)d;
+//                }
+                break;
+//             // - - -24b cases, also use 32bit source
+//             case PIXFMT_RGB24:
+//             case PIXFMT_BGR24:
+//             // - - -32b cases
+//             case PIXFMT_ARGB32:
+//                // this is the id one, no need for table, direct palette use.
+//                break;
+//             case PIXFMT_BGRA32:
+//             case PIXFMT_RGBA32:
+//                break;
+//             case PIXFMT_LUT8: // no sense, should just use RGB32 os palette, do not select Display_CGX_Paletted
+            default:
+                break;
+            }
+
+			// loop over all 32 bits and update dirty entries
+			for (j = 0; (j < 32) && (i+j < display->game_palette_entries); j++, dirtyflags >>= 1)
+				if (dirtyflags & 1)
+				{
+					// extract the RGB values
+					rgb_t rgbvalue = display->game_palette[i + j];
+					int r = RGB_RED(rgbvalue);
+					int g = RGB_GREEN(rgbvalue);
+					int b = RGB_BLUE(rgbvalue);
+
+					// update both lookup tables
+					//palette_16bit_lookup[i + j] = win_color16(r, g, b) * 0x10001;
+					//palette_32bit_lookup[i + j] = win_color32(r, g, b);
+				}
+		} // if batch dirty
+	} // loop per 32 batch
+
+	// reset the invalidate flag
+	_needFirstRemap = 0;
+
+    /*
     const rgb_t *gpal = pmame_display->game_palette;
+
     USHORT *p=(USHORT *)_clut;
     UBYTE *pb=(UBYTE *)_clut;
     int i=0;
@@ -688,9 +805,10 @@ void Display_CGX_Paletted::updatePaletteRemap(_mame_display *pmame_display)
      case PIXFMT_BGR16:
         for(;i<nbc;i++) { ULONG c = *gpal++; *p++ = ((c<<8)&0xf800)|((c>>5)&0x07e0)|((c>>19)&0x001f); }
         break;
-     case PIXFMT_RGB16PC:
+     case PIXFMT_RGB16PC:          //  *p++ = d;
         for(;i<nbc;i++) { ULONG c = *gpal++; USHORT d = ((c>>8)&0xf800)|((c>>5)&0x07e0)|((c>>3)&0x001f);
-            *pb++ = (UBYTE)d; d>>=8;  *pb++ = (UBYTE)d;
+//           USHORT d = ((c>>9)&0xf800);
+//            *pb++ = (UBYTE)d; *pb++ = (UBYTE)(d>>8);
         }
         break;
      case PIXFMT_BGR16PC:
@@ -712,6 +830,7 @@ void Display_CGX_Paletted::updatePaletteRemap(_mame_display *pmame_display)
     default:
         break;
     }
+    */
 }
 struct directDrawScreen {
     void *_base;
@@ -724,12 +843,13 @@ struct directDrawSource {
     WORD _x1,_y1,_x2,_y2; // to be drawn.
 };
 extern "C" {
-    // for any of the 8 16b target mode?
+    //extern int asmval,asmval2;
+    // for any of the 8x 16b target mode.
     void directDrawClut16(register directDrawScreen *screen __asm("a0"),
                     register directDrawSource *source __asm("a1"),
                     register LONG x1 __asm("d0"),
                     register LONG y1 __asm("d1"),
-                    register UBYTE *lut __asm("a2") // actually UWORD* or anywhat.
+                    register USHORT *lut __asm("a2") // actually UWORD* or anywhat.
                 );
 }
 void Display_CGX_Paletted::draw(_mame_display *pmame_display)
@@ -740,11 +860,11 @@ void Display_CGX_Paletted::draw(_mame_display *pmame_display)
      *  UAE picasso : WB PIXFMT_BGRA32 , asked 16b: PIXFMT_RGB16PC
     */
 
-    if((pmame_display->changed_flags & GAME_PALETTE_CHANGED) !=0 || _needFirstRemap) {
-        printf("*** DO palette remap:%d\n",counter);
+    if((pmame_display->changed_flags & GAME_PALETTE_CHANGED) !=0 || _needFirstRemap)
+    {
+       // printf("*** DO palette remap:%d\n",counter);
         counter=0;
         updatePaletteRemap(pmame_display);
-        _needFirstRemap = 0;
     }
 
     mame_bitmap *bitmap = pmame_display->game_bitmap;
@@ -802,17 +922,18 @@ LBMI_BASEADDRESS
                                   LBMI_BASEADDRESS,(ULONG)&ddscreen._base,
                                   TAG_DONE);
         if(hdl) {
-           ddscreen._clipX1 = 0;
-           ddscreen._clipY1 = 0;
-           ddscreen._clipX2 = (WORD)width;
-           ddscreen._clipY2 = (WORD)height;
+           ddscreen._clipX1 = 10;
+           ddscreen._clipY1 = 10;
+           ddscreen._clipX2 = (WORD)width-10;
+           ddscreen._clipY2 = (WORD)height-10;
 //struct directDrawSource {
 //    void *_base;
 //    ULONG _bpr;
 //    WORD _x1,_y1,_width,_height; // to be drawn.
 //};
-            int sourcewidth = pmame_display->game_visible_area.max_x-pmame_display->game_visible_area.min_x;
-            int sourceheight = pmame_display->game_visible_area.max_y-pmame_display->game_visible_area.min_y;
+           // +1 because goes 0,319
+            int sourcewidth = (pmame_display->game_visible_area.max_x-pmame_display->game_visible_area.min_x)+1;
+            int sourceheight =( pmame_display->game_visible_area.max_y-pmame_display->game_visible_area.min_y)+1;
 
             int cenx = width-sourcewidth;
             int ceny = height-sourceheight;
@@ -823,7 +944,7 @@ LBMI_BASEADDRESS
 
             directDrawSource ddsource={bitmap->base,bitmap->rowbytes,
                 pmame_display->game_visible_area.min_x,pmame_display->game_visible_area.min_y,
-                pmame_display->game_visible_area.max_x,pmame_display->game_visible_area.max_y
+                pmame_display->game_visible_area.max_x+1,pmame_display->game_visible_area.max_y+1
             };
             switch(pixfmt) {
              case PIXFMT_RGB15:
@@ -834,12 +955,21 @@ LBMI_BASEADDRESS
              case PIXFMT_BGR16:
              case PIXFMT_RGB16PC:
              case PIXFMT_BGR16PC:
-                     directDrawClut16(&ddscreen,&ddsource,cenx,ceny,_clut);
+
+                directDrawClut16(&ddscreen,&ddsource,cenx,ceny,_clut16.data()+32768);
+                break;
+            default:
                 break;
             }
 
             UnLockBitMap(hdl);
+//            printf("minx:%d maxx:%d miny:%d maxy:%d\n",pmame_display->game_visible_area.min_x,
+//                   pmame_display->game_visible_area.max_x,pmame_display->game_visible_area.min_y,
+//                   pmame_display->game_visible_area.max_y);
+            // printf("asmval:%d %d pxf:%d\n",asmval,asmval2,pixfmt);
+
         } // end if lock
+             //     printf("clut:%d\n",pixfmt);
         //printf("pixfmt:%d\n",pixfmt);
     }
 }

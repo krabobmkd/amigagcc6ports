@@ -60,7 +60,8 @@ public:
     ~Display_CGX_Paletted();
     void draw(_mame_display *pmame_display) override;
 protected:
-    UBYTE *_clut;
+    std::vector<USHORT> _clut16;
+    std::vector<ULONG> _clut32;
     int   _needFirstRemap;
     void updatePaletteRemap(_mame_display *pmame_display);
 };
