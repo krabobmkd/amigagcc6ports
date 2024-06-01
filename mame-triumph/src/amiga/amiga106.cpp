@@ -106,8 +106,12 @@ inline void initOptions()
    options.cheat=1;
    options.gui_host=1;
 
+options.brightness = 1.0;
+options.gamma=0.5;
+
    options.samplerate=(Config[CFG_SOUND] == CFGS_NO)?0:22050;
     Machine->sample_rate = options.samplerate;
+
 
 //re?   options.use_samples=1; //TODO ?
 

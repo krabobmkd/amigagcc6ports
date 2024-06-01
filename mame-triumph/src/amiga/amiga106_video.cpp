@@ -36,6 +36,8 @@ extern "C" {
 }
 #include "amiga106_inputs.h"
 #include "amiga106_video.h"
+#include "amiga106_video_cgx.h"
+
 /** some abstact display management */
 
 #include <stdio.h>

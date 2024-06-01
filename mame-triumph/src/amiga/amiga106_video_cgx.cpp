@@ -4,7 +4,7 @@
  *
  *************************************************************************/
 
-#include "amiga106_video.h"
+#include "amiga106_video_cgx.h"
 
 #include <proto/exec.h>
 #include <proto/graphics.h>
@@ -634,6 +634,7 @@ extern "C" {
 Paletted_CGX::Paletted_CGX(const _osd_create_params *params, int screenPixFmt, int bytesPerPix)
     : _needFirstRemap(1), _pixFmt(screenPixFmt),_bytesPerPix(bytesPerPix)
 {
+    printf(" **** Paletted_CGX() pixfmt:%d bpp:%d  nbc:%d\n",screenPixFmt,bytesPerPix,params->colors);
     switch(bytesPerPix){
         case 1: _clut8.reserve(params->colors); break;
         case 2: _clut16.reserve(params->colors); break;
@@ -646,6 +647,7 @@ void Paletted_CGX::updatePaletteRemap(_mame_display *display)
 {
     const rgb_t *gpal = display->game_palette;
     const int nbc = display->game_palette_entries;
+//    printf("nbc:%d _bytesPerPix:%d\n",nbc,_bytesPerPix);
     if(_needFirstRemap)
     {
         switch(_bytesPerPix){
@@ -689,11 +691,7 @@ void Paletted_CGX::updatePaletteRemap(_mame_display *display)
         break;
      case PIXFMT_RGB16PC:          //  *p++ = d;
         for(;i<nbc;i++) {
-            ULONG c = *gpal++; USHORT d = ((c>>8)&0xf800)|(((USHORT)c>>5)&0x07e0)|(((USHORT)c>>3)&0x001f);
-          // _clut16[ji]= ((d>>8)&0x00ff)|((d<<8)&0xff00);
-
-//        ULONG c = *gpal++; USHORT d = ((c>>8)&0xf800)|((c>>5)&0x07e0)|((c>>3)&0x001f);
-//           USHORT d = ((c>>9)&0xf800);
+            ULONG c = *gpal++; USHORT d = (((USHORT)(c>>8))&0xf800)|(((USHORT)c>>5)&0x07e0)|(((USHORT)c>>3)&0x001f);
             *p++ = ((d>>8)&0x00ff)|((d<<8)&0xff00);
         }
         break;
@@ -702,7 +700,7 @@ void Paletted_CGX::updatePaletteRemap(_mame_display *display)
             *pb++ = (UBYTE)d; d>>=8;  *pb++ = (UBYTE)d;
         }
         break;
-     // - - -24b cases, also use 32bit source
+    //   - - -24b cases, also use 32bit source
      case PIXFMT_RGB24:
      case PIXFMT_BGR24:
      // - - -32b cases
@@ -710,7 +708,7 @@ void Paletted_CGX::updatePaletteRemap(_mame_display *display)
         // this is the id one, no need for table, direct palette use.
         break;
      case PIXFMT_BGRA32:
-        for(;i<nbc;i++) { ULONG c = *gpal++; ULONG d = ((c>>16)&0x0000ff00)|((c<<8)&0x00ff0000)|((c<<24)&0xff000000);
+        for(;i<nbc;i++) { ULONG c = *gpal++; ULONG d = ((c>>8)&0x0000ff00)|((c<<8)&0x00ff0000)|((c<<24)&0xff000000);
             *p32++= d;
         }
         break;
@@ -732,12 +730,11 @@ IntuitionDrawable::IntuitionDrawable()
 IntuitionDrawable::~IntuitionDrawable()
 {
 }
-//    void open() = 0;
-//    void close()= 0;
 
 // would draw LUT screens or truecolor, ...
-void IntuitionDrawable::drawRastPort(_mame_display *display,Paletted_CGX *pRemap)
+void IntuitionDrawable::drawRastPort_CGX(_mame_display *display,Paletted_CGX *pRemap)
 {
+    if(!CyberGfxBase) return;
     RastPort *pRPort = rastPort();
     if(!pRPort) return;
     mame_bitmap *bitmap = display->game_bitmap;
@@ -804,24 +801,58 @@ void IntuitionDrawable::drawRastPort(_mame_display *display,Paletted_CGX *pRemap
 }
 // =========================== new impl
 
-Intuition_Screen::Intuition_Screen(const _osd_create_params *params) : IntuitionDrawable()
+Intuition_Screen::Intuition_Screen(const _osd_create_params *params,ULONG forcedModeId) : IntuitionDrawable()
     , _pScreen(NULL)
     , _pScreenWindow(NULL)
-    , _ScreenModeId(INVALID_ID)
+    , _ScreenModeId(forcedModeId)
     , _fullscreenWidth(0)
     , _fullscreenHeight(0)
     , _pMouseRaster(NULL)
-{}
+{
+    // may get mode from Cybergraphics...
+    if(CyberGfxBase)
+    {
+        int width = params->width;
+        int height = params->height;
+
+        int screenDepth = (params->colors<=256)?8:16; // more would be Display_CGX_TrueColor.
+
+        if(_ScreenModeId == INVALID_ID)
+        {
+             struct TagItem cgxtags[]={
+                    CYBRBIDTG_NominalWidth,width,
+                    CYBRBIDTG_NominalHeight,height,
+                    CYBRBIDTG_Depth,screenDepth,
+                    TAG_DONE,0 };
+                 printf("bef BestCModeIDTagList()\n");
+
+            _ScreenModeId = BestCModeIDTagList(cgxtags);
+               printf("aft BestCModeIDTagList()\n");
+                   fflush(stdout);
+        }
+        if(_ScreenModeId == INVALID_ID)
+        {
+            logerror("Can't find cyber screen mode for w%d h%d d%d ",width,height,screenDepth);
+            return;
+        }
+        _fullscreenWidth = GetCyberIDAttr( CYBRIDATTR_WIDTH, _ScreenModeId );
+        _fullscreenHeight = GetCyberIDAttr( CYBRIDATTR_HEIGHT, _ScreenModeId );
+        _PixelFmt = GetCyberIDAttr( CYBRIDATTR_PIXFMT, _ScreenModeId );
+        _PixelBytes = GetCyberIDAttr( CYBRIDATTR_BPPIX, _ScreenModeId );
+
+    } // end if CGX available
+
+}
 Intuition_Screen::~Intuition_Screen()
 {
     close();
 }
 void Intuition_Screen::open()
 {
-    if(_pScreenWindow) return;
-
+    if(_pScreenWindow) return; // already open.
     if(_ScreenModeId == INVALID_ID) return; // set by inherited class.
 
+    // note: all this is regular OS intuition, no CGX
 	struct ColorSpec colspec[2]={0,0,0,0,-1,0,0,0};
  	_pScreen = OpenScreenTags( NULL,
 			SA_DisplayID,_ScreenModeId,
@@ -947,10 +978,13 @@ void Intuition_Window::open()
     _dx = _pWbWindow->BorderLeft;
     _dy = _pWbWindow->BorderTop;
     // need pixel format at this level
-    if(_sWbWinSBitmap && GetCyberMapAttr(_sWbWinSBitmap,CYBRMATTR_ISCYBERGFX))
+    if(CyberGfxBase)
     {
-        _PixelFmt = GetCyberMapAttr(_sWbWinSBitmap,CYBRMATTR_PIXFMT);
-        _PixelBytes = GetCyberMapAttr(_sWbWinSBitmap,CYBRMATTR_BPPIX);
+        if(_sWbWinSBitmap && GetCyberMapAttr(_sWbWinSBitmap,CYBRMATTR_ISCYBERGFX))
+        {
+            _PixelFmt = GetCyberMapAttr(_sWbWinSBitmap,CYBRMATTR_PIXFMT);
+            _PixelBytes = GetCyberMapAttr(_sWbWinSBitmap,CYBRMATTR_BPPIX);
+        }
     }
 
 }
@@ -970,11 +1004,6 @@ RastPort *Intuition_Window::rastPort()
     if(!_pWbWindow) return NULL;
     return _pWbWindow->RPort;
 }
-
-
-
-
-
 
 Display_CGX::Display_CGX()
 : MameDisplay()
@@ -998,7 +1027,7 @@ void Display_CGX::open(const _osd_create_params *params,int window, ULONG forced
         _drawable = new Intuition_Window(params);
     } else
     {
-        _drawable = new Intuition_Screen(params);
+        _drawable = new Intuition_Screen(params,forcedModeID);
     }
 
     if(!_drawable) return;
@@ -1009,8 +1038,6 @@ void Display_CGX::open(const _osd_create_params *params,int window, ULONG forced
     {
         _remap = new Paletted_CGX(params,_drawable->pixelFmt(),_drawable->pixelBytes());
     }
-
-
 
 }
 void Display_CGX::close()
@@ -1030,11 +1057,10 @@ void Display_CGX::draw(_mame_display *display)
     // - - update palette if exist and is needed.
     if(_remap && ((display->changed_flags & GAME_PALETTE_CHANGED) !=0 || _remap->needRemap()))
     {
-        printf("*** DO palette remap:\n");
         _remap->updatePaletteRemap(display);
     }
 
-    _drawable->drawRastPort(display,_remap);
+    if(CyberGfxBase) _drawable->drawRastPort_CGX(display,_remap);
 }
 MsgPort *Display_CGX::userPort()
 {
