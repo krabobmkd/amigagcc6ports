@@ -61,7 +61,6 @@ extern struct IntuitionBase *IntuitionBase;
 extern struct Library       *GadToolsBase;
 extern struct Library       *AslBase;
 extern struct Library       *KeymapBase;
-extern struct Device       *TimerBase;
 #ifdef POWERUP
 extern struct Library       *PPCLibBase;
 #endif

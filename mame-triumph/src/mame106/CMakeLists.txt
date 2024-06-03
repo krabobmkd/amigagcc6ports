@@ -5,11 +5,19 @@ cmake_minimum_required (VERSION 3.1)
 set(C_STANDARD 11)
 set(CXX_STANDARD 11)
 project(MameLib LANGUAGES C CXX VERSION 1.0)
+option(MAME_USE_HARDFLOAT "compile using direct 68882 FPU, will not work on economic 060" ON)
 
-#if(AMIGA)
-#
-#	 add_compile_options(-m68060 -mhard-float -ffast-math -save-temps )
-#endif()
+if(AMIGA)
+	add_compile_options( -m68060 -mcpu=68060 -save-temps )
+	add_link_options( -m68060 -mcpu=68060 )
+	if(MAME_USE_HARDFLOAT)
+		add_compile_options( -mhard-float -ffast-math )
+		add_link_options( -mhard-float -ffast-math)
+	else()
+		add_compile_options( -msoft-float )
+		add_link_options( -msoft-float )
+	endif()
+endif()
 
 include(gamedrivers.cmake)
 
@@ -22,7 +30,6 @@ set(MAME_CORE_SRC
 # chdman.c is an external tool !
 # romcmp.c  is an external tool !
 
-# x86drc.c profiler.c tiny.c audit.c
  fileio.c
  artwork.c
    cpuint.c    inptport.c  palette.c   streams.c   video.c
@@ -47,31 +54,14 @@ set(MAME_CORE_SRC
  cpuintrf.h   input.h      palette.h             timer.h
 
 
-#	version.cpp info.cpp audit.cpp datafile.cpp
-#    state.cpp png.cpp artwork.cpp unzip.cpp
-
-#	profiler.cpp cheat.cpp hiscore.cpp
-#	input.cpp inptport.cpp
-#    mame.cpp usrintrf.cpp ui_text.cpp
-#	tilemap.cpp sprite.cpp gfxobj.cpp
-#	drawgfx.cpp palette.cpp common.cpp
-#	cpuintrf.cpp memory.cpp timer.cpp
-#	scanline.cpp
-#	sndintrf.cpp
-
-#	sound/streams.cpp
-#	sound/mixer.cpp
-#	machine/z80fmly.cpp machine/6821pia.cpp
-#	machine/8255ppi.cpp
+	# minimal common driver needs:
 	vidhrdw/generic.c vidhrdw/vector.c
-#	machine/mathbox.c
-	# 	vidhrdw/avgdvg.c
-#	machine/ticket.cpp
+
 	machine/generic.c
 	machine/generic.h
 	machine/eeprom.c
 	machine/eeprom.h
-#	sound/votrax.cpp
+
 	sound/flt_vol.c
 	sound/flt_vol.h
 	sound/flt_rc.c
@@ -81,13 +71,6 @@ set(MAME_CORE_SRC
 
 	sndhrdw/generic.c
 	sndhrdw/generic.h
-#	artwork.h   drawgfx.h   input.h         network.h   sndintrf.h      ui_text.h
-#	audit.h     driver.h    legacy.h        osdepend.h  sprite.h        unzip.h
-#	cheat.h     gfxobj.h    mame.h          palette.h   state.h         usrintrf.h
-#	common.h    hiscore.h   memory.h        png.h       tilemap_draw.h
-#	cpuintrf.h  info.h      memory_read.h   profiler.h  tilemap.h
-#	datafile.h  inptport.h  memory_write.h  scanline.h  timer.h
-
 
 	)
 

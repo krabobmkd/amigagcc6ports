@@ -106,8 +106,9 @@ inline void initOptions()
    options.cheat=1;
    options.gui_host=1;
 
-options.brightness = 1.0;
-options.gamma=0.5;
+   options.pause_bright = 0.3f;
+options.brightness = 1.0f;
+options.gamma=0.5f;
 
    options.samplerate=(Config[CFG_SOUND] == CFGS_NO)?0:22050;
     Machine->sample_rate = options.samplerate;
@@ -382,7 +383,7 @@ int osd_display_loading_rom_message(const char *name,rom_load_data *romdata)
 /* interface is still active while the game is paused. */
 void osd_pause(int paused)
 {
-
+    printf("osd_pause:%d\n",paused);
 }
 
 

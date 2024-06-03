@@ -45,11 +45,13 @@ public:
     inline ULONG pixelFmt() const { return _PixelFmt; }
     inline ULONG pixelBytes() const { return _PixelBytes; }
 
-    void drawRastPort_CGX(_mame_display *display,Paletted_CGX *pRemap);
+    virtual void drawRastPort_CGX(_mame_display *display,Paletted_CGX *pRemap);
 protected:
     ULONG _PixelFmt,_PixelBytes;
+    int _width,_height;
     int _dx,_dy; // draw delta (for windows borders)
     virtual RastPort *rastPort() = 0;
+    virtual BitMap *bitmap() = 0;
 };
 
 class Intuition_Screen : public IntuitionDrawable
@@ -68,6 +70,7 @@ protected:
     int _fullscreenHeight;
     void *_pMouseRaster;
     RastPort *rastPort() override;
+    BitMap *bitmap() override;
 
 };
 class Intuition_Window : public IntuitionDrawable
@@ -83,6 +86,8 @@ protected:
     BitMap *_sWbWinSBitmap;
     int _machineWidth,_machineHeight;
     RastPort *rastPort() override;
+    BitMap *bitmap() override;
+    void drawRastPort_CGX(_mame_display *display,Paletted_CGX *pRemap) override;
 };
 
 

@@ -85,19 +85,25 @@ MameDisplay::~MameDisplay(){}
 
   Returns 0 on success.
 */
-static void waitsec(int s)
-{
-    for(int j=0;j<s;j++)
-    for(int i=0;i<50;i++)
-    {
-        WaitTOF();
-    }
-}
+//static void waitsec(int s)
+//{
+//    for(int j=0;j<s;j++)
+//    for(int i=0;i<50;i++)
+//    {
+//        WaitTOF();
+//    }
+//}
 MameDisplay *g_pMameDisplay=NULL;
+ULONG       g_nextFrameSkip=0;
+cycles_t    g_lastFame=-1;
+int         g_gameRefreshRate=0;
 
 int osd_create_display(const _osd_create_params *params, UINT32 *rgb_components)
-{
+{      
     if(g_pMameDisplay) osd_close_display();
+    if(!params) return 1; // fail
+
+    g_gameRefreshRate =  0; //better not here. (int)params->fps;
     if((params->video_attributes &VIDEO_TYPE_VECTOR)==0)
     {
         //try RTG  drivers first:
@@ -132,6 +138,9 @@ void osd_close_display(void)
         delete g_pMameDisplay;
         g_pMameDisplay = NULL;
     }
+    // because we will restart
+    g_nextFrameSkip = 0;
+    g_lastFame = -1;
 }
 
 
@@ -150,11 +159,52 @@ void osd_close_display(void)
 */
 void osd_update_video_and_audio(struct _mame_display *display)
 {
-   // printf("osd_update_video_and_audio\n");
     if(!g_pMameDisplay) return;
     g_pMameDisplay->draw(display);
     MsgPort *userport = g_pMameDisplay->userPort();
     if(userport) UpdateInputs(userport);
+
+
+//        printf("update fps:%f\n",display->game_refresh_rate);
+
+    // - - - - -auto fps management
+    {
+        if(g_gameRefreshRate==0)
+        {
+
+            g_gameRefreshRate = (int)display->game_refresh_rate;
+           // printf("game_refresh_rate:%f i:%d\n",display->game_refresh_rate,g_gameRefreshRate);
+        }
+
+        // test
+        //WaitTOF();
+        //WaitTOF();
+
+
+        cycles_t now = osd_cycles(); // microsec
+
+        g_nextFrameSkip=0;  // default, show next.
+//        if(g_lastFame != -1) {
+//            cycles_t delta = now-g_lastFame;
+//            if(delta>0)
+//            {
+
+//                // to 50 or 60 fps
+//                delta *= g_gameRefreshRate;
+//                ULONG deltafps = (ULONG)(delta/1000000); // aka *60/1000
+//                static int tc=0;
+//                tc++;
+//                if(tc==60)
+//                {
+//                    tc=0;
+//                    printf("delta:%d gamerefresh:%d\n",(int)delta,g_gameRefreshRate);
+//                    printf("deltafps:%d\n",(int)deltafps);
+//                }
+//                g_nextFrameSkip = deltafps;
+//            }
+//        }
+        g_lastFame = now;
+    }
 }
 
 
@@ -170,16 +220,7 @@ void osd_update_video_and_audio(struct _mame_display *display)
 */
 int osd_skip_this_frame(void)
 {
-// TODO
-//    if(FrameCounter >= NoFrameSkipCount)
-//    {
-//      if(FrameCounter < (NoFrameSkipCount + frameskip))
-//        return(1);
-//    }
-//    static int i=0;
-//    i++;
-//    return (i&1);
-    return(0);
+    return(g_nextFrameSkip); // 0 means display.
 }
 
 /*

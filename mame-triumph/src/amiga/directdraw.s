@@ -275,7 +275,7 @@ directDrawClut32:
 .noclipx2
 
 	sub.w	d1,d3 ; width
-	lea		(a3,d1.w*4),a3	; src
+	lea		(a3,d1.w*2),a3	; src , still .w
 	lea		(a4,d0.w*4),a4	; dest
 
 	sub.w	#1,d4

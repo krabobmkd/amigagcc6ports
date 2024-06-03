@@ -131,7 +131,7 @@ struct _callback_item
 
 /* the active machine */
 static running_machine active_machine;
-running_machine *Machine;
+running_machine *Machine=NULL;
 
 /* the active game driver */
 static machine_config internal_drv;
@@ -342,8 +342,7 @@ int run_game(int game)
 
 				/* otherwise, just pump video updates through */
 				else
-				{
-                printf("go updatescreen ...\n");
+				{                    
 					updatescreen();
 					reset_partial_updates();
 				}
@@ -364,6 +363,7 @@ int run_game(int game)
 			/* save the NVRAM and configuration */
 			nvram_save();
 			config_save_settings();
+
 		}
         printf("after cpu loop, do close list...\n");
 
@@ -588,6 +588,7 @@ int mame_is_scheduled_event_pending(void)
 
 void mame_pause(int pause)
 {
+    printf("mame_pause%d\n",(int)pause);
 	callback_item *cb;
 
 	/* ignore if nothing has changed */
@@ -598,6 +599,8 @@ void mame_pause(int pause)
 	/* call all registered pause callbacks */
 	for (cb = pause_callback_list; cb; cb = cb->next)
 		(*cb->func.pause)(mame_paused);
+
+   printf("mame_pause endfunc\n");
 }
 
 
