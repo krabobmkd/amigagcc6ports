@@ -200,4 +200,45 @@ const char *osd_get_fps_text(const performance_info *performance)
     return "osd_get_fps_text to implement";
 }
 
-
+struct ledBitmap {
+    ledBitmap(int nbleds,int ledwidth) {
+        _ledwidth = ledwidth;
+        _ledmarge = ledwidth>>1;
+        _width = (nbleds+1)*_ledmarge + ledwidth*nbleds;
+        _height = 2*_ledmarge + ledwidth;
+        _nbleds = nbleds;
+        int mem = _width*_height;
+        _bm.reserve(mem);
+        _bm.resize(mem,1); // fill with BG
+        //
+    }
+    static int rgbpalette[]={0,0x00505050,
+                0x00d00000,0x0000d000,0x000000d0};
+    void update(int ledbits) {
+        if(_bm.size()==0) return;
+        // 0black, 1bg, red,green,blue
+        int bmofs = _ledmarge*_width+_ledmarge;
+        for(int i=0;i<_nbleds;i++)
+        {
+            int ledcolor = (ledbits&1)?(2+i):0;
+            int bmofs2 = bmofs;
+            for(int y=0;y<_ledwidth;y++)
+            {
+                for(int x=0;x<_ledwidth;x++)
+                {
+                    _bm[bmofs2+x] = ledcolor;
+                    bmofs3++;
+                }
+                bmofs2 +=_width;
+            }
+            bmofs +=_ledwidth+_ledmarge;
+            ledbits>>=1;
+        }
+    }
+    int _width;
+    int _height;
+    int _nbleds;
+    int _ledwidth;
+    int _ledmarge;
+    std::vector<UWORD> _bm;
+};

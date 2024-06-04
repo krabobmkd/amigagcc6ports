@@ -682,41 +682,53 @@ void Paletted_CGX::updatePaletteRemap(_mame_display *display)
         break;
      // - -- - - - 16b cases
      case PIXFMT_RGB16:
-        for(;i<nbc;i++) { ULONG c = *gpal++; *p++ = ((c>>8)&0xf800)|((c>>5)&0x07e0)|((c>>3)&0x001f); }
+        for(;i<nbc;i++) { ULONG c = *gpal++; USHORT d = ((c>>8)&0xf800)|(((USHORT)c>>5)&0x07e0)|(((USHORT)c>>3)&0x001f);
+            *p++ = d;
+        }
         break;
      case PIXFMT_BGR16:
-        for(;i<nbc;i++) { ULONG c = *gpal++; *p++ = ((c<<8)&0xf800)|((c>>5)&0x07e0)|((c>>19)&0x001f); }
+        for(;i<nbc;i++) { ULONG c = *gpal++; USHORT d = ((c>>8)&0xf800)|(((USHORT)c>>5)&0x07e0)|(((USHORT)c>>3)&0x001f);
+            *p++ = d;
+        }
         break;
      case PIXFMT_RGB16PC:          //  *p++ = d;
         for(;i<nbc;i++) {
             ULONG c = *gpal++; USHORT d = ((c>>8)&0xf800)|(((USHORT)c>>5)&0x07e0)|(((USHORT)c>>3)&0x001f);
-          // _clut16[ji]= ((d>>8)&0x00ff)|((d<<8)&0xff00);
-
-//        ULONG c = *gpal++; USHORT d = ((c>>8)&0xf800)|((c>>5)&0x07e0)|((c>>3)&0x001f);
-//           USHORT d = ((c>>9)&0xf800);
             *p++ = ((d>>8)&0x00ff)|((d<<8)&0xff00);
         }
         break;
      case PIXFMT_BGR16PC:
         for(;i<nbc;i++) { ULONG c = *gpal++; USHORT d =  ((c<<8)&0xf800)|((c>>5)&0x07e0)|((c>>19)&0x001f);
-            *pb++ = (UBYTE)d; d>>=8;  *pb++ = (UBYTE)d;
+            *p++ = ((d>>8)&0x00ff)|((d<<8)&0xff00);
         }
         break;
      // - - -24b cases, also use 32bit source
-     case PIXFMT_RGB24:
      case PIXFMT_BGR24:
+        for(;i<nbc;i++) { ULONG c = *gpal++; ULONG d = ((c>>16)&0x000000ff)|((c)&0x0000ff00)|((c<<16)&0x00ff0000);
+            *p32++= d;
+            }
+         break;
      // - - -32b cases
+     case PIXFMT_RGB24:
      case PIXFMT_ARGB32:
         // this is the id one, no need for table, direct palette use.
+        for(;i<nbc;i++) { *p32++= (*gpal++);}
         break;
      case PIXFMT_BGRA32:
+        // actually used by picasso 32b
         for(;i<nbc;i++) { ULONG c = *gpal++; ULONG d = ((c>>16)&0x0000ff00)|((c<<8)&0x00ff0000)|((c<<24)&0xff000000);
             *p32++= d;
         }
         break;
      case PIXFMT_RGBA32:
+        for(;i<nbc;i++) { *p32++= (*gpal++)<<8;}
         break;
      case PIXFMT_LUT8: // no sense, should just use RGB32 os palette, do not select Display_CGX_Paletted
+        // let's consider a 2/3/3 RGB
+        // no: let's consider intuition pens.
+//        for(;i<nbc;i++) { ULONG c = *gpal++; ULONG d = ((c>>16)&0x0000ff00)|((c<<8)&0x00ff0000)|((c<<24)&0xff000000);
+//            *p32++= d;
+//        }
     default:
         break;
     }
