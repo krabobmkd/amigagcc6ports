@@ -39,7 +39,7 @@ extern "C" {
 #include "macros.h"
 #include "main.h"
 
-extern "C" {    
+extern "C" {
     #include "driver.h"
     #include "mamecore.h"
 }
@@ -77,7 +77,7 @@ typedef ULONG (*RE_HOOKFUNC)();
 "CGXHooks routines by Trond Werner Hansen\n\n" \
 "Chunky to planar routine by Mikael Kalms\n\n" \
 "This program uses MUI - Magic User Interface\n" \
-"MUI is © 1992 - 1997 by Stefan Stuntz\n" \
+"MUI is ? 1992 - 1997 by Stefan Stuntz\n" \
 "http://www.sasg.com"
 #else
 #define DRIVER_OFFSET 2
@@ -92,7 +92,7 @@ typedef ULONG (*RE_HOOKFUNC)();
 "CGXHooks routines by Trond Werner Hansen\n\n" \
 "Chunky to planar routine by Mikael Kalms\n\n" \
 "This program uses MUI - Magic User Interface\n" \
-"MUI is © 1992 - 1997 by Stefan Stuntz\n" \
+"MUI is ? 1992 - 1997 by Stefan Stuntz\n" \
 "http://www.sasg.com"
 #endif
 
@@ -448,7 +448,7 @@ static void ScanDrivers(void)
             while(ExNext(locks[j], fib))
             {
               for(i = 0; i < NumDrivers; i++)
-              {              
+              {
                 machine_config machine;
                 memset(&machine,0,sizeof(machine));
                 (*SortedDrivers[i+DRIVER_OFFSET])->drv(&machine);
@@ -1721,7 +1721,7 @@ static void SetOptions(BOOL set_driver)
     }
 //  printf("SetOptions() 4\n");
   if((Config[CFG_DRIVER] < 0) || (!Config[CFG_USEDEFAULTS]
-     && /*(Drivers[Config[CFG_DRIVER]]->drv->video_attributes & VIDEO_SUPPORTS_16BIT)*/      
+     && /*(Drivers[Config[CFG_DRIVER]]->drv->video_attributes & VIDEO_SUPPORTS_16BIT)*/
         (machine.total_colors > 256)
      ))
   {
@@ -1994,7 +1994,7 @@ static ULONG ASM UseDefaultsNotify(struct Hook *hook REG(a0), APTR obj REG(a2), 
     drv = GetDriver();
 
     machine_config machine;
-    memset(&machine,0,sizeof(machine));       
+    memset(&machine,0,sizeof(machine));
     if(drv) drv->drv(&machine);
 
     if(machine.total_colors<256 )
