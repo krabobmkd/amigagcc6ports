@@ -1,7 +1,9 @@
 #ifndef AMIGA_MAME_CONFIG_H
 #define AMIGA_MAME_CONFIG_H
-
-
+extern "C"
+{
+    #include <exec/types.h>
+}
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -32,6 +34,10 @@ class nameDriverMap {
     std::unordered_map<char,std::unordered_map<std::string,int>> _m;
 };
 
+struct ScreenConf {
+     ULONG _modeID;
+};
+
 /** Main configuration.
  *  Mame106 core manage itself default and per driver configuration.
  *  We just manage here:
@@ -47,18 +53,36 @@ public:
     void init(int argc,char **argv);
     void setRomPath(const char *rompath);
     void setUserPath(const char *userpath);
+    void setActiveDriver(int driverIndex);
     void save();
     void load();
     // - -  update detected rom list - - -
     int scanDrivers();
     // - - path to main dirs --
-    const char *getUserDir() {return _userDir.c_str(); }
-    const char *getRomDir() {return _rompath.c_str(); }
+    const char *getUserDir() const {return _userDir.c_str(); }
+    const char *getRomDir() const {return _rompath.c_str(); }
 
     const std::vector<_game_driver **> &romsFound() const { return _romsFound; };
+
+    int lastActiveDriver() const { return _lastActiveDriver; }
 protected:
+    // - - - prefs unique for app
     std::string _userDir;
     std::string _rompath; // finally just use one, but a tested one.
+
+    int   _startWindowed; // else fullscreen.
+    //std::string _lastActiveDriver;
+    int         _lastActiveDriver;
+    //int     _doublewindow;
+
+    ScreenConf _defaultscreenconf;
+    // video prefs, per video config
+    // keys are like: "320x224x16"
+    std::unordered_map<std::string,ScreenConf> _screenconf;
+
+    // prefs per game
+    // force player1 joystick as port2 CD32 pad
+
 
     // name to current mame index to fasten dir search
     nameDriverMap _driverIndex;

@@ -59,7 +59,7 @@ set(AMIGA_SRC
 	amiga106_video_cgx.cpp
 
 	amiga_locale.cpp
-	main.h
+
 
 	audio.h
 

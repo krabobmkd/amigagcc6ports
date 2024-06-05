@@ -148,9 +148,7 @@ static Object * BU_Quit;
 static Object * BU_About_OK;
 static Object * PU_ScreenMode;
 
-#ifdef POWERUP
-static Object * CM_AsyncPPC;
-#endif
+int dummy=0;
 
 //static UBYTE           DisplayNameBuffer[256];
 std::string DisplayNameBuffer;
@@ -1000,6 +998,7 @@ int MainGUI(void)
   ULONG signals = 0;
   BOOL  loop  = TRUE;
 
+  MameConfig &config = getMainConfig();
   printf("MainGUI: MUIMasterBase:%08x\n",(int)MUIMasterBase);
 //
   if(MUIMasterBase)
@@ -1179,7 +1178,7 @@ int MainGUI(void)
                       MUIA_Popasl_Type,     ASL_ScreenModeRequest,
                       MUIA_Popasl_StartHook,  (ULONG) &ScreenModeStartHook,
                       MUIA_Popasl_StopHook, (ULONG) &ScreenModeStopHook,
-                      MUIA_Disabled, (ULONG) (Config[CFG_SCREENTYPE] != CFGST_CUSTOM),
+                      MUIA_Disabled, (ULONG) (/*Config[CFG_SCREENTYPE] != CFGST_CUSTOM*/1),
                     TAG_DONE)),
                   TAG_DONE),
                   Child, HSpace(0),
@@ -1383,7 +1382,7 @@ int MainGUI(void)
 #ifdef MESS
           DoMethod(LI_Driver, MUIM_List_Insert, SortedDrivers, NumDrivers + DRIVER_OFFSET, MUIV_List_Insert_Bottom);
 #else
-          ShowNotify(NULL, NULL,(ULONG*) &Config[CFG_SHOW]);
+          ShowNotify(NULL, NULL,(ULONG*) /*&Config[CFG_SHOW]*/&dummy);
 #endif
         }
       }
@@ -1409,7 +1408,8 @@ int MainGUI(void)
               {
                 GetOptions(TRUE);
 
-                if(Config[CFG_DRIVER] >= 0)
+                //if(Config[CFG_DRIVER] >= 0)
+                if(config.lastActiveDriver()>=0)
                   loop = FALSE;
               }
 
@@ -1420,7 +1420,7 @@ int MainGUI(void)
 
               DoMethod(LI_Driver, MUIM_List_Clear);
 
-              ScanDrivers();
+              config.scanDrivers();
               ShowFound();
 
               break;
@@ -1558,6 +1558,7 @@ static void CreateApp(void)
 
 static void GetOptions(BOOL get_driver)
 {
+/*todo
   int config_index;
 
   get(CY_ScreenType,       MUIA_Cycle_Active,    &Config[CFG_SCREENTYPE]);
@@ -1608,10 +1609,12 @@ static void GetOptions(BOOL get_driver)
 
   if(config_index >= 0)
     SetConfig(config_index, Config);
+    */
 }
 
 static void SetOptions(BOOL set_driver)
 {
+/*todo
   ULONG i, v;
  // printf("SetOptions() 1\n");
   GetConfig(Config[CFG_DRIVER] + DRIVER_OFFSET, Config);
@@ -1670,7 +1673,7 @@ static void SetOptions(BOOL set_driver)
     }
 //  printf("SetOptions() 4\n");
   if((Config[CFG_DRIVER] < 0) || (!Config[CFG_USEDEFAULTS]
-     && /*(Drivers[Config[CFG_DRIVER]]->drv->video_attributes & VIDEO_SUPPORTS_16BIT)*/
+     &&
         (machine.total_colors > 256)
      ))
   {
@@ -1711,6 +1714,7 @@ static void SetOptions(BOOL set_driver)
     }
 #endif
   }
+  */
  //   printf("SetOptions() 5\n");
 }
 
@@ -1833,6 +1837,7 @@ static ULONG ASM SoundNotify(struct Hook *hook REG(a0), APTR obj REG(a2), ULONG 
 
 static ULONG ASM DriverNotify(struct Hook *hook REG(a0), APTR obj REG(a2), ULONG *par REG(a1))
 {
+    MameConfig &config = getMainConfig();
   GetOptions(FALSE);
 
   if(*par < DRIVER_OFFSET)
@@ -1845,8 +1850,8 @@ static ULONG ASM DriverNotify(struct Hook *hook REG(a0), APTR obj REG(a2), ULONG
     set(CM_UseDefaults, MUIA_Disabled, FALSE);
   }
 
-  Config[CFG_DRIVER] = GetDriverIndex();
-
+  //Config[CFG_DRIVER] = GetDriverIndex();
+   config.setActiveDriver(GetDriverIndex());
   SetOptions(FALSE);
 
   return(0);

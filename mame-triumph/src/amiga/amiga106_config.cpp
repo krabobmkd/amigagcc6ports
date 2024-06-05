@@ -30,11 +30,18 @@ MameConfig &getMainConfig()
 }
 
 MameConfig::MameConfig()
+    : _startWindowed(0); // else fullscreen.
+    ,_lastActiveDriver(-1)
 {
     initDriverIndex();
 }
 MameConfig::~MameConfig()
 {}
+
+void MameConfig::setActiveDriver(int driverIndex)
+{
+    //TODO
+}
 
 void MameConfig::save()
 {
@@ -160,3 +167,4 @@ void MameConfig::sortDrivers()
           (int (*)(const void *, const void *)) DriverCompare);
 
 }
+
