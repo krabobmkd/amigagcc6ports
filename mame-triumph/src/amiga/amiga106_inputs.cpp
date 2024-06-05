@@ -40,8 +40,10 @@ extern "C" {
 // we don't even need to publish it:
 struct MameInputs
 {
-    struct MsgPort *pMsgPort;
-    BYTE         Keys[128]; // actual keyboard rawkeys
+    struct MsgPort *_pMsgPort;
+    int         _NbKeysUpStack;
+    BYTE         _Keys[256]; // actual keyboard rawkeys
+    UBYTE        _NextKeysUpStack[256];
 
 };
 
@@ -113,6 +115,13 @@ void UpdateInputs(struct MsgPort *pMsgPort)
  //printf("UpdateInputs: %08x\n",(int)g_pInputs);
     if(!pMsgPort || !g_pInputs) return;
 
+    // treat keys up next frame so no keys are missed.
+    for(int i=0;i<g_pInputs->_NbKeysUpStack;i++)
+    {
+        g_pInputs->_Keys[g_pInputs->_NextKeysUpStack[i]] =0;
+    }
+    g_pInputs->_NbKeysUpStack = 0;
+    // - - - -
     while((im = (struct IntuiMessage *) GetMsg(pMsgPort)))
     {
         imclass = im->Class;
@@ -131,11 +140,19 @@ void UpdateInputs(struct MsgPort *pMsgPort)
  //               g_pInputs->Keys[imcode & IKEY_RAWMASK] = (BYTE)((imcode & IECODE_UP_PREFIX)==0);
                 if(imcode & IECODE_UP_PREFIX)
                 {
-                    g_pInputs->Keys[imcode & IKEY_RAWMASK] = 0;
+                   //no, could miss key on long frames: g_pInputs->_Keys[imcode & IKEY_RAWMASK] = 0;
+                   if(g_pInputs->_NbKeysUpStack<256)
+                   {
+                        g_pInputs->_NextKeysUpStack[g_pInputs->_NbKeysUpStack] = (UBYTE)imcode;
+                        g_pInputs->_NbKeysUpStack++;
+                   } else {
+                        // shouldnt happen, but does coherency.
+                        g_pInputs->_Keys[imcode & IKEY_RAWMASK] = 0;
+                   }
                 }
                 else
                 {
-                    g_pInputs->Keys[imcode & IKEY_RAWMASK] = 1;
+                    g_pInputs->_Keys[imcode & IKEY_RAWMASK] = 1;
                     printf("key:%d on\n",imcode);
                 }
             }
@@ -179,8 +196,6 @@ void UpdateInputs(struct MsgPort *pMsgPort)
         }
     }
 }
-
-
 
 /******************************************************************************
 
@@ -385,7 +400,7 @@ INT32 osd_get_code_value(os_code oscode)
 {
     // now , always rawkey.
     if(!g_pInputs) return 0;
-    if(oscode<128) return (int)g_pInputs->Keys[oscode];
+    if(oscode<128) return (int)g_pInputs->_Keys[oscode];
     return 0;
 }
 

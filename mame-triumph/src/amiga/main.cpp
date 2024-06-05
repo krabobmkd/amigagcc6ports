@@ -63,11 +63,6 @@ extern "C" {
 
 #include "file.h"
 
-
-
-
-typedef ULONG (*RE_HOOKFUNC)();
-
 #define MIN_STACK (10*1024)
 
 #define ITEM_NEW    0
@@ -113,33 +108,15 @@ struct Library      *UtilityBase  = NULL;
 struct Library      *CyberGfxBase = NULL;
 struct Library      *P96Base = NULL;
 
-struct Device      *TimerBase    = NULL;
 }
 
 struct FileRequester  *FileRequester  = NULL;
 
-//LONG          Width;
-//LONG          Height;
-
-//struct Video      *Video=NULL;
-//struct Inputs     *Inputs=NULL;
-//struct VPixelArray    *PixelArray[2];
-//struct VDirectArray   *DirectArray;
-
-//BYTE          *Keys=NULL;
-//struct IPort      *Port1=NULL;
-//struct IPort      *Port2=NULL;
-//UBYTE         *DirectPixels;
-//ULONG         DirectBytesPerRow;
-
-struct timerequest    *TimerIO=NULL;
-struct MsgPort      TimerMP;
-/*
-static struct Hook    RefreshHook;
-static struct Hook    MenuHook;
-static struct Hook    IDCMPHook;
-*/
 static struct StackSwapStruct StackSwapStruct;
+
+void initTimers();
+void closeTimers();
+
 
 int libs_init()
 {
@@ -167,19 +144,7 @@ int libs_init()
 
     if(GadToolsBase) gui_gadtools_init();
 
-    // - - - - - - - timer init. Most likely to work
-    {
-        TimerMP.mp_Node.ln_Type   = NT_MSGPORT;
-        TimerMP.mp_Flags      = PA_IGNORE;
-        NewList(&TimerMP.mp_MsgList);
-
-        TimerIO = (struct timerequest*)CreateIORequest(&TimerMP, sizeof(struct timerequest));
-        if(TimerIO)
-        {
-        if(!OpenDevice("timer.device", UNIT_MICROHZ, (struct IORequest *) TimerIO, 0))
-          TimerBase = TimerIO->tr_node.io_Device;
-        }
-    }
+    initTimers();
 
     return(0);
 }
@@ -200,12 +165,8 @@ void main_close()
     osd_stop_audio_stream();
     unzip_cache_clear();
 
-    if(TimerIO)
-    {
-        if(TimerBase)
-          CloseDevice((struct IORequest *) TimerIO);
-        DeleteIORequest((struct IORequest *) TimerIO);
-    }
+    closeTimers();
+
     FreeGUI();
     FreeConfig();
 
@@ -256,15 +217,6 @@ beforeMainInit _ginit;
 
 int main(int argc, char **argv)
 {
-
-    static float testval = 2.5f;
-
-    printf("testdiv\n");
-    float mytest = 1.0f / testval;
-    printf("after testdiv\n");
-    printf("printdiv dbl:%lf\n",(double)mytest);
-    printf("letsgo\n");
-    printf("look:%f\n",testval);
 
 /* krb: looks messy to me, original stack should be restored and alloc freed , in an atexit().
   task  = FindTask(NULL);

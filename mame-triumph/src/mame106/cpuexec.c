@@ -975,9 +975,7 @@ static void init_refresh_timer(void)
 
 void cpu_compute_scanline_timing(void)
 {
-printf("Machine:%08x\n",(int)Machine);
- printf("cpu_compute_scanline_timing Machine->refresh_rate:%f\n",Machine->refresh_rate);
-
+    // may crash here if gcc in FPU software mode...
 	/* recompute the refresh period */
 	refresh_period = double_to_mame_time(1.0 / Machine->refresh_rate);
 
@@ -995,6 +993,7 @@ printf("Machine:%08x\n",(int)Machine);
 	}
 	else
 		scanline_period.subseconds /= Machine->drv->screen_height;
+
 
 	LOG(("cpu_compute_scanline_timing: refresh=%.9f vblank=%.9f scanline=%.9f\n", mame_time_to_double(refresh_period), mame_time_to_double(vblank_period), mame_time_to_double(scanline_period)));
 }

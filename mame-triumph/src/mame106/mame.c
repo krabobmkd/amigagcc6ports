@@ -131,7 +131,7 @@ struct _callback_item
 
 /* the active machine */
 static running_machine active_machine;
-running_machine *Machine;
+running_machine *Machine=NULL;
 
 /* the active game driver */
 static machine_config internal_drv;
@@ -342,8 +342,7 @@ int run_game(int game)
 
 				/* otherwise, just pump video updates through */
 				else
-				{
-                printf("go updatescreen ...\n");
+				{                    
 					updatescreen();
 					reset_partial_updates();
 				}

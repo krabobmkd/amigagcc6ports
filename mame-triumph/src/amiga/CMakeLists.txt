@@ -10,20 +10,32 @@ set(C_STANDARD 11)
 project(AmigaMame LANGUAGES C CXX VERSION 1.0)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-option(MAME_USE_HARDFLOAT "compile using direct 68882 FPU, will not work on economic 060" OFF)
-option(HOOKTEST "do" ON)
+option(MAME_USE_HARDFLOAT "compile using direct 68882 FPU, will not work on economic 060" ON)
+option(MAME_USE_68060 "else 040" ON)
+
+#option(HOOKTEST "do" ON)
 
 if(AMIGA)
 #  -fno-rtti -fno-exceptions -fno-strict-aliasing
-	add_definitions( -m68060 -save-temps )
-	if(MAME_USE_HARDFLOAT)
-		add_definitions( -mhard-float -ffast-math )
+	# add your generic options here:
+	add_compile_options( -save-temps )
+
+	if(MAME_USE_68060)
+		add_compile_options( -m68060 -mcpu=68060 )
+		add_link_options( -m68060 -mcpu=68060 )
 	else()
-		add_definitions( -msoft-float )
+		add_compile_options( -m68040 -mcpu=68040 )
+		add_link_options( -m68040 -mcpu=68040 )
+	endif()
+	if(MAME_USE_HARDFLOAT)
+		add_compile_options( -mhard-float -ffast-math )
+		add_link_options( -mhard-float -ffast-math)
+	else()
+		add_compile_options( -msoft-float )
+		add_link_options( -msoft-float )
 	endif()
 endif()
 
-#add_subdirectory(../mame037b/src MameLib)
 add_subdirectory(../mame106 MameLib)
 
 set(AMIGA_SRC

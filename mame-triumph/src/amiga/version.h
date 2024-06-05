@@ -1,3 +1,5 @@
+#ifndef MAME_AMIGA_VERSION
+#define MAME_AMIGA_VERSION
 #include "osdepend.h"
 
 #include "mame_ver.h"
@@ -7,3 +9,4 @@
 #define APPNAME  "MAME 0."REVISION" BETA"
 #endif
 
+#endif

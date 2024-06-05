@@ -36,6 +36,8 @@ extern "C" {
 }
 #include "amiga106_inputs.h"
 #include "amiga106_video.h"
+#include "amiga106_video_cgx.h"
+
 /** some abstact display management */
 
 #include <stdio.h>
@@ -83,26 +85,75 @@ MameDisplay::~MameDisplay(){}
 
   Returns 0 on success.
 */
-static void waitsec(int s)
-{
-    for(int j=0;j<s;j++)
-    for(int i=0;i<50;i++)
-    {
-        WaitTOF();
-    }
-}
+//static void waitsec(int s)
+//{
+//    for(int j=0;j<s;j++)
+//    for(int i=0;i<50;i++)
+//    {
+//        WaitTOF();
+//    }
+//}
 MameDisplay *g_pMameDisplay=NULL;
+ULONG       g_nextFrameSkip=0;
+cycles_t    g_lastFame=-1;
+int         g_gameRefreshRate=0;
+
+
+//struct ledBitmap {
+//    ledBitmap(int nbleds,int ledwidth) {
+//        _ledwidth = ledwidth;
+//        _ledmarge = ledwidth>>1;
+//        _width = (nbleds+1)*_ledmarge + ledwidth*nbleds;
+//        _height = 2*_ledmarge + ledwidth;
+//        _nbleds = nbleds;
+//        int mem = _width*_height;
+//        _bm.reserve(mem);
+//        _bm.resize(mem,1); // fill with BG
+//        //
+//    }
+//    std::vector<int> rgbpalette={0,0x00505050,
+//                0x00d00000,0x0000d000,0x000000d0};
+//    void update(int ledbits) {
+//        if(_bm.size()==0) return;
+//        // 0black, 1bg, red,green,blue
+//        int bmofs = _ledmarge*_width+_ledmarge;
+//        for(int i=0;i<_nbleds;i++)
+//        {
+//            int ledcolor = (ledbits&1)?(2+i):0;
+//            int bmofs2 = bmofs;
+//            for(int y=0;y<_ledwidth;y++)
+//            {
+//                for(int x=0;x<_ledwidth;x++)
+//                {
+//                    _bm[bmofs2+x] = ledcolor;
+//                }
+//                bmofs2 +=_width;
+//            }
+//            bmofs +=_ledwidth+_ledmarge;
+//            ledbits>>=1;
+//        }
+//    }
+//    int _nbleds;
+//    int _ledwidth;
+//    int _ledmarge;
+
+//};
+
+//ledBitmap _ledBitmap(3,4); // nbleds, ledwidth
 
 int osd_create_display(const _osd_create_params *params, UINT32 *rgb_components)
-{
+{      
     if(g_pMameDisplay) osd_close_display();
+    if(!params) return 1; // fail
+
+    g_gameRefreshRate =  0; //better not here. (int)params->fps;
     if((params->video_attributes &VIDEO_TYPE_VECTOR)==0)
     {
         //try RTG  drivers first:
         if(CyberGfxBase)
         {
             g_pMameDisplay = new Display_CGX();
-            g_pMameDisplay->open(params,0);
+            g_pMameDisplay->open(params,1);
         }
 
     } // end if bitmap
@@ -130,6 +181,9 @@ void osd_close_display(void)
         delete g_pMameDisplay;
         g_pMameDisplay = NULL;
     }
+    // because we will restart
+    g_nextFrameSkip = 0;
+    g_lastFame = -1;
 }
 
 
@@ -148,11 +202,59 @@ void osd_close_display(void)
 */
 void osd_update_video_and_audio(struct _mame_display *display)
 {
-   // printf("osd_update_video_and_audio\n");
+ printf("osd_update_video_and_audio\n");
     if(!g_pMameDisplay) return;
     g_pMameDisplay->draw(display);
+    //_ledBitmap.update((int)display->led_state);
+
+
+
     MsgPort *userport = g_pMameDisplay->userPort();
     if(userport) UpdateInputs(userport);
+
+
+//        printf("update fps:%f\n",display->game_refresh_rate);
+
+    // - - - - -auto fps management
+    {
+        if(g_gameRefreshRate==0)
+        {
+
+            g_gameRefreshRate = (int)display->game_refresh_rate;
+           // printf("game_refresh_rate:%f i:%d\n",display->game_refresh_rate,g_gameRefreshRate);
+        }
+
+        // test
+        //WaitTOF();
+        //WaitTOF();
+
+
+        cycles_t now = osd_cycles(); // microsec
+
+//        g_nextFrameSkip=0;  // default, show next.
+//        if(g_lastFame != -1) {
+//            cycles_t delta = now-g_lastFame;
+//            if(delta>0)
+//            {
+
+//                // to 50 or 60 fps
+//                delta *= g_gameRefreshRate;
+//                ULONG deltafps = (ULONG)(delta/1000000); // aka *60/1000
+//                static int tc=0;
+//                tc++;
+//                if(tc==60)
+//                {
+//                    tc=0;
+//                    printf("delta:%d gamerefresh:%d\n",(int)delta,g_gameRefreshRate);
+//                    printf("deltafps:%d\n",(int)deltafps);
+//                }
+//                g_nextFrameSkip = deltafps;
+//            }
+//        }
+        g_lastFame = now;
+    }
+    g_nextFrameSkip++;
+    if(g_nextFrameSkip==3) g_nextFrameSkip=0;
 }
 
 
@@ -168,16 +270,9 @@ void osd_update_video_and_audio(struct _mame_display *display)
 */
 int osd_skip_this_frame(void)
 {
-// TODO
-//    if(FrameCounter >= NoFrameSkipCount)
-//    {
-//      if(FrameCounter < (NoFrameSkipCount + frameskip))
-//        return(1);
-//    }
-//    static int i=0;
-//    i++;
-//    return (i&1);
-    return(0);
+ printf("osd_skip_this_frame\n");
+    return (g_nextFrameSkip==0)?0:1;
+//    return(g_nextFrameSkip); // 0 means display.
 }
 
 /*
@@ -199,46 +294,3 @@ const char *osd_get_fps_text(const performance_info *performance)
 {
     return "osd_get_fps_text to implement";
 }
-
-struct ledBitmap {
-    ledBitmap(int nbleds,int ledwidth) {
-        _ledwidth = ledwidth;
-        _ledmarge = ledwidth>>1;
-        _width = (nbleds+1)*_ledmarge + ledwidth*nbleds;
-        _height = 2*_ledmarge + ledwidth;
-        _nbleds = nbleds;
-        int mem = _width*_height;
-        _bm.reserve(mem);
-        _bm.resize(mem,1); // fill with BG
-        //
-    }
-    static int rgbpalette[]={0,0x00505050,
-                0x00d00000,0x0000d000,0x000000d0};
-    void update(int ledbits) {
-        if(_bm.size()==0) return;
-        // 0black, 1bg, red,green,blue
-        int bmofs = _ledmarge*_width+_ledmarge;
-        for(int i=0;i<_nbleds;i++)
-        {
-            int ledcolor = (ledbits&1)?(2+i):0;
-            int bmofs2 = bmofs;
-            for(int y=0;y<_ledwidth;y++)
-            {
-                for(int x=0;x<_ledwidth;x++)
-                {
-                    _bm[bmofs2+x] = ledcolor;
-                    bmofs3++;
-                }
-                bmofs2 +=_width;
-            }
-            bmofs +=_ledwidth+_ledmarge;
-            ledbits>>=1;
-        }
-    }
-    int _width;
-    int _height;
-    int _nbleds;
-    int _ledwidth;
-    int _ledmarge;
-    std::vector<UWORD> _bm;
-};

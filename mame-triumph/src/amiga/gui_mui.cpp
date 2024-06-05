@@ -1,18 +1,10 @@
 /**************************************************************************
  *
- * Copyright (C) 1999 Mats Eirik Hansen (mats.hansen@triumph.no)
- *
- * $Id: gui_mui.c,v 1.2 1999/05/13 13:51:02 meh Exp meh $
- *
- * $Log: gui_mui.c,v $
- * Revision 1.2  1999/05/13 13:51:02  meh
- * *** empty log message ***
- *
- * Revision 1.1  1999/04/28 18:54:28  meh
- * Initial revision
- *
+ * Copyright (C) 2024 Vic Ferry
+ * Forked from 1999 Mats Eirik Hansen
  *
  *************************************************************************/
+
 
 // krb:
 /* mui includes generated with:
@@ -386,7 +378,7 @@ static struct _game_driver *GetDriver(void)
 #ifndef MESS
 static void ScanDrivers(void)
 {
-  printf("ScanDrivers\n");
+  printf(" *** ScanDrivers\n");
   struct FileInfoBlock *fib;
   //const char           *str;
   std::string str;
@@ -398,7 +390,6 @@ static void ScanDrivers(void)
   int  vector_lock;
 
 //  const MameConfig &config = Config();
-  printf("DriversFound:%d\n",(int)DriversFound);
   if(DriversFound)
   {
     memset(DriversFound, 0, NumDrivers);
