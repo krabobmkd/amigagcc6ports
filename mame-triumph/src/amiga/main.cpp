@@ -157,6 +157,7 @@ void main_close()
 {
     printf("does main_close\n");
 
+
     mameExitCleanCtrlC(); // flush game allocs, ahcked from mame.c, in case stopped during game.
     osd_close_display(); // also useful when ctrl-C
     osd_stop_audio_stream();
@@ -248,7 +249,11 @@ int main(int argc, char **argv)
     AllocGUI();
 
     // go into interface loop, select first game.
-    if(MainGUI()!=0) exit(0);
+    if(MainGUI()!=0)
+    {
+        getMainConfig().save(); // for test
+        exit(0);
+    }
 
     ULONG quit=FALSE;
 
@@ -266,7 +271,8 @@ int main(int argc, char **argv)
           quit = MainGUI();
         else if(!SelectNextGame)
           quit = TRUE;
-        } // end loop by emulation launch
+    } // end loop by emulation launch
+    getMainConfig().save();
 
     // end of main, will automatically reach main_close(), like any exit() call does.
     return(0);

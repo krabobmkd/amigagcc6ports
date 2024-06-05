@@ -56,8 +56,8 @@ public:
     void setUserPath(const char *userpath);
     // set when driver selected,
     void setActiveDriver(int driverIndexInRomFoundList);
-    void save();
-    void load();
+    int save();
+    int load();
 
     int activeDriver() const { return _activeDriver; }
     ULONG audio() const { return _audio; }

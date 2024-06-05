@@ -3,12 +3,11 @@
 #include <proto/exec.h>
 #include <proto/dos.h>
 
-
-
-
 // from mame
 extern "C" {
     #include "driver.h"
+    // use xml from mame
+    #include "xmlfile.h"
 
     #include <string.h>
     #include <stdlib.h>
@@ -62,12 +61,75 @@ void MameConfig::setActiveDriver(int driverIndexInRomFoundList)
    // printf("driverfound:%%s\n",drivers[_activeDriver]->description);
 }
 
-void MameConfig::save()
+int MameConfig::save()
 {
     // note: got to save rom short name id, not driver index ! index evolve with compilation.
     printf("MameConfig::save\n");
+
+    xml_data_node *root = xml_file_create();
+    xml_data_node *confignode, *systemnode;
+    mame_file *file=NULL;
+    xml_data_node *romsnode,*romnode;
+//    config_type *type;
+
+    /* if we don't have a root, bail */
+    if (!root)
+        return 0;
+
+    file = mame_fopen("main", 0, FILETYPE_CONFIG, 1);
+    if(!file)  goto error;
+
+    /* create a config node */
+    confignode = xml_add_child(root, "amigamameconfig", NULL);
+    if (!confignode)
+        goto error;
+    xml_set_attribute_int(confignode, "version", 1);
+
+    /* create a system node */
+    systemnode = xml_add_child(confignode, "system", NULL);
+    if (!systemnode)
+        goto error;
+    xml_set_attribute(systemnode, "name","main" /*(which_type == CONFIG_TYPE_DEFAULT) ? "default" : Machine->gamedrv->name*/);
+
+    // save known rom list
+    romsnode = xml_add_child(systemnode,"roms", NULL);
+    for(const _game_driver *const*d : _romsFound)
+    {
+         romnode = xml_add_child(romsnode,"r", (*d)->name);
+    }
+
+    /* create the input node and write it out */
+    /* loop over all registrants and call their save function */
+//    for (type = typelist; type; type = type->next)
+//    {
+//        xml_data_node *curnode = xml_add_child(systemnode, type->name, NULL);
+//        if (!curnode)
+//            goto error;
+//        (*type->save)(which_type, curnode);
+
+//        /* if nothing was added, just nuke the node */
+//        if (!curnode->value && !curnode->child)
+//            xml_delete_node(curnode);
+//    }
+
+    /* flush the file */
+    xml_file_write(root, file);
+
+    /* free and get out of here */
+    xml_file_free(root);
+
+    if(file) mame_fclose(file);
+
+    return 1;
+
+error:
+    xml_file_free(root);
+    if(file) mame_fclose(file);
+    return 0;
+
+
 }
-void MameConfig::load()
+int MameConfig::load()
 {
     printf("MameConfig::load\n");
     // resolve short name to index after load, like scan does.
