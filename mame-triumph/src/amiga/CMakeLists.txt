@@ -53,7 +53,8 @@ set(AMIGA_SRC
 	amiga106_audiostream.cpp
 	amiga106_filesystem.cpp
 	amiga106_timer.cpp
-
+	amiga106_config.cpp
+	amiga106_config.h
 	amiga106_video.h
 	amiga106_video.cpp
 #	amiga106_video_p96.cpp

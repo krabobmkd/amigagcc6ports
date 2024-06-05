@@ -31,6 +31,8 @@ extern "C" {
 
 #include <stdio.h>
 
+#include "amiga106_config.h"
+
 extern struct DosLibrary    *DOSBase;
 
 using namespace std;
@@ -182,13 +184,65 @@ int osd_get_path_count(int pathtype)
         default: return 0;
     }
 }
+
+int get_path_info(const char *fullpath)
+{
+    BPTR hdl = Open(fullpath, MODE_OLDFILE);
+    if(!hdl)
+    {
+        return PATH_NOT_FOUND;
+    }
+    struct FileInfoBlock *fib = (struct FileInfoBlock *)AllocDosObject(DOS_FIB, NULL);
+    if(!fib){
+        Close(hdl);
+        return PATH_NOT_FOUND;
+    }
+    ExamineFH(hdl,fib);
+    int res = ((fib->fib_DirEntryType<0)?PATH_IS_FILE:PATH_IS_DIRECTORY);
+    FreeDosObject(DOS_FIB,fib);
+    Close(hdl);
+    return res;
+}
+
+// would create directory recusively, return if ok.
+int assumeDirectory(const char *fullpath)
+{
+    int dirtype = get_path_info(fullpath);
+    if(dirtype == PATH_IS_DIRECTORY) return PATH_IS_DIRECTORY;
+
+    // if not...
+    std::string sfullpath(fullpath);
+    size_t i = sfullpath.rfind("/");
+    if(i != string::npos)
+    {
+        string sparent =sfullpath.substr(0,i);
+        int iparent = assumeDirectory(sparent.c_str());
+        if(iparent != PATH_IS_DIRECTORY) return PATH_NOT_FOUND;
+    }
+    BPTR l = CreateDir(fullpath);
+    if(l) {
+        UnLock(l);
+        return PATH_IS_DIRECTORY;
+    }
+    return PATH_NOT_FOUND;
+}
+
+
+
+
 void composeFilePath(int pathtype, int pathindex, const char *filename, std::string &p)
 {
     switch( getAmigaFileType(pathtype))
     {
         case AFT_ROM: p = _rompathlist[pathindex]; break;
         case AFT_SAMPLE: p = _samplepathlist[pathindex]; break;
-        case AFT_USER: p = "PROGDIR:user"; break;
+        case AFT_USER:
+        {
+            // where configs are written should be only one dir, no search.
+            p = "PROGDIR:config";
+            // TODO: get path from config
+            assumeDirectory(p.c_str());
+        } break;
         default: p.clear(); break;
     }
     if(p.length()>0 && p.back() != ':') p+= '/';
@@ -201,14 +255,19 @@ osd_file *osd_fopen(int pathtype, int pathindex, const char *filename, const cha
     if(error) *error = FILEERR_FAILURE;
     string spath;
     composeFilePath(pathtype,pathindex,filename,spath);
+
+ printf("osd_fopen: mode:%s file:%s\n",mode,spath.c_str());
+
     _osd_file *posd = new _osd_file();
     if(!posd) return NULL;
     if(! posd->open(spath.c_str(),mode))
     {
+         printf("fail\n");
         delete posd;
         return NULL;
     }
     if(error) *error = FILEERR_SUCCESS;
+ printf("ok\n");
     return posd;
 }
 
@@ -279,25 +338,7 @@ int osd_get_path_info(int pathtype, int pathindex, const char *filename)
     string spath;
     composeFilePath(pathtype,pathindex,filename,spath);
 
-    BPTR hdl = Open(spath.c_str(), MODE_OLDFILE);
-    if(!hdl)
-    {
-    // printf("gpi: not found :%s\n",spath.c_str());
-        return PATH_NOT_FOUND;
-    }
-    struct FileInfoBlock *fib = (struct FileInfoBlock *)AllocDosObject(DOS_FIB, NULL);
-    if(!fib){
-        Close(hdl);
-      //  printf("gpi: not found :%s\n",spath.c_str());
-        return PATH_NOT_FOUND;
-    }
-    ExamineFH(hdl,fib);
-    int res = ((fib->fib_DirEntryType<0)?PATH_IS_FILE:PATH_IS_DIRECTORY);
-
-    FreeDosObject(DOS_FIB,fib);
-    Close(hdl);
-// printf("gpi: %s :%s\n",((res==PATH_IS_FILE)?"file":"dir "),spath.c_str());
-    return res;
+    return get_path_info(spath.c_str());
 }
 
 /* Create a directory if it doesn't already exist */
