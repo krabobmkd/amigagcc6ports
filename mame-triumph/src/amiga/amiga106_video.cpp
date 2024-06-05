@@ -202,7 +202,7 @@ void osd_close_display(void)
 */
 void osd_update_video_and_audio(struct _mame_display *display)
 {
- printf("osd_update_video_and_audio\n");
+// printf("osd_update_video_and_audio\n");
     if(!g_pMameDisplay) return;
     g_pMameDisplay->draw(display);
     //_ledBitmap.update((int)display->led_state);
@@ -270,7 +270,7 @@ void osd_update_video_and_audio(struct _mame_display *display)
 */
 int osd_skip_this_frame(void)
 {
- printf("osd_skip_this_frame\n");
+// printf("osd_skip_this_frame\n");
     return (g_nextFrameSkip==0)?0:1;
 //    return(g_nextFrameSkip); // 0 means display.
 }
@@ -292,5 +292,5 @@ mame_bitmap *osd_override_snapshot(mame_bitmap *bitmap, rectangle *bounds)
 */
 const char *osd_get_fps_text(const performance_info *performance)
 {
-    return "osd_get_fps_text to implement";
+    return ".";
 }

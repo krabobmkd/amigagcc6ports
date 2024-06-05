@@ -14,6 +14,7 @@ struct _game_driver;
 
 // driver name list could actually get big, avoid looping it.
 class nameDriverMap {
+public:
     void insert(const char *n, int mamedriverindex) {
         using namespace std;
         if(!n || *n==0) return;
@@ -53,18 +54,23 @@ public:
     void init(int argc,char **argv);
     void setRomPath(const char *rompath);
     void setUserPath(const char *userpath);
-    void setActiveDriver(int driverIndex);
+    // set when driver selected,
+    void setActiveDriver(int driverIndexInRomFoundList);
     void save();
     void load();
+
+    int activeDriver() const { return _activeDriver; }
+    ULONG audio() const { return _audio; }
+    ULONG sampleRate() const { return _sampleRate; }
     // - -  update detected rom list - - -
     int scanDrivers();
     // - - path to main dirs --
     const char *getUserDir() const {return _userDir.c_str(); }
     const char *getRomDir() const {return _rompath.c_str(); }
 
-    const std::vector<_game_driver **> &romsFound() const { return _romsFound; };
+    const std::vector<const _game_driver *const*> &romsFound() const { return _romsFound; };
 
-    int lastActiveDriver() const { return _lastActiveDriver; }
+
 protected:
     // - - - prefs unique for app
     std::string _userDir;
@@ -72,7 +78,10 @@ protected:
 
     int   _startWindowed; // else fullscreen.
     //std::string _lastActiveDriver;
-    int         _lastActiveDriver;
+    int         _activeDriver;
+    int         _audio;
+    ULONG       _sampleRate;
+
     //int     _doublewindow;
 
     ScreenConf _defaultscreenconf;
@@ -91,7 +100,7 @@ protected:
     //std::vector<MameRomFound> _romsFound; // what to save
     // mui like a ptr to ptr list, to insert in one blow.
     // this is meant to be sorted a way or another
-    std::vector<_game_driver **> _romsFound;
+    std::vector<const _game_driver *const*> _romsFound;
     int initDriverIndex();
     int scanDriversRecurse(BPTR lock, FileInfoBlock*fib);
 

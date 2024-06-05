@@ -1,4 +1,4 @@
-#define REVISION "106(2006)"
+#define REVISION "106"
 #define REVDATE  "31.01.2024"
 #define REVTIME  "10:37:01"
 #define AUTHOR   "krb"

@@ -4,14 +4,15 @@
 #include <proto/dos.h>
 
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
+
 
 // from mame
 extern "C" {
     #include "driver.h"
-    //#include "mamecore.h"
+
+    #include <string.h>
+    #include <stdlib.h>
+    #include <stdio.h>
 }
 
 using namespace std;
@@ -29,28 +30,46 @@ MameConfig &getMainConfig()
     return config;
 }
 
+std::string _userDir;
+std::string _rompath; // finally just use one, but a tested one.
+
+
 MameConfig::MameConfig()
-    : _startWindowed(0); // else fullscreen.
-    ,_lastActiveDriver(-1)
+    : _userDir("PROGDIR:user")
+    , _rompath("PROGDIR:roms")
+    , _startWindowed(0) // else fullscreen.
+    , _activeDriver(-1)
+    , _audio(1)
+    , _sampleRate(16000)
 {
     initDriverIndex();
 }
 MameConfig::~MameConfig()
 {}
 
-void MameConfig::setActiveDriver(int driverIndex)
+void MameConfig::setActiveDriver(int driverIndexInRomFoundList)
 {
-    //TODO
+    if(driverIndexInRomFoundList<0 || driverIndexInRomFoundList>=(int)_romsFound.size())
+    {
+        _activeDriver = -1;
+        return;
+    }
+    const _game_driver *const*drv = _romsFound[driverIndexInRomFoundList];
+    int idriver = ((int)drv-(int)&drivers[0])/sizeof(const _game_driver *);
+    _activeDriver = idriver;
+    printf("driverfound:%d\n",_activeDriver);
+
+   // printf("driverfound:%%s\n",drivers[_activeDriver]->description);
 }
 
 void MameConfig::save()
 {
     // note: got to save rom short name id, not driver index ! index evolve with compilation.
-
+    printf("MameConfig::save\n");
 }
 void MameConfig::load()
 {
-
+    printf("MameConfig::load\n");
     // resolve short name to index after load, like scan does.
 }
 void MameConfig::init(int argc,char **argv)
@@ -61,13 +80,12 @@ void MameConfig::setRomPath(const char *rompath)
 {
     if(!rompath || *rompath==0)_rompath = "PROGDIR:roms";
     else { _rompath = rompath; _rompath = trimSlach(_rompath); }
-
     // todo send update
 
 }
 void MameConfig::setUserPath(const char *userpath)
 {
-    if(!userpath || *userpath==0) _rompath = "PROGDIR:roms";
+    if(!userpath || *userpath==0) _rompath = "PROGDIR:user";
      else { _userDir = userpath;  _userDir = trimSlach(_userDir); }
     // todo send update
 }
@@ -104,7 +122,7 @@ int MameConfig::scanDrivers()
     sortDrivers();
     printf(" *** ScanDrivers end\n");
 
-    return n;
+    return (int)_romsFound.size();
 }
 int MameConfig::scanDriversRecurse(BPTR lock, FileInfoBlock*fib)
 {
@@ -115,7 +133,8 @@ int MameConfig::scanDriversRecurse(BPTR lock, FileInfoBlock*fib)
     while(ExNext(lock, fib))
     {
         // trick: force lowercase at this level
-        int i=0,char c;
+        int i=0;
+        char c;
         while((c=fib->fib_FileName[i])!=0) {
             if(c>='A' && c<='Z') c=fib->fib_FileName[i]+= 32;
             i++;
@@ -126,7 +145,7 @@ int MameConfig::scanDriversRecurse(BPTR lock, FileInfoBlock*fib)
            int idriver = _driverIndex.index(fib->fib_FileName);
            if(idriver >= 0)
            {
-                _romsFound.push(&driver[idriver]);
+                _romsFound.push_back(&drivers[idriver]);
            }
            else
            {    // subdir ?
@@ -138,13 +157,13 @@ int MameConfig::scanDriversRecurse(BPTR lock, FileInfoBlock*fib)
             // fast, no alloc version
             char *p = fib->fib_FileName;
             int l =strlen(p);
-            if(l>4 && p[l-4]=='.' && p[l-3]=='z'&& p[l-2]=='i' && && p[l-1]=='p')
+            if(l>4 && p[l-4]=='.' && p[l-3]=='z' && p[l-2]=='i' && p[l-1]=='p')
             {
                 p[l-4] = 0;
                 int idriver = _driverIndex.index(p);
                 if(idriver >= 0)
                 {
-                    _romsFound.push(&driver[idriver]);
+                    _romsFound.push_back(&drivers[idriver]);
                 }
             }
         } // end if is file.

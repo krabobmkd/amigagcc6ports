@@ -535,7 +535,7 @@ static struct _game_driver *GetDriver(void)
 static void ShowFound(void)
 {
     MameConfig &config = getMainConfig();
-    const std::vector<_game_driver **> &roms = config.romsFound();
+    const std::vector<const _game_driver *const*> &roms = config.romsFound();
     /*
         MUIM_List_Insert can insert everything in a blow.
     */
@@ -1402,15 +1402,22 @@ int MainGUI(void)
           switch(rid)
           {
             case RID_Start:
+              // game rom selected to start !
               get(LI_Driver, MUIA_List_Active, &v);
+
+
+              printf("GUI start:%d \n",v);
 
               if(v != MUIV_List_Active_Off)
               {
                 GetOptions(TRUE);
 
                 //if(Config[CFG_DRIVER] >= 0)
-                if(config.lastActiveDriver()>=0)
+                if(v>=0)
+                {
+                  config.setActiveDriver(v);
                   loop = FALSE;
+                }
               }
 
               break;
@@ -1769,18 +1776,21 @@ static ULONG ASM ShowNotify(struct Hook *hook REG(a0), APTR obj REG(a2), ULONG *
 {
   DoMethod(LI_Driver, MUIM_List_Clear);
 
-  switch(*par)
-  {
-    case CFGS_ALL:
-      set(BU_Scan, MUIA_Disabled, TRUE);
-      DoMethod(LI_Driver, MUIM_List_Insert, SortedDrivers, NumDrivers + DRIVER_OFFSET, MUIV_List_Insert_Bottom);
-      break;
+    set(BU_Scan, MUIA_Disabled, FALSE);
+    ShowFound();
 
-    case CFGS_FOUND:
-      set(BU_Scan, MUIA_Disabled, FALSE);
-      ShowFound();
-      break;
-  }
+//  switch(*par)
+//  {
+//    case CFGS_ALL:
+//      set(BU_Scan, MUIA_Disabled, TRUE);
+//      DoMethod(LI_Driver, MUIM_List_Insert, SortedDrivers, NumDrivers + DRIVER_OFFSET, MUIV_List_Insert_Bottom);
+//      break;
+
+//    case CFGS_FOUND:
+//      set(BU_Scan, MUIA_Disabled, FALSE);
+//      ShowFound();
+//      break;
+//  }
 
   return(0);
 }
@@ -1788,27 +1798,36 @@ static ULONG ASM ShowNotify(struct Hook *hook REG(a0), APTR obj REG(a2), ULONG *
 
 static ULONG ASM ScreenTypeNotify(struct Hook *hook REG(a0), APTR obj REG(a2), ULONG *par REG(a1))
 {
-  if(*par == CFGST_CUSTOM)
+    /*
+
+#define CFGST_BEST       0
+#define CFGST_WB         1
+#define CFGST_CUSTOM     2
+#define CFGST_USERSELECT 3
+
+*/
+/*  if(*par == CFGST_CUSTOM)
   {
     set(PA_ScreenMode,  MUIA_Disabled, FALSE);
     set(PU_ScreenMode,  MUIA_Disabled, FALSE);
   }
   else
-  {
+  {*/
     set(PA_ScreenMode,  MUIA_Disabled, TRUE);
     set(PU_ScreenMode,  MUIA_Disabled, TRUE);
-  }
+//  }
 
   return(0);
 }
 
 static ULONG ASM DirectModeNotify(struct Hook *hook REG(a0), APTR obj REG(a2), ULONG *par REG(a1))
 {
+    /*
   if(*par == CFGDM_DRAW)
     set(CM_DirtyLines, MUIA_Disabled, TRUE);
   else
     set(CM_DirtyLines, MUIA_Disabled, FALSE);
-
+*/
   return(0);
 }
 

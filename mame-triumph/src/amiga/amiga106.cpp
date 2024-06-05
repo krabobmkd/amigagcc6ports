@@ -42,29 +42,14 @@ extern "C" {
 #include "main.h"
 #include "amiga106_config.h"
 
-// from mame since 0.37:
 #include "input.h"
 
-
-//#include "zlib.h"
-
-#define INTELuint32_t(i) (((i)<<24)|((i)>>24)|(((i)<<8)&0x00ff0000)|(((i)>>8)&0x0000ff00))
-
-mame_bitmap *BitMap=NULL;
-LONG ClearBitMap;
-
+// 2024: most of the folowing are obsolete
 static LONG  UserInterface;
 
 extern FILE *errorlog;
 extern void *record;
 extern void *playback;
-
-static uint8_t Palette[256][3];
-
-static int FrameCounter;
-static const int NoFrameSkipCount = 10;
-
-std::string ROMZipName,SampleZipName;
 
 static int  ShowFPS;
 
@@ -95,10 +80,10 @@ static int input_update_counter = 0;
 #define ORIENTATION_DEFAULT 0
 #endif
 void unzip_cache_clear();
-void setRomPaths(std::vector<std::string> &extrarompaths,std::vector<std::string> &extrasamplepaths);
 
 inline void initOptions()
 {
+    MameConfig &conf = getMainConfig();
     // consider everything null by default.
     //note: 0 for brightness treated as 1.
     memset(&options, 0,sizeof(global_options));
@@ -110,8 +95,8 @@ inline void initOptions()
 options.brightness = 1.0f;
 options.gamma=0.5f;
 
-   options.samplerate=(Config[CFG_SOUND] == CFGS_NO)?0:22050;
-    Machine->sample_rate = options.samplerate;
+    options.samplerate=(conf.audio())?0:conf.sampleRate();
+ //?   Machine->sample_rate = options.samplerate;
 
 
 //re?   options.use_samples=1; //TODO ?
@@ -128,9 +113,17 @@ options.gamma=0.5f;
 
 void StartGame(void)
 {
+  MameConfig &conf = getMainConfig();
+  int idriver = conf.activeDriver();
+  printf(" ***** StartGame:%d\n",idriver);
+  if(idriver<0)
+  {
+      //logerror no driver
+      return;
+  }
   throttle = 1;
 
-  printf("StartGame1\n");
+
 
   initOptions();
 
@@ -171,73 +164,33 @@ void StartGame(void)
 //done  options.cheat      = 1;
 //done  options.norotate   = 0;
 
- //ok
-  frameskip = Config[CFG_FRAMESKIP];
-/* vector things removed
-  antialias    = Config[CFG_ANTIALIASING];
-  translucency = Config[CFG_TRANSLUCENCY];
-
-  beam = Config[CFG_BEAMWIDTH] * 0x00010000;
-  if(beam < 0x00010000)
-    beam = 0x00010000;
-  if(beam > 0x00100000)
-    beam = 0x00100000;
-
-  flicker = (int)(Config[CFG_VECTORFLICKER] * 2.55);
-  if(flicker < 0)
-    flicker = 0;
-  if(flicker > 255)
-    flicker = 255;
-*/
-#ifdef MESS
-  for(i = 0; i < MAX_ROM; i++)
-  {
-    options.rom_name[i][0] = 0;
-
-    if((i == 0) && Config[CFG_ROM])
-      strcpy(options.rom_name[0], (char *) Config[CFG_ROM]);
-  }
-
-  for(i = 0; i < MAX_FLOPPY; i++)
-    options.floppy_name[i][0] = 0;
-
-  for(i = 0; i < MAX_HARD; i++)
-    options.hard_name[i][0] = 0;
-
-  for(i = 0; i < MAX_CASSETTE; i++)
-    options.cassette_name[i][0] = 0;
-#endif
 
   // krb2024: set list of search path for rom
-  int path_num=0;
-  const char *path;
-  std::vector<std::string> rompathlist,samplepathlist;
-  for(path_num = 0;
-      (path = GetRomPath(Config[CFG_DRIVER], path_num)) != NULL;
-      path_num++)
-  {
-        if(*path != 0)
-        {
-            rompathlist.push_back(std::string(path));
-            printf("pathtotest:%s:\n",path);
-        }
-  }
-  setRomPaths(rompathlist,samplepathlist);
+  // this is automatic from ui to config to filesystem now.
+//  int path_num=0;
+//  const char *path;
+//  std::vector<std::string> rompathlist,samplepathlist;
+//  for(path_num = 0;
+//      (path = GetRomPath(Config[CFG_DRIVER], path_num)) != NULL;
+//      path_num++)
+//  {
+//        if(*path != 0)
+//        {
+//            rompathlist.push_back(std::string(path));
+//            printf("pathtotest:%s:\n",path);
+//        }
+//  }
+//  setRomPaths(rompathlist,samplepathlist);
 
-
-  printf("StartGame2\n");
   /* Clear the zip filename caches. */
 
-  ROMZipName.clear();
-  SampleZipName.clear();
   ShowFPS          = 0;
   printf("StartGame2b\n");
-  FrameCounter = 0;
 
   osd_set_mastervolume(0);
   printf("before run_game\n");
 
-  run_game(Config[CFG_DRIVER]);
+  run_game(idriver);
   printf("after run_game\n");
 
   unzip_cache_clear();

@@ -223,18 +223,18 @@ osd_file *osd_fopen(int pathtype, int pathindex, const char *filename, const cha
     string spath;
     composeFilePath(pathtype,pathindex,filename,spath);
 
- printf("osd_fopen: mode:%s file:%s\n",mode,spath.c_str());
+// printf("osd_fopen: mode:%s file:%s\n",mode,spath.c_str());
 
     _osd_file *posd = new _osd_file();
     if(!posd) return NULL;
     if(! posd->open(spath.c_str(),mode))
     {
-         printf("fail\n");
+       //  printf("fail\n");
         delete posd;
         return NULL;
     }
     if(error) *error = FILEERR_SUCCESS;
- printf("ok\n");
+
     return posd;
 }
 
