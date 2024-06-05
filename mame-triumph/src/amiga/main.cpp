@@ -29,8 +29,6 @@ extern "C" {
 #define CATCOMP_NUMBERS
 #include "messages.h"
 
-#include "main.h"
-
 #include <stdio.h>
 #include <strings.h>
 
@@ -57,7 +55,8 @@ extern "C" {
 #include "video.h"
 
 #include "amiga_locale.h"
-#include "config_moo.h"
+#include "amiga106_config.h"
+#include "amiga106_inputs.h"
 #include "gui_mui.h"
 #include "gui_gadtools.h"
 
@@ -91,7 +90,7 @@ struct _game_driver **Drivers;
 
 LONG        MenuSelect[NUM_ITEMS];
 UBYTE       Channel[4];
-static LONG NewGame;
+static LONG SelectNextGame;
 
 UBYTE       ChannelBuffer[8];
 
@@ -141,6 +140,7 @@ int libs_init()
     CyberGfxBase  = OpenLibrary("cybergraphics.library", 1);
     P96Base  = OpenLibrary("Picasso96API.library", 0);
     GadToolsBase  = OpenLibrary("gadtools.library", 1);
+    // mui is done elsewhere.
 
     if(GadToolsBase) gui_gadtools_init();
 
@@ -150,17 +150,14 @@ int libs_init()
 }
 
 extern "C" {
-void exitCleanCtrlC(void);
+void mameExitCleanCtrlC(void);
 }
-// exit code that is executed in all cases:
-// - after main()
-// - when anything call exit()
-// - SIGTERM signal (->to be managed)
+// exit code that is called from any exit() and ctrl-c breaks:
 void main_close()
 {
     printf("does main_close\n");
 
-    exitCleanCtrlC(); // flush game allocs, ahcked from mame.c, in case stopped during game.
+    mameExitCleanCtrlC(); // flush game allocs, ahcked from mame.c, in case stopped during game.
     osd_close_display(); // also useful when ctrl-C
     osd_stop_audio_stream();
     unzip_cache_clear();
@@ -168,7 +165,7 @@ void main_close()
     closeTimers();
 
     FreeGUI();
-    FreeConfig();
+   // FreeConfig(); -> static destructor in _config.
 
     gui_gadtools_close();
 
@@ -245,69 +242,33 @@ int main(int argc, char **argv)
 
     if(GadToolsBase) gui_gadtools_init();
 
-    if(AllocConfig(argc, argv) !=0 ) exit(1);
+    getMainConfig().init(argc,argv);
+    getMainConfig().load();
 
     AllocGUI();
-    LoadConfig(argc, argv);
 
-/*
-    printf("drivers:\n");
-    int idrv=0;
-    while(drivers[idrv] != NULL)
-    {
-        if(Drivers[idrv] && Drivers[idrv]->name) printf("driver:%s\n",Drivers[idrv]->name);
-        idrv++;
-    }
-*/
-    if(Config[CFG_DRIVER] < 0)
-    {
-        GetConfig(0, Config);
-        // go into interface loop
-        if(MainGUI()!=0) exit(0);
-    }
-    printf("bef loop\n");
+    // go into interface loop, select first game.
+    if(MainGUI()!=0) exit(0);
+
     ULONG quit=FALSE;
 
     // loop per emulation launched
     while(!quit)
     {
-        #ifdef MESS
-        GetConfig(Config[CFG_DRIVER], Config);
-        #else
-        GetConfig(Config[CFG_DRIVER]+2, Config);
+        SelectNextGame = 1;
 
-        GetConfig(0, Config);
+        StartGame();
+        // here game is closed.
+        osd_stop_audio_stream();
 
+        // relaunch GUI
+        if(SelectNextGame > 0)
+          quit = MainGUI();
+        else if(!SelectNextGame)
+          quit = TRUE;
+        } // end loop by emulation launch
 
-       /* if(Config[CFG_USEDEFAULTS])
-        {
-
-          if(Drivers[Config[CFG_DRIVER]]->drv->video_attributes & VIDEO_TYPE_VECTOR)
-            GetConfig(1, Config);
-          else
-            GetConfig(0, Config);
-        }*/
-        #endif
-    printf("aft GetConfig\n");
-        NewGame     = 1;
-
-    printf("bef StartGame\n");
-
-    StartGame();
-    printf("aft StartGame\n");
-
-    osd_stop_audio_stream();
-
-
-        printf("bef MainGUI\n");
-    if(NewGame > 0)
-      quit = MainGUI();
-    else if(!NewGame)
-      quit = TRUE;
-    } // end loop by emulation launch
-
-
-    // end of main
+    // end of main, will automatically reach main_close(), like any exit() call does.
     return(0);
 }
 

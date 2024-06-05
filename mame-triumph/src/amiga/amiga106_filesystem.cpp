@@ -141,49 +141,7 @@ protected:
     FILE *_hdl;
 };
 
-std::vector<std::string>
-            _rompathlist({"PROGDIR:roms"}), // default values.
-            _samplepathlist({"PROGDIR:samples"});
 
-inline const std::string trimSlach(const std::string &s) {
-    if(s.length()>0 && s.back()=='/') {
-        return s.substr(0,s.length()-1);
-    } else return s;
-}
-
-void setRomPaths(std::vector<std::string> &extrarompaths,std::vector<std::string> &extrasamplepaths)
-{
-    _rompathlist.resize(extrarompaths.size()+1); // path from config are prioritary.
-    for(size_t i=0;i<extrarompaths.size();i++) {
-        _rompathlist[i] =trimSlach(extrarompaths[i]);
-    }
-    _rompathlist[extrarompaths.size()] = "PROGDIR:roms"; // then only this. Amiga-ish isn't it ?
-
-    /* Some sets (games) of MAME need some additional files to emulate the audio perfectly,
-     *  these files are contained in compressed zip package with the same name of the file
-     *  containing the roms and it should be placed in the "samples" folder of your MAME .
-    */
-    _samplepathlist.resize(extrasamplepaths.size()+1);
-    for(size_t i=0;i<extrasamplepaths.size();i++)
-    {
-        _samplepathlist[1+i] =trimSlach(extrasamplepaths[i]);
-    }
-    _samplepathlist[extrasamplepaths.size()] = "PROGDIR:samples";
-    // then samples must also tests roms...
-    _samplepathlist.insert(_samplepathlist.end(),_rompathlist.begin(),_rompathlist.end());
-}
-
-/* Return the number of paths for a given type */
-int osd_get_path_count(int pathtype)
-{
-    switch( getAmigaFileType(pathtype))
-    {
-        case AFT_ROM:return (int)_rompathlist.size();
-        case AFT_SAMPLE:return (int)_samplepathlist.size();
-        case AFT_USER: return 1;
-        default: return 0;
-    }
-}
 
 int get_path_info(const char *fullpath)
 {
@@ -227,21 +185,30 @@ int assumeDirectory(const char *fullpath)
     return PATH_NOT_FOUND;
 }
 
+/* Return the number of paths for a given type */
+int osd_get_path_count(int pathtype)
+{
 
-
+    switch( getAmigaFileType(pathtype))
+    {
+        case AFT_ROM: return 1;
+        case AFT_USER: return 1;
+        default: return 0;
+    }
+}
 
 void composeFilePath(int pathtype, int pathindex, const char *filename, std::string &p)
 {
+    MameConfig &conf = getMainConfig();
+
     switch( getAmigaFileType(pathtype))
     {
-        case AFT_ROM: p = _rompathlist[pathindex]; break;
-        case AFT_SAMPLE: p = _samplepathlist[pathindex]; break;
+        case AFT_ROM: p = conf.getRomDir(); break;
         case AFT_USER:
         {
             // where configs are written should be only one dir, no search.
-            p = "PROGDIR:config";
-            // TODO: get path from config
-            assumeDirectory(p.c_str());
+            p = conf.getUserDir();
+            assumeDirectory(p.c_str()); // would makedir if not done.
         } break;
         default: p.clear(); break;
     }

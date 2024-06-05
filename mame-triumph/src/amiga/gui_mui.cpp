@@ -14,8 +14,6 @@
 */
 #include <ctype.h>
 
-//
-
 #include <proto/alib.h>
 #include <proto/exec.h>
 #include <proto/dos.h>
@@ -37,7 +35,6 @@ extern "C" {
 #include "messages.h"
 
 #include "macros.h"
-#include "main.h"
 
 extern "C" {
     #include "driver.h"
@@ -45,9 +42,10 @@ extern "C" {
 }
 
 #include "gui_mui.h"
-#include "config_moo.h"
+#include "amiga106_config.h"
+
 #include "version.h"
-//#include "romscan.h"
+
 #include <vector>
 #include <string>
 #include <cstdio>
@@ -64,38 +62,24 @@ typedef ULONG (*RE_HOOKFUNC)();
 #define SMT_DISPLAYID 0
 #define SMT_DEPTH     1
 
-#ifdef MESS
-#define DRIVER_OFFSET 0
-
-#define TEXT_ABOUT \
-"\33c\n\33b\33uMESS - Multi-Emulator Super System\33n\n\n" \
-"0."REVISION" ("REVDATE")\n\n" \
-"Copyright (C) 1998 by the MESS team\n" \
-"http://www.internetter.com/titan/mess\n\n" \
-"Amiga port by Mats Eirik Hansen\n" \
-"http://www.triumph.no/mess\n" \
-"CGXHooks routines by Trond Werner Hansen\n\n" \
-"Chunky to planar routine by Mikael Kalms\n\n" \
-"This program uses MUI - Magic User Interface\n" \
-"MUI is ? 1992 - 1997 by Stefan Stuntz\n" \
-"http://www.sasg.com"
-#else
 #define DRIVER_OFFSET 2
 
 #define TEXT_ABOUT \
 "\33c\n\33b\33uMAME - Multiple Arcade Machine Emulator\33n\n\n" \
 "0."REVISION" ("REVDATE")\n\n" \
-"Copyright (C) 1997-1999 by Nicola Salmoria and the MAME team\n" \
-"http://www.media.dsi.unimi.it/mame\n\n" \
-"Amiga port by Mats Eirik Hansen\n" \
+"Copyright (C) 1997-2024 by Nicola Salmoria and the MAME team\n" \
+"http://mamedev.org\n\n" \
+"Amiga port by Vic 'Krb' Ferry (2024)\n" \
+" Partly based on Mats Eirik Hansen Mame060(1999)\n" \
 "http://www.triumph.no/mame\n" \
-"CGXHooks routines by Trond Werner Hansen\n\n" \
-"Chunky to planar routine by Mikael Kalms\n\n" \
-"This program uses MUI - Magic User Interface\n" \
-"MUI is ? 1992 - 1997 by Stefan Stuntz\n" \
-"http://www.sasg.com"
-#endif
+"This program uses libexpat,zlib,\n"\
+" MUI - Magic User Interface\n" \
+"MUI is copyright 1992 - 2024 by Stefan Stuntz\n" \
 
+
+// https://github.com/krabobmkd
+// "CGXHooks routines by Trond Werner Hansen\n\n"
+// "Chunky to planar routine by Mikael Kalms\n\n"
 struct DriverData
 {
   struct MUI_EventHandlerNode EventHandler;
@@ -113,11 +97,6 @@ struct DriverData
 extern struct Library *KeymapBase;
 
 struct Library *MUIMasterBase = NULL;
-
-static struct _game_driver ***SortedDrivers = NULL;
-
-static char  *DriversFound = NULL;
-static ULONG NumDrivers=0;
 
 static struct MUI_CustomClass *DriverClass;
 
@@ -306,23 +285,23 @@ static ULONG ASM UseDefaultsNotify(struct Hook *hook REG(a0), APTR obj REG(a2), 
 /* Convert an index in SortedDrivers into an index for the same
  * driver in Drivers. */
 
-static inline int GetSortedDriverIndex(int sorted_index)
-{
-  int index;
+//static inline int GetSortedDriverIndex(int sorted_index)
+//{
+//  int index;
 
-  if(sorted_index < DRIVER_OFFSET)
-    index = sorted_index - DRIVER_OFFSET;
-  else
-    index = (((ULONG) SortedDrivers[sorted_index]) - ((ULONG) &Drivers[0])) / sizeof(struct _game_driver *);
+//  if(sorted_index < DRIVER_OFFSET)
+//    index = sorted_index - DRIVER_OFFSET;
+//  else
+//    index = (((ULONG) SortedDrivers[sorted_index]) - ((ULONG) &Drivers[0])) / sizeof(struct _game_driver *);
 
-  return(index);
-}
+//  return(index);
+//}
 
 static inline int GetEntryDriverIndex(ULONG entry)
 {
   int index;
 
-  index = (entry - ((ULONG) &Drivers[0])) / sizeof(struct _game_driver *);
+  index = (entry - ((ULONG) &drivers[0])) / sizeof(struct _game_driver *);
 
   return(index);
 }
@@ -375,218 +354,199 @@ static struct _game_driver *GetDriver(void)
   return(drv);
 }
 
-#ifndef MESS
-static void ScanDrivers(void)
-{
-  printf(" *** ScanDrivers\n");
-  struct FileInfoBlock *fib;
-  //const char           *str;
-  std::string str;
+// moved to config
 
-  BPTR locks[4];
-  LONG i, j, len;
-  char buf[13];    /* 8.3 filename. */
-  int  bitmap_lock;
-  int  vector_lock;
+//static void ScanDrivers(void)
+//{
+//  printf(" *** ScanDrivers\n");
+//  struct FileInfoBlock *fib;
+//  //const char           *str;
+//  std::string str;
 
-//  const MameConfig &config = Config();
-  if(DriversFound)
-  {
-    memset(DriversFound, 0, NumDrivers);
+//  BPTR locks[4];
+//  LONG i, j, len;
+//  char buf[13];    /* 8.3 filename. */
+//  int  bitmap_lock;
+//  int  vector_lock;
 
-    fib = (struct FileInfoBlock *)AllocDosObject(DOS_FIB, NULL);
+////  const MameConfig &config = Config();
+//  if(DriversFound)
+//  {
+//    memset(DriversFound, 0, NumDrivers);
 
-    if(fib)
-    {
-      bitmap_lock = -1;
-      vector_lock = -1;
+//    fib = (struct FileInfoBlock *)AllocDosObject(DOS_FIB, NULL);
 
-      j = 0;
+//    if(fib)
+//    {
+//      bitmap_lock = -1;
+//      vector_lock = -1;
 
-      locks[j++] = DupLock(((struct Process *) FindTask(NULL))->pr_CurrentDir);
+//      j = 0;
 
-      locks[j++] = Lock("roms", ACCESS_READ);
+//      locks[j++] = DupLock(((struct Process *) FindTask(NULL))->pr_CurrentDir);
 
-      str = GetRomPath(0, 0);
+//      locks[j++] = Lock("roms", ACCESS_READ);
 
-      if(!str.empty())
-      {
-          locks[j] = Lock( str.c_str(), ACCESS_READ);
+//      str = GetRomPath(0, 0);
 
-          if(locks[j])
-          {
-            if( (SameLock(locks[0], locks[j]) == LOCK_SAME)
-            ||  (SameLock(locks[1], locks[j]) == LOCK_SAME))
-              UnLock(locks[j]);
-            else
-              bitmap_lock = j++;
-          }
-      }
+//      if(!str.empty())
+//      {
+//          locks[j] = Lock( str.c_str(), ACCESS_READ);
 
-      str = GetRomPath(1, 0);
+//          if(locks[j])
+//          {
+//            if( (SameLock(locks[0], locks[j]) == LOCK_SAME)
+//            ||  (SameLock(locks[1], locks[j]) == LOCK_SAME))
+//              UnLock(locks[j]);
+//            else
+//              bitmap_lock = j++;
+//          }
+//      }
 
-      if(!str.empty())
-      {
-          locks[j] = Lock( str.c_str(), ACCESS_READ);
+//      str = GetRomPath(1, 0);
 
-          if(locks[j])
-          {
-            if( (SameLock(locks[0], locks[j]) == LOCK_SAME)
-            ||  (SameLock(locks[1], locks[j]) == LOCK_SAME))
-              UnLock(locks[j]);
-            else
-              vector_lock = j++;
-          }
-      }
+//      if(!str.empty())
+//      {
+//          locks[j] = Lock( str.c_str(), ACCESS_READ);
 
-      for(; --j >= 0;)
-      {
-        if(Examine(locks[j], fib))
-        {
-          if(fib->fib_DirEntryType > 0)
-          {
-            while(ExNext(locks[j], fib))
-            {
-              for(i = 0; i < NumDrivers; i++)
-              {
-                machine_config machine;
-                memset(&machine,0,sizeof(machine));
-                (*SortedDrivers[i+DRIVER_OFFSET])->drv(&machine);
+//          if(locks[j])
+//          {
+//            if( (SameLock(locks[0], locks[j]) == LOCK_SAME)
+//            ||  (SameLock(locks[1], locks[j]) == LOCK_SAME))
+//              UnLock(locks[j]);
+//            else
+//              vector_lock = j++;
+//          }
+//      }
 
-                if( !DriversFound[i]
-                &&  ((j != bitmap_lock) || !(machine.video_attributes & VIDEO_TYPE_VECTOR))
-                &&  ((j != vector_lock) || (machine.video_attributes & VIDEO_TYPE_VECTOR)))
-                {
-                  len = strlen((*SortedDrivers[i+DRIVER_OFFSET])->name);
+//      for(; --j >= 0;)
+//      {
+//        if(Examine(locks[j], fib))
+//        {
+//          if(fib->fib_DirEntryType > 0)
+//          {
+//            while(ExNext(locks[j], fib))
+//            {
+//              for(i = 0; i < NumDrivers; i++)
+//              {
+//                machine_config machine;
+//                memset(&machine,0,sizeof(machine));
+//                (*SortedDrivers[i+DRIVER_OFFSET])->drv(&machine);
 
-                  if(!strnicmp(fib->fib_FileName, (*SortedDrivers[i+DRIVER_OFFSET])->name, len))
-                  {
-                    if(!fib->fib_FileName[len])
-                    {
-                      if(fib->fib_DirEntryType > 0)
-                      {
-                        DriversFound[i] = 1;
-                        break;
-                      }
-                    }
-                    else if(fib->fib_DirEntryType < 0)
-                    {
-                      if( !stricmp(&fib->fib_FileName[len], ".zip")
-                      ||  !stricmp(&fib->fib_FileName[len], ".lha")
-                      ||  !stricmp(&fib->fib_FileName[len], ".lzx"))
-                      {
-                        DriversFound[i] = 1;
-                        break;
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
+//                if( !DriversFound[i]
+//                &&  ((j != bitmap_lock) || !(machine.video_attributes & VIDEO_TYPE_VECTOR))
+//                &&  ((j != vector_lock) || (machine.video_attributes & VIDEO_TYPE_VECTOR)))
+//                {
+//                  len = strlen((*SortedDrivers[i+DRIVER_OFFSET])->name);
 
-        if(locks[j])
-          UnLock(locks[j]);
-      }
-      //KRB2024:
-      FreeDosObject(DOS_FIB,fib);
-    }
+//                  if(!strnicmp(fib->fib_FileName, (*SortedDrivers[i+DRIVER_OFFSET])->name, len))
+//                  {
+//                    if(!fib->fib_FileName[len])
+//                    {
+//                      if(fib->fib_DirEntryType > 0)
+//                      {
+//                        DriversFound[i] = 1;
+//                        break;
+//                      }
+//                    }
+//                    else if(fib->fib_DirEntryType < 0)
+//                    {
+//                      if( !stricmp(&fib->fib_FileName[len], ".zip")
+//                      ||  !stricmp(&fib->fib_FileName[len], ".lha")
+//                      ||  !stricmp(&fib->fib_FileName[len], ".lzx"))
+//                      {
+//                        DriversFound[i] = 1;
+//                        break;
+//                      }
+//                    }
+//                  }
+//                }
+//              }
+//            }
+//          }
+//        }
 
-    /* The code above searched in current dir, roms/ and any the rom path specified for
-     * the bitmap and vector driver defaults. Now I'll look for any driver that has its
-     * own rom path. */
+//        if(locks[j])
+//          UnLock(locks[j]);
+//      }
+//      //KRB2024:
+//      FreeDosObject(DOS_FIB,fib);
+//    }
 
-    for(i = 0; i < NumDrivers; i++)
-    {
-      if(!DriversFound[i])
-      {
-        if(!GetUseDefaults(GetSortedDriverIndex(DRIVER_OFFSET+i)))
-        {
-          str = GetRomPath(GetSortedDriverIndex(DRIVER_OFFSET+i), 0);
+//    /* The code above searched in current dir, roms/ and any the rom path specified for
+//     * the bitmap and vector driver defaults. Now I'll look for any driver that has its
+//     * own rom path. */
 
-          if(!str.empty())
-          {
-            locks[0] = Lock( str.c_str(), ACCESS_READ);
+//    for(i = 0; i < NumDrivers; i++)
+//    {
+//      if(!DriversFound[i])
+//      {
+//        if(!GetUseDefaults(GetSortedDriverIndex(DRIVER_OFFSET+i)))
+//        {
+//          str = GetRomPath(GetSortedDriverIndex(DRIVER_OFFSET+i), 0);
 
-            if(locks[0])
-            {
-              locks[1] = CurrentDir(locks[0]);
+//          if(!str.empty())
+//          {
+//            locks[0] = Lock( str.c_str(), ACCESS_READ);
 
-              locks[2] = Lock((char *) (*SortedDrivers[i+DRIVER_OFFSET])->name, ACCESS_READ);
+//            if(locks[0])
+//            {
+//              locks[1] = CurrentDir(locks[0]);
 
-              if(!locks[2])
-              {
-                sprintf(buf, "%s.zip", (*SortedDrivers[i+DRIVER_OFFSET])->name);
-                locks[2] = Lock(buf, ACCESS_READ);
+//              locks[2] = Lock((char *) (*SortedDrivers[i+DRIVER_OFFSET])->name, ACCESS_READ);
 
-                if(!locks[2])
-                {
-                  sprintf(buf, "%s.lha", (*SortedDrivers[i+DRIVER_OFFSET])->name);
-                  locks[2] = Lock(buf, ACCESS_READ);
+//              if(!locks[2])
+//              {
+//                sprintf(buf, "%s.zip", (*SortedDrivers[i+DRIVER_OFFSET])->name);
+//                locks[2] = Lock(buf, ACCESS_READ);
 
-                  if(!locks[2])
-                  {
-                    sprintf(buf, "%s.lzx", (*SortedDrivers[i+DRIVER_OFFSET])->name);
-                    locks[2] = Lock(buf, ACCESS_READ);
-                  }
-                }
-              }
+//                if(!locks[2])
+//                {
+//                  sprintf(buf, "%s.lha", (*SortedDrivers[i+DRIVER_OFFSET])->name);
+//                  locks[2] = Lock(buf, ACCESS_READ);
 
-              if(locks[2])
-              {
-                UnLock(locks[2]);
+//                  if(!locks[2])
+//                  {
+//                    sprintf(buf, "%s.lzx", (*SortedDrivers[i+DRIVER_OFFSET])->name);
+//                    locks[2] = Lock(buf, ACCESS_READ);
+//                  }
+//                }
+//              }
 
-                DriversFound[i] = 1;
-              }
+//              if(locks[2])
+//              {
+//                UnLock(locks[2]);
 
-              CurrentDir(locks[1]);
-              UnLock(locks[0]);
-            }
-          }
-        }
-      }
-    }
+//                DriversFound[i] = 1;
+//              }
 
-    for(i = 0; i < NumDrivers; i++)
-      SetFound(DRIVER_OFFSET+GetSortedDriverIndex(DRIVER_OFFSET+i),DriversFound[i]);
-  }
-  printf("ScanDrivers end\n");
-}
+//              CurrentDir(locks[1]);
+//              UnLock(locks[0]);
+//            }
+//          }
+//        }
+//      }
+//    }
+
+//    for(i = 0; i < NumDrivers; i++)
+//      SetFound(DRIVER_OFFSET+GetSortedDriverIndex(DRIVER_OFFSET+i),DriversFound[i]);
+//  }
+//  printf("ScanDrivers end\n");
+//}
 
 static void ShowFound(void)
 {
-  int start;
-  int end;
-  int num;
-  int max;
+    MameConfig &config = getMainConfig();
+    const std::vector<_game_driver **> &roms = config.romsFound();
+    /*
+        MUIM_List_Insert can insert everything in a blow.
+    */
+        DoMethod((Object *)LI_Driver, MUIM_List_Insert,
+         (ULONG)roms.data(),(int)roms.size(),  MUIV_List_Insert_Bottom);
 
-  start = 0;
-  end   = DRIVER_OFFSET;
-  max   = NumDrivers + DRIVER_OFFSET;
-
-  while(start < max)
-  {
-    for(; (end < max) && GetFound(DRIVER_OFFSET+GetSortedDriverIndex(end)); end++);
-
-    num = end - start;
-
-    if(num > 0)
-      DoMethod((Object *)LI_Driver, MUIM_List_Insert, &SortedDrivers[start], num, MUIV_List_Insert_Bottom);
-
-    for(; (end < max) && !GetFound(DRIVER_OFFSET+GetSortedDriverIndex(end)); end++);
-
-    start = end;
-
-    end++;
-  }
 }
-#endif
 
-static int DriverCompare(struct _game_driver ***drv1, struct _game_driver ***drv2)
-{
-  return(stricmp((**drv1)->description, (**drv2)->description));
-}
+
 
 static ULONG ASM DriverDisplay(struct Hook *hook REG(a0), char **array REG(a2), struct _game_driver **drv_indirect REG(a1))
 {
@@ -845,26 +805,26 @@ static ULONG ASM DriverDispatcher(struct IClass *cclass REG(a0), Object * obj RE
 
 void AllocGUI(void)
 {
-  LONG  i;
-
-  for(NumDrivers = 0; Drivers[NumDrivers]; NumDrivers++);
-
-  SortedDrivers = ( struct _game_driver ***)malloc((NumDrivers + DRIVER_OFFSET) * sizeof(struct _game_driver **));
-
-  if(SortedDrivers)
-  {
-#ifndef MESS
-    SortedDrivers[0]  = (struct _game_driver **) 1;
-    SortedDrivers[1]  = (struct _game_driver **) 2;
-#endif
-    for(i = 0; i < NumDrivers; i++)
-      SortedDrivers[i+DRIVER_OFFSET] = const_cast<struct _game_driver **>(&Drivers[i]);
-
-    qsort(&SortedDrivers[DRIVER_OFFSET], NumDrivers, sizeof(struct _game_driver **), (int (*)(const void *, const void *)) DriverCompare);
-
     MUIMasterBase = OpenLibrary("muimaster.library", 16);
+    if(!MUIMasterBase) return;
 
-    DriversFound  = (char *)malloc(NumDrivers);
+    LONG  i;
+
+//  for(NumDrivers = 0; Drivers[NumDrivers]; NumDrivers++);
+
+//  SortedDrivers = ( struct _game_driver ***)malloc((NumDrivers + DRIVER_OFFSET) * sizeof(struct _game_driver **));
+
+//  if(SortedDrivers)
+//  {
+//#ifndef MESS
+//    SortedDrivers[0]  = (struct _game_driver **) 1;
+//    SortedDrivers[1]  = (struct _game_driver **) 2;
+//#endif
+//    for(i = 0; i < NumDrivers; i++)
+//      SortedDrivers[i+DRIVER_OFFSET] = const_cast<struct _game_driver **>(&Drivers[i]);
+
+//    qsort(&SortedDrivers[DRIVER_OFFSET], NumDrivers, sizeof(struct _game_driver **), (int (*)(const void *, const void *)) DriverCompare);
+
 
     App     = NULL;
     MainWin   = NULL;
@@ -925,29 +885,21 @@ void AllocGUI(void)
 #endif
 
     DriverClass = MUI_CreateCustomClass(NULL, MUIC_Listview, NULL, sizeof(struct DriverData),(APTR) DriverDispatcher);
-  }
+
 }
 
 void FreeGUI(void)
 {
-  if(SortedDrivers)
-  {
+
     if(App)
       MUI_DisposeObject(App);
 
     if(DriverClass)
       MUI_DeleteCustomClass(DriverClass);
 
-    if(DriversFound)
-      free(DriversFound);
-
     if(MUIMasterBase)
       CloseLibrary(MUIMasterBase);
 
-    free(SortedDrivers);
-
-    SortedDrivers = NULL;
-  }
 }
 
 // = = = = = = = objects contructors = = = = = =
@@ -1119,7 +1071,7 @@ int MainGUI(void)
 #ifndef MESS
                 Child, UMUINO(MUIC_Group,MUIA_Group_Horiz,TRUE,
                   Child, Label((ULONG)GetMessage(MSG_USE_DEFAULTS)),
-                  Child, (ULONG)(CM_UseDefaults = OCheckMark(Config[CFG_USEDEFAULTS])),
+                  Child, (ULONG)(CM_UseDefaults = OCheckMark(/*Config[CFG_USEDEFAULTS]*/1)),
                   Child, Label((ULONG)GetMessage(MSG_SHOW)),
                   Child, (ULONG) (CY_Show = OMUINO(MUIC_Cycle,
                     MUIA_Cycle_Entries, (ULONG) Shows,
@@ -1138,23 +1090,20 @@ int MainGUI(void)
                   Child, UMUINO(MUIC_Group,MUIA_Group_Columns,4,
                     MUIA_HorizWeight, 1000,
                     Child, Label((ULONG)GetMessage(MSG_ALLOW16BIT)),
-                    Child, (ULONG)(CM_Allow16Bit = OCheckMark(Config[CFG_ALLOW16BIT])),
+                    Child, (ULONG)(CM_Allow16Bit = OCheckMark(/*Config[CFG_ALLOW16BIT]*/1)),
                     Child, Label((ULONG)GetMessage(MSG_AUTO_FRAMESKIP)),
-                    Child, (ULONG)(CM_AutoFrameSkip = OCheckMark(Config[CFG_AUTOFRAMESKIP])),
+                    Child, (ULONG)(CM_AutoFrameSkip = OCheckMark(/*Config[CFG_AUTOFRAMESKIP]*/1)),
                     Child, Label((ULONG)GetMessage(MSG_FLIPX)),
-                    Child, (ULONG)(CM_FlipX = OCheckMark(Config[CFG_FLIPX])),
+                    Child, (ULONG)(CM_FlipX = OCheckMark(/*Config[CFG_FLIPX]*/0)),
                     Child, Label((ULONG)GetMessage(MSG_ANTIALIAS)),
-                    Child, (ULONG)(CM_Antialiasing = OCheckMark(Config[CFG_ANTIALIASING])),
+                    Child, (ULONG)(CM_Antialiasing = OCheckMark(/*Config[CFG_ANTIALIASING]*/1)),
                     Child, Label((ULONG)GetMessage(MSG_FLIPY)),
-                    Child, (ULONG)(CM_FlipY = OCheckMark(Config[CFG_FLIPY])),
+                    Child, (ULONG)(CM_FlipY = OCheckMark(/*Config[CFG_FLIPY]*/0)),
                     Child, Label((ULONG)GetMessage(MSG_TRANSLUCENCY)),
-                    Child, (ULONG)(CM_Translucency = OCheckMark(Config[CFG_TRANSLUCENCY])),
+                    Child, (ULONG)(CM_Translucency = OCheckMark(/*Config[CFG_TRANSLUCENCY]*/1)),
                     Child, Label((ULONG)GetMessage(MSG_DIRTY_LINES)),
-                    Child, (ULONG)(CM_DirtyLines = OCheckMark(Config[CFG_DIRTYLINES])),
-#ifdef POWERU
-                    Child, Label((ULONG)GetMessage(MSG_ASYNCPPC)),
-                    Child, CM_AsyncPPC = UCheckMark(Config[CFG_ASYNCPPC]),
-#endif
+                    Child, (ULONG)(CM_DirtyLines = OCheckMark(/*Config[CFG_DIRTYLINES]*/1)),
+
                   TAG_DONE), // end colgroup 4
                   Child, HSpace(0),
                 TAG_DONE),

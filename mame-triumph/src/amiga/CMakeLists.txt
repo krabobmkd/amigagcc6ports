@@ -43,8 +43,6 @@ set(AMIGA_SRC
 
 	gui_mui.cpp
 	gui_gadtools.cpp
-	config_moo.h
-	config_moo.cpp
 
 	amiga106.cpp
 
@@ -91,10 +89,9 @@ endif()
 # the static libs that are part of this repo: 
 target_link_libraries(${PROGNAME} PUBLIC mamecore z expat)
 
-# the extra original static libs furnished by triumph,"moo db" is a database used for config:
 target_link_directories(${PROGNAME} PUBLIC "../../lib")
 target_include_directories(${PROGNAME} PUBLIC "../../include" )
-target_link_libraries(${PROGNAME} PUBLIC moo mood )
+
 #add_library(${PROGNAME} PUBLIC OBJECT IMPORTED  ../../c2p.s.o ../../gfx.s.o)
 
 # target_include_directories(${PROGNAME} PUBLIC "../mame037b/src")

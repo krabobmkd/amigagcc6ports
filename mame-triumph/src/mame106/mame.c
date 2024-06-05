@@ -387,7 +387,7 @@ int run_game(int game)
 	return error;
 }
 // added by KRB /2024
-void exitCleanCtrlC(void)
+void mameExitCleanCtrlC(void)
 {
     callback_item *cb;
     /* call all exit callbacks registered */

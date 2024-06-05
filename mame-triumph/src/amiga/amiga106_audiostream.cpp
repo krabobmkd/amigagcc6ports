@@ -35,7 +35,7 @@ extern "C" {
 #include <stdlib.h>
 #include <string.h>
 
-#include "config_moo.h"
+#include "amiga106_config.h"
 
 
 // describe a sound buffer to write. Passed to a SoundWriter function to create sound.

@@ -1,198 +1,162 @@
-//#include "amiga106_config.h"
+#include "amiga106_config.h"
 
-//#include <proto/exec.h>
-//#include <proto/dos.h>
-
-
-//#include <string.h>
-//#include <stdlib.h>
-//#include <stdio.h>
+#include <proto/exec.h>
+#include <proto/dos.h>
 
 
-//// class
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+// from mame
+extern "C" {
+    #include "driver.h"
+    //#include "mamecore.h"
+}
+
+using namespace std;
+
+inline const std::string trimSlach( std::string s) {
+    if(s.length()>0 && s.back()=='/') {
+        return s.substr(0,s.length()-1);
+    } else return s;
+}
 
 
+MameConfig &getMainConfig()
+{
+    static MameConfig config;
+    return config;
+}
+
+MameConfig::MameConfig()
+{
+    initDriverIndex();
+}
+MameConfig::~MameConfig()
+{}
 
 void MameConfig::save()
 {
+    // note: got to save rom short name id, not driver index ! index evolve with compilation.
 
 }
-void load();
+void MameConfig::load()
+{
 
-//void ScanDrivers(void)
-//{
-//  printf(" *** ScanDrivers\n");
-//  struct FileInfoBlock *fib;
-//  //const char           *str;
-//  std::string str;
+    // resolve short name to index after load, like scan does.
+}
+void MameConfig::init(int argc,char **argv)
+{
 
-//  BPTR locks[4];
-//  LONG i, j, len;
-//  char buf[13];    /* 8.3 filename. */
-//  int  bitmap_lock;
-//  int  vector_lock;
+}
+void MameConfig::setRomPath(const char *rompath)
+{
+    if(!rompath || *rompath==0)_rompath = "PROGDIR:roms";
+    else { _rompath = rompath; _rompath = trimSlach(_rompath); }
 
-////  const MameConfig &config = Config();
-//  if(DriversFound)
-//  {
-//    memset(DriversFound, 0, NumDrivers);
+    // todo send update
 
-//    fib = (struct FileInfoBlock *)AllocDosObject(DOS_FIB, NULL);
+}
+void MameConfig::setUserPath(const char *userpath)
+{
+    if(!userpath || *userpath==0) _rompath = "PROGDIR:roms";
+     else { _userDir = userpath;  _userDir = trimSlach(_userDir); }
+    // todo send update
+}
 
-//    if(fib)
-//    {
-//      bitmap_lock = -1;
-//      vector_lock = -1;
+// extern const game_driver * const drivers[];
 
-//      j = 0;
+int MameConfig::initDriverIndex()
+{
+    // to be done once.
+  for(int NumDrivers = 0; drivers[NumDrivers]; NumDrivers++)
+  {
+        _driverIndex.insert(drivers[NumDrivers]->name,NumDrivers);
+  }
+}
+int MameConfig::scanDrivers()
+{
+  printf(" *** ScanDrivers\n");
+  _romsFound.clear();
+  if(_rompath.empty()) return 0;
 
-//      locks[j++] = DupLock(((struct Process *) FindTask(NULL))->pr_CurrentDir);
+    struct FileInfoBlock *fib;
+    fib = (struct FileInfoBlock *)AllocDosObject(DOS_FIB, NULL);
+    if(!fib) return 0;
 
-//      locks[j++] = Lock("roms", ACCESS_READ);
+    BPTR lock = Lock( _rompath.c_str(), ACCESS_READ);
+    if(lock)
+    {
+        scanDriversRecurse(lock,fib);
+        UnLock(lock);
+    }
 
-//      str = GetRomPath(0, 0);
+    FreeDosObject(DOS_FIB,fib);
 
-//      if(!str.empty())
-//      {
-//          locks[j] = Lock( str.c_str(), ACCESS_READ);
+    sortDrivers();
+    printf(" *** ScanDrivers end\n");
 
-//          if(locks[j])
-//          {
-//            if( (SameLock(locks[0], locks[j]) == LOCK_SAME)
-//            ||  (SameLock(locks[1], locks[j]) == LOCK_SAME))
-//              UnLock(locks[j]);
-//            else
-//              bitmap_lock = j++;
-//          }
-//      }
+    return n;
+}
+int MameConfig::scanDriversRecurse(BPTR lock, FileInfoBlock*fib)
+{
+    if(!Examine(lock, fib)) return 0;
 
-//      str = GetRomPath(1, 0);
+    if(fib->fib_DirEntryType <= 0) return 0; // if >0, a directory
 
-//      if(!str.empty())
-//      {
-//          locks[j] = Lock( str.c_str(), ACCESS_READ);
+    while(ExNext(lock, fib))
+    {
+        // trick: force lowercase at this level
+        int i=0,char c;
+        while((c=fib->fib_FileName[i])!=0) {
+            if(c>='A' && c<='Z') c=fib->fib_FileName[i]+= 32;
+            i++;
+        }
+        if(fib->fib_DirEntryType > 0) // if >0, a directory
+        { // sub is a dir.
+            // could be unzip roms or a subdir
+           int idriver = _driverIndex.index(fib->fib_FileName);
+           if(idriver >= 0)
+           {
+                _romsFound.push(&driver[idriver]);
+           }
+           else
+           {    // subdir ?
+                //TODO or not.
+           }
+        } else
+        {   // is a file.
+            // if end with zip
+            // fast, no alloc version
+            char *p = fib->fib_FileName;
+            int l =strlen(p);
+            if(l>4 && p[l-4]=='.' && p[l-3]=='z'&& p[l-2]=='i' && && p[l-1]=='p')
+            {
+                p[l-4] = 0;
+                int idriver = _driverIndex.index(p);
+                if(idriver >= 0)
+                {
+                    _romsFound.push(&driver[idriver]);
+                }
+            }
+        } // end if is file.
 
-//          if(locks[j])
-//          {
-//            if( (SameLock(locks[0], locks[j]) == LOCK_SAME)
-//            ||  (SameLock(locks[1], locks[j]) == LOCK_SAME))
-//              UnLock(locks[j]);
-//            else
-//              vector_lock = j++;
-//          }
-//      }
+    } // end loop per dir file
 
-//      for(; --j >= 0;)
-//      {
-//        if(Examine(locks[j], fib))
-//        {
-//          if(fib->fib_DirEntryType > 0)
-//          {
-//            while(ExNext(locks[j], fib))
-//            {
-//              for(i = 0; i < NumDrivers; i++)
-//              {
-//                machine_config machine;
-//                memset(&machine,0,sizeof(machine));
-//                (*SortedDrivers[i+DRIVER_OFFSET])->drv(&machine);
+}
+static int DriverCompare(struct _game_driver ***drv1, struct _game_driver ***drv2)
+{
+  return(stricmp((**drv1)->description, (**drv2)->description));
+}
 
-//                if( !DriversFound[i]
-//                &&  ((j != bitmap_lock) || !(machine.video_attributes & VIDEO_TYPE_VECTOR))
-//                &&  ((j != vector_lock) || (machine.video_attributes & VIDEO_TYPE_VECTOR)))
-//                {
-//                  len = strlen((*SortedDrivers[i+DRIVER_OFFSET])->name);
+void MameConfig::sortDrivers()
+{
+    if(_romsFound.size()==0) return;
 
-//                  if(!strnicmp(fib->fib_FileName, (*SortedDrivers[i+DRIVER_OFFSET])->name, len))
-//                  {
-//                    if(!fib->fib_FileName[len])
-//                    {
-//                      if(fib->fib_DirEntryType > 0)
-//                      {
-//                        DriversFound[i] = 1;
-//                        break;
-//                      }
-//                    }
-//                    else if(fib->fib_DirEntryType < 0)
-//                    {
-//                      if( !stricmp(&fib->fib_FileName[len], ".zip")
-//                      ||  !stricmp(&fib->fib_FileName[len], ".lha")
-//                      ||  !stricmp(&fib->fib_FileName[len], ".lzx"))
-//                      {
-//                        DriversFound[i] = 1;
-//                        break;
-//                      }
-//                    }
-//                  }
-//                }
-//              }
-//            }
-//          }
-//        }
+    qsort(_romsFound.data(), //&SortedDrivers[DRIVER_OFFSET],
+        (int)_romsFound.size() ,//NumDrivers,
+         sizeof(struct _game_driver **),
+          (int (*)(const void *, const void *)) DriverCompare);
 
-//        if(locks[j])
-//          UnLock(locks[j]);
-//      }
-//      //KRB2024:
-//      FreeDosObject(DOS_FIB,fib);
-//    }
-
-//    /* The code above searched in current dir, roms/ and any the rom path specified for
-//     * the bitmap and vector driver defaults. Now I'll look for any driver that has its
-//     * own rom path. */
-
-//    for(i = 0; i < NumDrivers; i++)
-//    {
-//      if(!DriversFound[i])
-//      {
-//        if(!GetUseDefaults(GetSortedDriverIndex(DRIVER_OFFSET+i)))
-//        {
-//          str = GetRomPath(GetSortedDriverIndex(DRIVER_OFFSET+i), 0);
-
-//          if(!str.empty())
-//          {
-//            locks[0] = Lock( str.c_str(), ACCESS_READ);
-
-//            if(locks[0])
-//            {
-//              locks[1] = CurrentDir(locks[0]);
-
-//              locks[2] = Lock((char *) (*SortedDrivers[i+DRIVER_OFFSET])->name, ACCESS_READ);
-
-//              if(!locks[2])
-//              {
-//                sprintf(buf, "%s.zip", (*SortedDrivers[i+DRIVER_OFFSET])->name);
-//                locks[2] = Lock(buf, ACCESS_READ);
-
-//                if(!locks[2])
-//                {
-//                  sprintf(buf, "%s.lha", (*SortedDrivers[i+DRIVER_OFFSET])->name);
-//                  locks[2] = Lock(buf, ACCESS_READ);
-
-//                  if(!locks[2])
-//                  {
-//                    sprintf(buf, "%s.lzx", (*SortedDrivers[i+DRIVER_OFFSET])->name);
-//                    locks[2] = Lock(buf, ACCESS_READ);
-//                  }
-//                }
-//              }
-
-//              if(locks[2])
-//              {
-//                UnLock(locks[2]);
-
-//                DriversFound[i] = 1;
-//              }
-
-//              CurrentDir(locks[1]);
-//              UnLock(locks[0]);
-//            }
-//          }
-//        }
-//      }
-//    }
-
-//    for(i = 0; i < NumDrivers; i++)
-//      SetFound(DRIVER_OFFSET+GetSortedDriverIndex(DRIVER_OFFSET+i),DriversFound[i]);
-//  }
-//  printf("ScanDrivers end\n");
-//}
+}

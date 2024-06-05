@@ -28,7 +28,6 @@
 #include "driver.h"
 #include "osdepend.h"
 
-#include "config_moo.h"
 #include "video.h"
 #include "amiga106_inputs.h"
 

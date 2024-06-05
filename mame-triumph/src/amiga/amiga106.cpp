@@ -40,7 +40,7 @@ extern "C" {
 
 
 #include "main.h"
-#include "config_moo.h"
+#include "amiga106_config.h"
 
 // from mame since 0.37:
 #include "input.h"
