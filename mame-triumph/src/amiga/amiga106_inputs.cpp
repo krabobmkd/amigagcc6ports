@@ -121,6 +121,7 @@ void UpdateInputs(struct MsgPort *pMsgPort)
         g_pInputs->_Keys[g_pInputs->_NextKeysUpStack[i]] =0;
     }
     g_pInputs->_NbKeysUpStack = 0;
+
     // - - - -
     while((im = (struct IntuiMessage *) GetMsg(pMsgPort)))
     {
@@ -366,6 +367,7 @@ const os_code_info *osd_get_code_list(void)
             km.push_back(mapkeymap());
             mapkeymap &mkm = km.back();
             mapRawKeyToString((UWORD)keystodo[i],mkm._name);
+            printf("keystodo:%d mapped to:%s:\n",keystodo[i],mkm._name.c_str());
             // then look if it correspond to something in mame enums...
             if(mkm._name.length()>0)
             {
@@ -376,9 +378,11 @@ const os_code_info *osd_get_code_list(void)
                     (input_code)mamekc
                     };
                 kbi.push_back(oci);
+            } else {
+             printf("code with no name\n");
             }
         }
-
+        exit(1); //test
         // end
         kbi.push_back({NULL,0,0});
     }

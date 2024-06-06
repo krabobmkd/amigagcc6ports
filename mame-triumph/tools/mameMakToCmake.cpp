@@ -884,6 +884,8 @@ void completeDefinitionsByHand(
     machinetargets["taito"]._gamedrivers.erase("rollace2");
 
 
+    machinetargets["dataeast"]._cpu_defs["DECO16"]=1; // m6502 variant, need HAS_DECO16.
+
 // vidhrdw/seta.c
 
   //  machinetargets["taito"]._sources.push_back("drivers/wiz.c"); // needed by rollrace
