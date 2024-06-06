@@ -203,7 +203,7 @@ void composeFilePath(int pathtype, int pathindex, const char *filename, std::str
 
     switch( getAmigaFileType(pathtype))
     {
-        case AFT_ROM: p = conf.getRomDir(); break;
+        case AFT_ROM: p = conf.getRomsDir(); break;
         case AFT_USER:
         {
             // where configs are written should be only one dir, no search.

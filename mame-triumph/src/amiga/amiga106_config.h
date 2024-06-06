@@ -66,7 +66,7 @@ public:
     int scanDrivers();
     // - - path to main dirs --
     const char *getUserDir() const {return _userDir.c_str(); }
-    const char *getRomDir() const {return _rompath.c_str(); }
+    const char *getRomsDir() const {return _romsDir.c_str(); }
 
     const std::vector<const _game_driver *const*> &romsFound() const { return _romsFound; };
 
@@ -74,7 +74,7 @@ public:
 protected:
     // - - - prefs unique for app
     std::string _userDir;
-    std::string _rompath; // finally just use one, but a tested one.
+    std::string _romsDir; // finally just use one, but a tested one.
 
     int   _startWindowed; // else fullscreen.
     //std::string _lastActiveDriver;
@@ -82,7 +82,7 @@ protected:
     int         _audio;
     ULONG       _sampleRate;
 
-    //int     _doublewindow;
+    int     _doubleWindow;
 
     ScreenConf _defaultscreenconf;
     // video prefs, per video config

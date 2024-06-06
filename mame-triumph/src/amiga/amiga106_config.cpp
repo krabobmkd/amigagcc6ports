@@ -1,5 +1,7 @@
 #include "amiga106_config.h"
 
+#include <sstream>
+
 #include <proto/exec.h>
 #include <proto/dos.h>
 
@@ -29,13 +31,9 @@ MameConfig &getMainConfig()
     return config;
 }
 
-std::string _userDir;
-std::string _rompath; // finally just use one, but a tested one.
-
-
 MameConfig::MameConfig()
     : _userDir("PROGDIR:user")
-    , _rompath("PROGDIR:roms")
+    , _romsDir("PROGDIR:roms")
     , _startWindowed(0) // else fullscreen.
     , _activeDriver(-1)
     , _audio(1)
@@ -60,16 +58,16 @@ void MameConfig::setActiveDriver(int driverIndexInRomFoundList)
 
    // printf("driverfound:%%s\n",drivers[_activeDriver]->description);
 }
-
+static const char *pMainConfig="Mame";
 int MameConfig::save()
 {
     // note: got to save rom short name id, not driver index ! index evolve with compilation.
     printf("MameConfig::save\n");
 
     xml_data_node *root = xml_file_create();
-    xml_data_node *confignode, *systemnode;
+    xml_data_node *confignode;
     mame_file *file=NULL;
-    xml_data_node *romsnode,*romnode;
+    xml_data_node *display;
 //    config_type *type;
 
     /* if we don't have a root, bail */
@@ -80,37 +78,47 @@ int MameConfig::save()
     if(!file)  goto error;
 
     /* create a config node */
-    confignode = xml_add_child(root, "amigamameconfig", NULL);
+    confignode = xml_add_child(root,pMainConfig, NULL);
     if (!confignode)
         goto error;
     xml_set_attribute_int(confignode, "version", 1);
 
     /* create a system node */
-    systemnode = xml_add_child(confignode, "system", NULL);
-    if (!systemnode)
-        goto error;
-    xml_set_attribute(systemnode, "name","main" /*(which_type == CONFIG_TYPE_DEFAULT) ? "default" : Machine->gamedrv->name*/);
+   // systemnode = xml_add_child(confignode, "system", NULL);
+//    if (!systemnode)
+//        goto error;
+    xml_set_attribute(confignode, "name","main" /*(which_type == CONFIG_TYPE_DEFAULT) ? "default" : Machine->gamedrv->name*/);
 
     // save known rom list
-    romsnode = xml_add_child(systemnode,"roms", NULL);
-    for(const _game_driver *const*d : _romsFound)
+    if(_romsFound.size()>0)
     {
-         romnode = xml_add_child(romsnode,"r", (*d)->name);
+        stringstream ssroms;
+        int i=0;
+        for(const _game_driver *const*d : _romsFound)
+        {
+            char sep=' ';
+            if(i==8) {i=0; sep='\n';}
+            ssroms << string((*d)->name) << sep;
+            i++;
+        }
+        string romslist = ssroms.str();
+        xml_add_child(confignode,"Roms", romslist.c_str());
     }
 
-    /* create the input node and write it out */
-    /* loop over all registrants and call their save function */
-//    for (type = typelist; type; type = type->next)
-//    {
-//        xml_data_node *curnode = xml_add_child(systemnode, type->name, NULL);
-//        if (!curnode)
-//            goto error;
-//        (*type->save)(which_type, curnode);
+    if(!_romsDir.empty()) xml_add_child(confignode,"RomsDir", _romsDir.c_str());
+    if(!_userDir.empty()) xml_add_child(confignode,"UserDir", _userDir.c_str());
 
-//        /* if nothing was added, just nuke the node */
-//        if (!curnode->value && !curnode->child)
-//            xml_delete_node(curnode);
-//    }
+    if(_activeDriver !=-1)
+    {
+        xml_add_child(confignode,"Last", drivers[_activeDriver]->name );
+    }
+
+    display = xml_add_child(confignode,"Display", NULL );
+    if(display)
+    {
+        if(_startWindowed) xml_add_child(confignode,"StartWindowed",NULL );
+        if(_doubleWindow)  xml_add_child(confignode,"DoubleWindow",NULL );
+    }
 
     /* flush the file */
     xml_file_write(root, file);
@@ -131,8 +139,83 @@ error:
 }
 int MameConfig::load()
 {
+    xml_data_node *root=NULL,*confignode,*node; //, *confignode, *systemnode;
+	const char *srcfile;
+	int version, count;
+	mame_file *file=NULL;
     printf("MameConfig::load\n");
     // resolve short name to index after load, like scan does.
+
+    _userDir="PROGDIR:user";
+    _romsDir="PROGDIR:roms";
+    // had to reset first ?
+    _romsFound.clear();
+    _activeDriver =-1;
+
+    file = mame_fopen("main", 0, FILETYPE_CONFIG, 0);
+    if(!file)  goto error;
+
+    printf("MameConfig::load 2\n");
+    /* read the file */
+	root = xml_file_read(file, NULL);
+	if (!root)
+		goto error;
+    printf("MameConfig::load 3\n");
+    /* find the config node */
+	confignode = xml_get_sibling(root->child, pMainConfig);
+	if (!confignode)
+		goto error;
+
+    {
+        xml_data_node*node = xml_get_sibling(confignode->child, "Roms");
+         printf(" rom node::%08x:\n",(int)node);
+        if(node && node->value)
+        {
+            string roms( node->value );
+            size_t i=0;
+            while(i != string::npos)
+            {
+               size_t in = roms.find_first_of(" \t\n",i+1);
+                string s = roms.substr(i,in);
+                if(s.size()>0) {
+                    printf("read rom:%s:\n",s.c_str());
+                    int idriver = _driverIndex.index(s.c_str());
+                    if(idriver>=0) _romsFound.push_back(&drivers[idriver]);
+                }
+               i = in;
+            }
+
+
+
+        }
+    }
+    node = xml_get_sibling(confignode->child, "RomsDir");
+    if(node && node->value) _romsDir = node->value;
+
+    node = xml_get_sibling(confignode->child, "UserDir");
+    if(node && node->value) _userDir = node->value;
+
+    node = xml_get_sibling(confignode->child, "Last");
+    if(node && node->value) _activeDriver = _driverIndex.index(node->value);
+
+
+//    version = xml_get_attribute_int(confignode, "version", 0);
+//	if (version != CONFIG_VERSION)
+//		goto error;
+    /* loop over all system nodes in the file */
+	//count = 0;
+    // get all system
+/*	for (systemnode = xml_get_sibling(confignode->child, "system"); systemnode; systemnode = xml_get_sibling(systemnode->next, "system"))
+	{
+
+    }*/
+    xml_file_free(root);
+	mame_fclose(file);
+	return 1;
+error:
+    if(root) xml_file_free(root);
+    if(file) mame_fclose(file);
+    return 0;
 }
 void MameConfig::init(int argc,char **argv)
 {
@@ -140,14 +223,14 @@ void MameConfig::init(int argc,char **argv)
 }
 void MameConfig::setRomPath(const char *rompath)
 {
-    if(!rompath || *rompath==0)_rompath = "PROGDIR:roms";
-    else { _rompath = rompath; _rompath = trimSlach(_rompath); }
+    if(!rompath || *rompath==0)_romsDir = "PROGDIR:roms";
+    else { _romsDir = rompath; _romsDir = trimSlach(_romsDir); }
     // todo send update
 
 }
 void MameConfig::setUserPath(const char *userpath)
 {
-    if(!userpath || *userpath==0) _rompath = "PROGDIR:user";
+    if(!userpath || *userpath==0) _userDir = "PROGDIR:user";
      else { _userDir = userpath;  _userDir = trimSlach(_userDir); }
     // todo send update
 }
@@ -164,15 +247,16 @@ int MameConfig::initDriverIndex()
 }
 int MameConfig::scanDrivers()
 {
-  printf(" *** ScanDrivers\n");
+  printf(" *** ScanDrivers: _romsDir:%s\n", _romsDir.c_str());
   _romsFound.clear();
-  if(_rompath.empty()) return 0;
+  if(_romsDir.empty()) return 0;
+  printf(" *** ScanDrivers 1\n");
 
     struct FileInfoBlock *fib;
     fib = (struct FileInfoBlock *)AllocDosObject(DOS_FIB, NULL);
     if(!fib) return 0;
 
-    BPTR lock = Lock( _rompath.c_str(), ACCESS_READ);
+    BPTR lock = Lock( _romsDir.c_str(), ACCESS_READ);
     if(lock)
     {
         scanDriversRecurse(lock,fib);

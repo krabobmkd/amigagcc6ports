@@ -144,7 +144,7 @@ void UpdateInputs(struct MsgPort *pMsgPort)
                    //no, could miss key on long frames: g_pInputs->_Keys[imcode & IKEY_RAWMASK] = 0;
                    if(g_pInputs->_NbKeysUpStack<256)
                    {
-                        g_pInputs->_NextKeysUpStack[g_pInputs->_NbKeysUpStack] = (UBYTE)imcode;
+                        g_pInputs->_NextKeysUpStack[g_pInputs->_NbKeysUpStack] = (UBYTE)imcode & IKEY_RAWMASK;
                         g_pInputs->_NbKeysUpStack++;
                    } else {
                         // shouldnt happen, but does coherency.
@@ -236,6 +236,10 @@ inline unsigned int nameToMameKeyEnum(std::string &s)
         if(c>='a' && c<='z')
         {
             return KEYCODE_A + (unsigned int)(c-'a');
+        }
+        if(c>='A' && c<='Z')
+        {
+            return KEYCODE_A + (unsigned int)(c-'A');
         }
         if(c==',') return KEYCODE_COMMA;
         if(c==':') return KEYCODE_COLON;
@@ -367,7 +371,7 @@ const os_code_info *osd_get_code_list(void)
             km.push_back(mapkeymap());
             mapkeymap &mkm = km.back();
             mapRawKeyToString((UWORD)keystodo[i],mkm._name);
-            printf("keystodo:%d mapped to:%s:\n",keystodo[i],mkm._name.c_str());
+          //  printf("keystodo:%d mapped to:%s:\n",keystodo[i],mkm._name.c_str());
             // then look if it correspond to something in mame enums...
             if(mkm._name.length()>0)
             {
@@ -382,7 +386,7 @@ const os_code_info *osd_get_code_list(void)
              printf("code with no name\n");
             }
         }
-        exit(1); //test
+       // exit(1); //test
         // end
         kbi.push_back({NULL,0,0});
     }
