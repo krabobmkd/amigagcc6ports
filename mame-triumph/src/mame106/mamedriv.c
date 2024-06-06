@@ -2903,6 +2903,19 @@ const game_driver * const drivers[] =
 	DRIVER( zero ) /* 1980 "Jeutel" "Zero" */
 	DRIVER( zwackery ) /* 1984 "Bally Midway" "Zwackery" */
 #endif
+#ifdef LINK_MINIKONAMI
+	DRIVER( blswhstl ) /* 1991 "Konami" "Bells & Whistles (Version L)" */
+	DRIVER( detatwin ) /* 1991 "Konami" "Detana!! Twin Bee (Japan ver. J)" */
+	DRIVER( glfgreat ) /* 1991 "Konami" "Golfing Greats" */
+	DRIVER( lgtnfght ) /* 1990 "Konami" "Lightning Fighters (World)" */
+	DRIVER( lgtnfghu ) /* 1990 "Konami" "Lightning Fighters (US)" */
+	DRIVER( prmrsocr ) /* 1993 "Konami" "Premier Soccer (ver EAB)" */
+	DRIVER( punkshot ) /* 1990 "Konami" "Punk Shot (US 4 Players)" */
+	DRIVER( simpsons ) /* 1991 "Konami" "The Simpsons (4 Players)" */
+	DRIVER( ssriders ) /* 1991 "Konami" "Sunset Riders (4 Players ver EAC)" */
+	DRIVER( tmnt ) /* 1989 "Konami" "Teenage Mutant Ninja Turtles (World 4 Players)" */
+	DRIVER( tmnt2 ) /* 1991 "Konami" "Teenage Mutant Ninja Turtles - Turtles in Time (4 Players ver UAA)" */
+#endif
 #ifdef LINK_MISC
 	DRIVER( 1945kiii ) /* 2000 "Oriental" "1945k III" */
 	DRIVER( 4enraya ) /* 1990 "IDSA" "4 En Raya" */
@@ -5941,8 +5954,6 @@ const game_driver * const drivers[] =
 	DRIVER( ddungeon ) /* 1992 "East Coast Coin Company (Melbourne)" "Dangerous Dungeons" */
 	DRIVER( dogfgt ) /* 1984 "Technos" "Acrobatic Dog-Fight" */
 	DRIVER( dogfgtj ) /* 1984 "Technos" "Dog-Fight (Japan)" */
-	DRIVER( dommy ) /* 198? "Technos" "Dommy" */
-	DRIVER( eggs ) /* 1983 "[Technos] Universal USA" "Eggs" */
 	DRIVER( excthour ) /* 1985 "Technos (Taito license)" "Exciting Hour" */
 	DRIVER( kuniokub ) /* 1986 "bootleg" "Nekketsu Kouha Kunio-kun (Japan bootleg)" */
 	DRIVER( kuniokun ) /* 1986 "Technos" "Nekketsu Kouha Kunio-kun (Japan)" */
@@ -5956,7 +5967,6 @@ const game_driver * const drivers[] =
 	DRIVER( saiyugb1 ) /* 1988 "bootleg" "Sai Yu Gou Ma Roku (Japan bootleg 1)" */
 	DRIVER( saiyugb2 ) /* 1988 "bootleg" "Sai Yu Gou Ma Roku (Japan bootleg 2)" */
 	DRIVER( saiyugou ) /* 1988 "Technos" "Sai Yu Gou Ma Roku (Japan)" */
-	DRIVER( scregg ) /* 1983 "Technos" "Scrambled Egg" */
 	DRIVER( shadfrce ) /* 1993 "Technos Japan" "Shadow Force (US Version 2)" */
 	DRIVER( solarwar ) /* 1986 "[Technos] Taito (Memetron license)" "Solar-Warrior" */
 	DRIVER( spdodgeb ) /* 1987 "Technos" "Super Dodge Ball (US)" */

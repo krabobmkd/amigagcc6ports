@@ -9,7 +9,7 @@ option(OPT_CAPCOM "" ON)
 option(OPT_CINEMAT "" OFF)
 option(OPT_COMAD "" OFF)
 option(OPT_CVS "" OFF)
-option(OPT_DATAEAST "" ON)
+option(OPT_DATAEAST "" OFF)
 option(OPT_DOOYONG "" OFF)
 option(OPT_DYNAX "" OFF)
 option(OPT_EDEVICES "" OFF)
@@ -35,6 +35,7 @@ option(OPT_METRO "" OFF)
 option(OPT_MIDCOIN "" OFF)
 option(OPT_MIDW8080 "" OFF)
 option(OPT_MIDWAY "" OFF)
+option(OPT_MINIKONAMI "" ON)
 option(OPT_MISC "" OFF)
 option(OPT_NAMCO "" OFF)
 option(OPT_NASCO "" OFF)
@@ -65,10 +66,10 @@ option(OPT_SUN "" OFF)
 option(OPT_SUNA "" OFF)
 option(OPT_TAD "" OFF)
 option(OPT_TAITO "" ON)
-option(OPT_TATSUMI "" ON)
+option(OPT_TATSUMI "" OFF)
 option(OPT_TCH "" OFF)
 option(OPT_TECFRI "" OFF)
-option(OPT_TECHNOS "" ON)
+option(OPT_TECHNOS "" OFF)
 option(OPT_TEHKAN "" OFF)
 option(OPT_THEPIT "" OFF)
 option(OPT_TOAPLAN "" OFF)
@@ -379,9 +380,11 @@ if(OPT_DATAEAST)
 	set(MSND_YM3812 ON)
 	set(MSND_YMZ280B ON)
 	set(MCPU_ARM ON)
+	set(MCPU_DECO16 ON)
 	set(MCPU_H6280 ON)
 	set(MCPU_I8X41 ON)
 	set(MCPU_M6502 ON)
+	set(MCPU_M65C02 ON)
 	set(MCPU_M68000 ON)
 	set(MCPU_M6809 ON)
 	set(MCPU_Z80 ON)
@@ -390,8 +393,9 @@ if(OPT_DATAEAST)
 		HAS_MSM5205=1 HAS_OKIM6295=1 HAS_SAMPLES=1 HAS_YM2151=1 
 		HAS_YM2203=1 HAS_YM3812=1 HAS_YMZ280B=1 	)
 	list(APPEND CPU_DEFS
-		HAS_ARM=1 HAS_H6280=1 HAS_I8X41=1 HAS_M6502=1 
-		HAS_M68000=1 HAS_M6809=1 HAS_Z80=1 	)
+		HAS_ARM=1 HAS_DECO16=1 HAS_H6280=1 HAS_I8X41=1 
+		HAS_M6502=1 HAS_M65C02=1 HAS_M68000=1 HAS_M6809=1 
+		HAS_Z80=1 	)
 endif()
 if(OPT_DOOYONG)
 	add_compile_definitions(LINK_DOOYONG=1)
@@ -883,6 +887,27 @@ if(OPT_MIDWAY)
 	list(APPEND CPU_DEFS
 		HAS_ADSP2100=1 HAS_M6800=1 HAS_M6809=1 HAS_TMS32031=1 
 		HAS_TMS34010=1 HAS_Z80=1 	)
+endif()
+if(OPT_MINIKONAMI)
+	add_compile_definitions(LINK_MINIKONAMI=1)
+	list(APPEND MAME_DRIVERS_SRC
+		drivers/tmnt.c vidhrdw/tmnt.c vidhrdw/konamiic.c drivers/simpsons.c 
+		machine/simpsons.c vidhrdw/simpsons.c 	)
+	set(MSND_K007232 ON)
+	set(MSND_K053260 ON)
+	set(MSND_K054539 ON)
+	set(MSND_OKIM6295 ON)
+	set(MSND_SAMPLES ON)
+	set(MSND_UPD7759 ON)
+	set(MSND_YM2151 ON)
+	set(MCPU_KONAMI ON)
+	set(MCPU_M68000 ON)
+	set(MCPU_Z80 ON)
+	list(APPEND CPU_DEFS
+		HAS_K007232=1 HAS_K053260=1 HAS_K054539=1 HAS_OKIM6295=1 
+		HAS_SAMPLES=1 HAS_UPD7759=1 HAS_YM2151=1 	)
+	list(APPEND CPU_DEFS
+		HAS_KONAMI=1 HAS_M68000=1 HAS_Z80=1 	)
 endif()
 if(OPT_MISC)
 	add_compile_definitions(LINK_MISC=1)
@@ -1653,11 +1678,11 @@ if(OPT_TECHNOS)
 		vidhrdw/ddragon.c drivers/ddragon3.c vidhrdw/ddragon3.c drivers/dogfgt.c 
 		vidhrdw/dogfgt.c drivers/matmania.c machine/maniach.c vidhrdw/matmania.c 
 		drivers/mystston.c vidhrdw/mystston.c drivers/renegade.c vidhrdw/renegade.c 
-		drivers/scregg.c drivers/shadfrce.c vidhrdw/shadfrce.c drivers/spdodgeb.c 
-		vidhrdw/spdodgeb.c drivers/ssozumo.c vidhrdw/ssozumo.c drivers/tagteam.c 
-		vidhrdw/tagteam.c drivers/vball.c vidhrdw/vball.c drivers/wwfsstar.c 
-		vidhrdw/wwfsstar.c drivers/wwfwfest.c vidhrdw/wwfwfest.c drivers/xain.c 
-		vidhrdw/xain.c 	)
+		drivers/shadfrce.c vidhrdw/shadfrce.c drivers/spdodgeb.c vidhrdw/spdodgeb.c 
+		drivers/ssozumo.c vidhrdw/ssozumo.c drivers/tagteam.c vidhrdw/tagteam.c 
+		drivers/vball.c vidhrdw/vball.c drivers/wwfsstar.c vidhrdw/wwfsstar.c 
+		drivers/wwfwfest.c vidhrdw/wwfwfest.c drivers/xain.c vidhrdw/xain.c 
+	)
 	set(MSND_AY8910 ON)
 	set(MSND_CUSTOM ON)
 	set(MSND_DAC ON)
@@ -1665,6 +1690,7 @@ if(OPT_TECHNOS)
 	set(MSND_OKIM6295 ON)
 	set(MSND_YM2151 ON)
 	set(MSND_YM2203 ON)
+	set(MSND_YM3526 ON)
 	set(MSND_YM3812 ON)
 	set(MCPU_I8039 ON)
 	set(MCPU_M6502 ON)
@@ -1674,8 +1700,8 @@ if(OPT_TECHNOS)
 	set(MCPU_Z80 ON)
 	list(APPEND CPU_DEFS
 		HAS_AY8910=1 HAS_CUSTOM=1 HAS_DAC=1 HAS_MSM5205=1 
-		HAS_OKIM6295=1 HAS_YM2151=1 HAS_YM2203=1 HAS_YM3812=1 
-	)
+		HAS_OKIM6295=1 HAS_YM2151=1 HAS_YM2203=1 HAS_YM3526=1 
+		HAS_YM3812=1 	)
 	list(APPEND CPU_DEFS
 		HAS_I8039=1 HAS_M6502=1 HAS_M6800=1 HAS_M68000=1 
 		HAS_M6809=1 HAS_Z80=1 	)
@@ -1698,6 +1724,7 @@ if(OPT_TEHKAN)
 	set(MSND_SN76496 ON)
 	set(MSND_YM2151 ON)
 	set(MSND_YM2203 ON)
+	set(MSND_YM2608 ON)
 	set(MSND_YM3812 ON)
 	set(MSND_YMF262 ON)
 	set(MSND_YMZ280B ON)
@@ -1705,8 +1732,8 @@ if(OPT_TEHKAN)
 	set(MCPU_Z80 ON)
 	list(APPEND CPU_DEFS
 		HAS_AY8910=1 HAS_MSM5205=1 HAS_OKIM6295=1 HAS_SAMPLES=1 
-		HAS_SN76496=1 HAS_YM2151=1 HAS_YM2203=1 HAS_YM3812=1 
-		HAS_YMF262=1 HAS_YMZ280B=1 	)
+		HAS_SN76496=1 HAS_YM2151=1 HAS_YM2203=1 HAS_YM2608=1 
+		HAS_YM3812=1 HAS_YMF262=1 HAS_YMZ280B=1 	)
 	list(APPEND CPU_DEFS
 		HAS_M68000=1 HAS_Z80=1 	)
 endif()
@@ -2058,6 +2085,9 @@ endif()
 if(MSND_YM2413)
 	list(APPEND MAME_SOUND_SRC sound/2413intf.c sound/ym2413.c )
 endif()
+if(MSND_YM2608)
+	list(APPEND MAME_SOUND_SRC sound/2608intf.c sound/ay8910.c sound/fm.c sound/ymdeltat.c )
+endif()
 if(MSND_YM2610)
 	list(APPEND MAME_SOUND_SRC sound/2610intf.c sound/ay8910.c sound/fm.c sound/ymdeltat.c )
 endif()
@@ -2103,6 +2133,9 @@ endif()
 if(MCPU_CCPU)
 	list(APPEND MAME_CPU_SRC cpu/ccpu/ccpu.c )
 endif()
+if(MCPU_DECO16)
+	list(APPEND MAME_CPU_SRC cpu/m6502/m6502.c )
+endif()
 if(MCPU_G65816)
 	list(APPEND MAME_CPU_SRC cpu/g65816/g65816.c cpu/g65816/g65816o0.c cpu/g65816/g65816o1.c cpu/g65816/g65816o2.c cpu/g65816/g65816o3.c cpu/g65816/g65816o4.c )
 endif()
@@ -2143,6 +2176,9 @@ if(MCPU_M37710)
 	list(APPEND MAME_CPU_SRC cpu/m37710/m37710.c cpu/m37710/m37710o0.c cpu/m37710/m37710o1.c cpu/m37710/m37710o2.c cpu/m37710/m37710o3.c cpu/m37710/m7700ds.c )
 endif()
 if(MCPU_M6502)
+	list(APPEND MAME_CPU_SRC cpu/m6502/m6502.c )
+endif()
+if(MCPU_M65C02)
 	list(APPEND MAME_CPU_SRC cpu/m6502/m6502.c )
 endif()
 if(MCPU_M6800)
