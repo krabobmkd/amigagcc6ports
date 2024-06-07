@@ -56,8 +56,10 @@ set(AMIGA_SRC
 	amiga106_video.h
 	amiga106_video.cpp
 #	amiga106_video_p96.cpp
+	amiga106_video_cgx.h
 	amiga106_video_cgx.cpp
-
+#	amiga106_video_aga.h
+#	amiga106_video_aga.cpp
 	amiga_locale.cpp
 
 
@@ -87,7 +89,7 @@ if(MAME_USE_HARDFLOAT)
 	target_compile_definitions(${PROGNAME} PUBLIC MAME_USE_HARD_FLOAT=1 )
 endif()
 # the static libs that are part of this repo: 
-target_link_libraries(${PROGNAME} PUBLIC mamecore z expat)
+target_link_libraries(${PROGNAME} PUBLIC mamecore mamecoreO2 z expat)
 
 target_link_directories(${PROGNAME} PUBLIC "../../lib")
 target_include_directories(${PROGNAME} PUBLIC "../../include" )
@@ -101,21 +103,10 @@ target_include_directories(${PROGNAME} PUBLIC "../mame106")
 target_include_directories(${PROGNAME} PUBLIC "../../../extrasdk/MUI/include")
 target_include_directories(${PROGNAME} PUBLIC "../../../extrasdk/P96/include")
 
+target_compile_options(${PROGNAME} PUBLIC -O3 -Wno-narrowing )
+# test
+target_link_options(${PROGNAME} PUBLIC -O3 -Wno-narrowing -s)
+
 # add_executable(cgxhooktest cgxhookstest.c cgxhooks.c cgxhooks.h )
 # set_property(TARGET cgxhooktest PROPERTY C_STANDARD 11)
 
-#  - - - - - - - - - - 
-## debug/test phase, no release.
-#set(RNAME rmame)
-## amiga_locale.cpp config_v37.cpp config_v37.h
-#add_executable(${RNAME} r2_main.cpp amiga_locale.cpp config_v37.cpp config_v37.h romscan.cpp romscan.h gui_mui.cpp gui_gadtools.cpp)
-#set_property(TARGET ${RNAME} PROPERTY C_STANDARD 11)
-#set_property(TARGET ${RNAME} PROPERTY CXX_STANDARD 11)
-#target_compile_definitions(${RNAME} PUBLIC MAMEVERSION=37 static inline=inline )
-## the static libs that are part of this repo:
-#target_link_directories(${RNAME} PUBLIC "../../lib")
-#target_include_directories(${RNAME} PUBLIC "../../include" )
-#target_include_directories(${RNAME} PUBLIC "../mame037b/src")
-
-## MUI is not provided by gccbebbo6.5 ndk by default, we have it there:
-#target_include_directories(${RNAME} PUBLIC "../../../extrasdk/MUI/include")

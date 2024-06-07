@@ -64,6 +64,7 @@ public:
     ULONG sampleRate() const { return _sampleRate; }
     // - -  update detected rom list - - -
     int scanDrivers();
+    int selectAll();
     // - - path to main dirs --
     const char *getUserDir() const {return _userDir.c_str(); }
     const char *getRomsDir() const {return _romsDir.c_str(); }

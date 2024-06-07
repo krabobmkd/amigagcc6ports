@@ -162,7 +162,7 @@ int MameConfig::load()
 		goto error;
     printf("MameConfig::load 3\n");
     /* find the config node */
-	confignode = xml_get_sibling(root->child, pMainConfig);
+	confignode = xml_get_sibling(root->child, /*pMainConfig*/"Roms");
 	if (!confignode)
 		goto error;
 
@@ -242,8 +242,20 @@ int MameConfig::initDriverIndex()
     // to be done once.
   for(int NumDrivers = 0; drivers[NumDrivers]; NumDrivers++)
   {
-        _driverIndex.insert(drivers[NumDrivers]->name,NumDrivers);
+    const game_driver *drv  =drivers[NumDrivers];
+    if(drv->flags & (/*GAME_NOT_WORKING|*/NOT_A_DRIVER)) continue;
+     _driverIndex.insert(drv->name,NumDrivers);
   }
+}
+int MameConfig::selectAll()
+{
+  _romsFound.clear();
+  for(int NumDrivers = 0; drivers[NumDrivers]; NumDrivers++)
+  {
+    if(drivers[NumDrivers]->flags & (/*GAME_NOT_WORKING|*/NOT_A_DRIVER)) continue;
+    _romsFound.push_back(&drivers[NumDrivers]);
+  }
+  sortDrivers();
 }
 int MameConfig::scanDrivers()
 {

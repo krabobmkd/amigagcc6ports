@@ -65,7 +65,7 @@ void InitLowLevelLib()
         SystemControl(
         // Starts creating rawkey codes for the
 	    // joystick/game controller on the given unit.
-          //keep mouse  SCON_AddCreateKeys,0,
+          //keep mouse if still mouse  SCON_AddCreateKeys,0,
             SCON_AddCreateKeys,1,
             SCON_AddCreateKeys,2,
             SCON_AddCreateKeys,3,
@@ -224,7 +224,14 @@ void mapRawKeyToString(UWORD rawkeycode, std::string &s)
     temp[actual]=0; //
     if(actual>0)
     {
+        // mame wants maj at this level, if not it displays empty
+        int i=0;
+        while(temp[i]!=0) {
+            if(temp[i]>='a' && temp[i]<='z') temp[i]-=32;
+        i++;
+        }
         s = temp;
+
     }
 
 }
@@ -236,10 +243,6 @@ inline unsigned int nameToMameKeyEnum(std::string &s)
         if(c>='a' && c<='z')
         {
             return KEYCODE_A + (unsigned int)(c-'a');
-        }
-        if(c>='A' && c<='Z')
-        {
-            return KEYCODE_A + (unsigned int)(c-'A');
         }
         if(c==',') return KEYCODE_COMMA;
         if(c==':') return KEYCODE_COLON;
@@ -366,13 +369,20 @@ const os_code_info *osd_get_code_list(void)
             ic=0;
             while(ic<11) {keystodo.push_back(0x30+ic); ic++; }
         }
-        for(int i=0;i<(int)keystodo.size();i++)
+        const int nbk = (int)keystodo.size();
+        km.reserve(nbk);
+        km.resize(nbk);
+        for(int i=0;i<nbk;i++)
         {
-            km.push_back(mapkeymap());
-            mapkeymap &mkm = km.back();
+            mapkeymap &mkm =km[i];
+            mkm._rawkeycode = keystodo[i];
+            // ask amiga OS about the meaning of that key on this configuration.
             mapRawKeyToString((UWORD)keystodo[i],mkm._name);
           //  printf("keystodo:%d mapped to:%s:\n",keystodo[i],mkm._name.c_str());
             // then look if it correspond to something in mame enums...
+            if( keystodo[i]==26) {
+                mkm._name = "?";  // MapRawKey doesnt get this one well.
+            }
             if(mkm._name.length()>0)
             {
                 unsigned int mamekc = nameToMameKeyEnum(mkm._name);
@@ -383,7 +393,7 @@ const os_code_info *osd_get_code_list(void)
                     };
                 kbi.push_back(oci);
             } else {
-             printf("code with no name\n");
+            // printf("code with no name:%d\n",keystodo[i]);
             }
         }
        // exit(1); //test
@@ -408,7 +418,14 @@ INT32 osd_get_code_value(os_code oscode)
 {
     // now , always rawkey.
     if(!g_pInputs) return 0;
-    if(oscode<128) return (int)g_pInputs->_Keys[oscode];
+    if(oscode<128)
+    {
+        if(g_pInputs->_Keys[oscode])
+        {
+            printf("ASKED AND GOT KEY:%d\n",(int)oscode);
+        }
+        return (int)g_pInputs->_Keys[oscode];
+    }
     return 0;
 }
 

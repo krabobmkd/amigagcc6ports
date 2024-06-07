@@ -82,10 +82,12 @@ set(MAME_CORE_SRC
 
 	)
 
+# ${MAME_CORE_SRC} ${MAME_DRIVERS_SRC} ${MAME_SOUND_SRC} ${MAME_CPU_SRC}
+
 set(MAME_INCLUDE_DIRS "src" "../amiga" "." "./includes" ${EXPATPATH})
 
-add_library( mamecore STATIC ${MAME_CORE_SRC}
-							 ${MAME_DRIVERS_SRC} ${MAME_SOUND_SRC} ${MAME_CPU_SRC} )
+add_library( mamecore STATIC ${MAME_CORE_SRC} ${MAME_DRIVERS_SRC} ${MAME_SOUND_SRC}
+							  )
 set_property(TARGET mamecore PROPERTY C_STANDARD 11)
 set_property(TARGET mamecore PROPERTY CXX_STANDARD 11)
 target_include_directories(mamecore PUBLIC ${MAME_INCLUDE_DIRS} ${ZLIBPATH} )
@@ -95,5 +97,33 @@ if(MAME_USE_HARDFLOAT)
 	target_compile_definitions(mamecore PUBLIC MAME_USE_HARD_FLOAT=1 )
 endif()
 # -fpermissive
-target_compile_options(mamecore PUBLIC  -Wno-narrowing )
+#target_compile_options(mamecore PUBLIC -O2 -Wno-narrowing )
 
+
+# - - - - - - --  - -same for O2
+
+add_library( mamecoreO2 STATIC ${MAME_CPU_SRC} )
+set_property(TARGET mamecoreO2 PROPERTY C_STANDARD 11)
+set_property(TARGET mamecoreO2 PROPERTY CXX_STANDARD 11)
+target_include_directories(mamecoreO2 PUBLIC ${MAME_INCLUDE_DIRS} ${ZLIBPATH} )
+set(MAME_INLINE "static inline")
+target_compile_definitions(mamecoreO2 PUBLIC INLINE=${MAME_INLINE} ZIP_CACHE=1 CRLF=2 ${CPU_DEFS} )
+if(MAME_USE_HARDFLOAT)
+	target_compile_definitions(mamecoreO2 PUBLIC MAME_USE_HARD_FLOAT=1 )
+endif()
+# -fpermissive -Wno-narrowing
+#target_compile_options(mamecoreO2 PUBLIC -O2  -Wno-narrowing )
+
+# - - - - - - - - - - same for O3
+
+#add_library( mamecoreO3 STATIC  ${MAME_DRIVERS_SRC} ${MAME_SOUND_SRC} ${MAME_CPU_SRC} )
+#set_property(TARGET mamecoreO3 PROPERTY C_STANDARD 11)
+#set_property(TARGET mamecoreO3 PROPERTY CXX_STANDARD 11)
+#target_include_directories(mamecoreO3 PUBLIC ${MAME_INCLUDE_DIRS} ${ZLIBPATH} )
+#set(MAME_INLINE "static inline")
+#target_compile_definitions(mamecoreO3 PUBLIC INLINE=${MAME_INLINE} ZIP_CACHE=1 CRLF=2 ${CPU_DEFS} )
+#if(MAME_USE_HARDFLOAT)
+#	target_compile_definitions(mamecoreO3 PUBLIC MAME_USE_HARD_FLOAT=1 )
+#endif()
+## -fpermissive  -Wno-narrowing
+#target_compile_options(mamecoreO3 PUBLIC -O3 )
