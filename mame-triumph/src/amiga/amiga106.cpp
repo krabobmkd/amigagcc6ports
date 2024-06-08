@@ -95,6 +95,8 @@ inline void initOptions()
 options.brightness = 1.0f;
 options.gamma=0.5f;
 
+options.ui_orientation = ORIENTATION_SWAP_XY;
+
     options.samplerate=(conf.audio())?0:conf.sampleRate();
  //?   Machine->sample_rate = options.samplerate;
 

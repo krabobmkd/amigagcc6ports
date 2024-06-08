@@ -4,9 +4,9 @@
 
 #include "mame_ver.h"
 #ifndef BETA
-#define APPNAME  "MAME 0." REVISION
+#define APPNAMEA  "MAME 0." REVISION
 #else
-#define APPNAME  "MAME 0."REVISION" BETA"
+#define APPNAMEA  "MAME 0."REVISION" BETA"
 #endif
 
 #endif

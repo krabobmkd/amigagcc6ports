@@ -285,7 +285,7 @@ void ErrorRequest(LONG msg_id, ...)
   
   es.es_StructSize   = sizeof(struct EasyStruct);
   es.es_Flags        = 0;
-  es.es_Title        =(CONST_STRPTR)(APPNAME);
+  es.es_Title        =(CONST_STRPTR)(APPNAMEA);
   es.es_TextFormat   = (CONST_STRPTR)(GetMessage(msg_id));
   es.es_GadgetFormat = (CONST_STRPTR)(GetMessage(MSG_OK));
 

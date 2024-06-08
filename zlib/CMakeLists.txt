@@ -5,9 +5,7 @@ set(CXX_STANDARD 11)
 set(C_STANDARD 11)
 project(zlib LANGUAGES C CXX VERSION 1.17.6)
 
-if(AMIGA)
 
-	add_definitions(-O2 -m68060 -mhard-float -ffast-math -save-temps )
 	add_definitions(-std=c11)
 	
 	set(BUILD_SHARED_LIBS OFF)
@@ -17,7 +15,6 @@ if(AMIGA)
 	set(HAVE_STDINT_H ON)
 	set(HAVE_STDDEF_H ON)
 
-endif()
 # ../zlib/adler32.c
 #add_executable(woot test.c ../zlib/adler32.c)
 
@@ -56,8 +53,10 @@ set(ZLIB_SRCS
     zutil.c
 )
 
+message(WARNING "zlib compiled with options:${AMIGA_COMPILER_OPTIONS}")
 add_library(z STATIC  ${ZLIB_SRCS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS} )
 set_property(TARGET z PROPERTY C_STANDARD 11)
+target_compile_options(z PRIVATE -O0 ${AMIGA_COMPILER_OPTIONS} )
 
 # generate zconf.h
 configure_file(	${CMAKE_CURRENT_SOURCE_DIR}/../zlib/zconf.h.cmakein

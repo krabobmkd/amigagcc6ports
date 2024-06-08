@@ -13,11 +13,16 @@
  *************************************************************************/
 // from amiga
 #include <proto/exec.h>
+#include <proto/graphics.h>
 #include <proto/intuition.h>
 #include <proto/lowlevel.h>
 #include <proto/keymap.h>
 
 #include "intuiuncollide.h"
+
+extern "C" {
+    #include <libraries/lowlevel.h>
+}
 
 //#include <devices/keyboard.h>
 //#include <devices/keymap.h>
@@ -28,6 +33,7 @@ extern "C" {
     #include "osdepend.h"
     #include "input.h"
     // for schedule_exit()
+
     #include "mame.h"
 }
 
@@ -42,12 +48,12 @@ struct MameInputs
 {
     struct MsgPort *_pMsgPort;
     int         _NbKeysUpStack;
-    BYTE         _Keys[256]; // actual keyboard rawkeys
-    UBYTE        _NextKeysUpStack[256];
+    BYTE         _Keys[256*4]; // bools state for actual keyboard rawkeys + lowlevel pads code
+    UWORD        _NextKeysUpStack[256]; // delay event between frame to not loose keys.
 
 };
 
-#define IKEY_RAWMASK 0x7f
+
 
 using namespace std;
 
@@ -62,10 +68,28 @@ void InitLowLevelLib()
     LowLevelBase = OpenLibrary("lowlevel.library", 0);
     if(LowLevelBase)
     {
+        /*
+#define JP_TYPE_NOTAVAIL  (00<<28)	   port data unavailable
+#define JP_TYPE_GAMECTLR  (01<<28)	   port has game controller
+#define JP_TYPE_MOUSE	  (02<<28)	   port has mouse
+#define JP_TYPE_JOYSTK	  (03<<28)	   port has joystick
+#define JP_TYPE_UNKNOWN   (04<<28)	   port has unknown device
+#define JP_TYPE_MASK	  (15<<28)	   controller type
+*/
+        printf("init lowlevel, need a bit shake.\n");
+        for(int itest=0;itest<3;itest++)
+        {
+            for(int i=0;i<4;i++)
+            {
+                ULONG state = ReadJoyPort(i);
+                printf("port:%i type:%08x\n",i,state & JP_TYPE_MASK);
+            }
+            WaitTOF();
+        }
         SystemControl(
         // Starts creating rawkey codes for the
 	    // joystick/game controller on the given unit.
-          //keep mouse if still mouse  SCON_AddCreateKeys,0,
+          //keep mouse if still mouse:  SCON_AddCreateKeys,0,
             SCON_AddCreateKeys,1,
             SCON_AddCreateKeys,2,
             SCON_AddCreateKeys,3,
@@ -108,9 +132,6 @@ void UpdateInputs(struct MsgPort *pMsgPort)
 {
   struct IntuiMessage *im;
   struct MenuItem   *mitem;
-  ULONG       imclass;
-  UWORD       imcode;
-  UWORD       imqual;
 
  //printf("UpdateInputs: %08x\n",(int)g_pInputs);
     if(!pMsgPort || !g_pInputs) return;
@@ -125,9 +146,9 @@ void UpdateInputs(struct MsgPort *pMsgPort)
     // - - - -
     while((im = (struct IntuiMessage *) GetMsg(pMsgPort)))
     {
-        imclass = im->Class;
-        imcode  = im->Code;
-        imqual  = im->Qualifier;
+        ULONG imclass = im->Class;
+        UWORD imcode  = im->Code;
+        UWORD imqual  = im->Qualifier;
 
         ReplyMsg((struct Message *) im);
 
@@ -138,28 +159,38 @@ void UpdateInputs(struct MsgPort *pMsgPort)
             case IDCMP_RAWKEY:
             if(!(imqual & IEQUALIFIER_REPEAT) )
             {
+                // same as amiga rawkey for keyboard, then joypads are remaped.
+                // pack that to fit one byte.
+                #define IKEY_RAWMASK_CD32PADS 0x037f // rawmask has evolved with CD32 pads
+                UWORD finalkeycode = imcode & IKEY_RAWMASK_CD32PADS ; //IKEY_RAWMASK;
+
+                //printf("key:%08x up:%d\n",(int)imcode,(int)((imcode & IECODE_UP_PREFIX)!=0));
+
  //               g_pInputs->Keys[imcode & IKEY_RAWMASK] = (BYTE)((imcode & IECODE_UP_PREFIX)==0);
                 if(imcode & IECODE_UP_PREFIX)
                 {
-                   //no, could miss key on long frames: g_pInputs->_Keys[imcode & IKEY_RAWMASK] = 0;
+                   // if many down/up happens in one frame, we must see it has pressed, then up next frame.
                    if(g_pInputs->_NbKeysUpStack<256)
                    {
-                        g_pInputs->_NextKeysUpStack[g_pInputs->_NbKeysUpStack] = (UBYTE)imcode & IKEY_RAWMASK;
+                        g_pInputs->_NextKeysUpStack[g_pInputs->_NbKeysUpStack] = finalkeycode;
                         g_pInputs->_NbKeysUpStack++;
                    } else {
-                        // shouldnt happen, but does coherency.
-                        g_pInputs->_Keys[imcode & IKEY_RAWMASK] = 0;
+                        // shouldnt happen, but does maintain consistency.
+                        g_pInputs->_Keys[finalkeycode] = 0;
                    }
                 }
                 else
                 {
-                    g_pInputs->_Keys[imcode & IKEY_RAWMASK] = 1;
-                    printf("key:%d on\n",imcode);
+                    g_pInputs->_Keys[finalkeycode] = 1;
+                    printf("key:%04x on\n",(int)finalkeycode);
                 }
             }
             break;
             case IDCMP_CLOSEWINDOW:
                 mame_schedule_exit();
+            break;
+            default:
+                printf("receive class:%d\n",imclass);
             break;
 
 
@@ -357,7 +388,57 @@ const os_code_info *osd_get_code_list(void)
             {"+ PAD",0x5E,KEYCODE_PLUS_PAD},
             // mame codes is missing keypad '.'
             {". PAD",0x3C,CODE_OTHER_DIGITAL},
-            {"ENTER PAD",0x43,KEYCODE_ENTER_PAD}
+            {"ENTER PAD",0x43,KEYCODE_ENTER_PAD},
+
+            // and then CD32 pads in lowlevel.library state of the art
+            // we consider mame port 1 is second port, port2 is mouse, then the 2 parallel ports
+            {"PAD0 BLUE",RAWKEY_PORT0_BUTTON_BLUE,JOYCODE_2_BUTTON2},
+            {"PAD0 RED",RAWKEY_PORT0_BUTTON_RED,JOYCODE_2_BUTTON1},
+            {"PAD0 YELLOW",RAWKEY_PORT0_BUTTON_YELLOW,JOYCODE_2_BUTTON3},
+            {"PAD0 GREEN",RAWKEY_PORT0_BUTTON_GREEN,JOYCODE_2_BUTTON4},
+            {"PAD0 FORWARD",RAWKEY_PORT0_BUTTON_FORWARD,JOYCODE_2_BUTTON6},
+            {"PAD0 REVERSE",RAWKEY_PORT0_BUTTON_REVERSE,JOYCODE_2_BUTTON5},
+            {"PAD0 PLAY",RAWKEY_PORT0_BUTTON_PLAY,JOYCODE_2_START},
+            {"PAD0 UP",RAWKEY_PORT0_JOY_UP,JOYCODE_2_UP},
+            {"PAD0 DOWN",RAWKEY_PORT0_JOY_DOWN,JOYCODE_2_DOWN},
+            {"PAD0 LEFT",RAWKEY_PORT0_JOY_LEFT,JOYCODE_2_LEFT},
+            {"PAD0 RIGHT",RAWKEY_PORT0_JOY_RIGHT,JOYCODE_2_RIGHT},
+
+            {"PAD1 BLUE",RAWKEY_PORT1_BUTTON_BLUE,JOYCODE_1_BUTTON2},
+            {"PAD1 RED",RAWKEY_PORT1_BUTTON_RED,JOYCODE_1_BUTTON1},
+            {"PAD1 YELLOW",RAWKEY_PORT1_BUTTON_YELLOW,JOYCODE_1_BUTTON3},
+            {"PAD1 GREEN",RAWKEY_PORT1_BUTTON_GREEN,JOYCODE_1_BUTTON4},
+            {"PAD1 FORWARD",RAWKEY_PORT1_BUTTON_FORWARD,JOYCODE_1_BUTTON6},
+            {"PAD1 REVERSE",RAWKEY_PORT1_BUTTON_REVERSE,JOYCODE_1_BUTTON5},
+            {"PAD1 PLAY",RAWKEY_PORT1_BUTTON_PLAY,JOYCODE_1_START},
+            {"PAD1 UP",RAWKEY_PORT1_JOY_UP,JOYCODE_1_UP},
+            {"PAD1 DOWN",RAWKEY_PORT1_JOY_DOWN,JOYCODE_1_DOWN},
+            {"PAD1 LEFT",RAWKEY_PORT1_JOY_LEFT,JOYCODE_1_LEFT},
+            {"PAD1 RIGHT",RAWKEY_PORT1_JOY_RIGHT,JOYCODE_1_RIGHT},
+
+            {"PAD2 BLUE",RAWKEY_PORT2_BUTTON_BLUE,JOYCODE_3_BUTTON2},
+            {"PAD2 RED",RAWKEY_PORT2_BUTTON_RED,JOYCODE_3_BUTTON1},
+            {"PAD2 YELLOW",RAWKEY_PORT2_BUTTON_YELLOW,JOYCODE_3_BUTTON3},
+            {"PAD2 GREEN",RAWKEY_PORT2_BUTTON_GREEN,JOYCODE_3_BUTTON4},
+            {"PAD2 FORWARD",RAWKEY_PORT2_BUTTON_FORWARD,JOYCODE_3_BUTTON6},
+            {"PAD2 REVERSE",RAWKEY_PORT2_BUTTON_REVERSE,JOYCODE_3_BUTTON5},
+            {"PAD2 PLAY",RAWKEY_PORT2_BUTTON_PLAY,JOYCODE_3_START},
+            {"PAD2 UP",RAWKEY_PORT2_JOY_UP,JOYCODE_3_UP},
+            {"PAD2 DOWN",RAWKEY_PORT2_JOY_DOWN,JOYCODE_3_DOWN},
+            {"PAD2 LEFT",RAWKEY_PORT2_JOY_LEFT,JOYCODE_3_LEFT},
+            {"PAD2 RIGHT",RAWKEY_PORT2_JOY_RIGHT,JOYCODE_3_RIGHT},
+
+            {"PAD3 BLUE",RAWKEY_PORT3_BUTTON_BLUE,JOYCODE_4_BUTTON2},
+            {"PAD3 RED",RAWKEY_PORT3_BUTTON_RED,JOYCODE_4_BUTTON1},
+            {"PAD3 YELLOW",RAWKEY_PORT3_BUTTON_YELLOW,JOYCODE_4_BUTTON3},
+            {"PAD3 GREEN",RAWKEY_PORT3_BUTTON_GREEN,JOYCODE_4_BUTTON4},
+            {"PAD3 FORWARD",RAWKEY_PORT3_BUTTON_FORWARD,JOYCODE_4_BUTTON6},
+            {"PAD3 REVERSE",RAWKEY_PORT3_BUTTON_REVERSE,JOYCODE_4_BUTTON5},
+            {"PAD3 PLAY",RAWKEY_PORT3_BUTTON_PLAY,JOYCODE_4_START},
+            {"PAD3 UP",RAWKEY_PORT3_JOY_UP,JOYCODE_4_UP},
+            {"PAD3 DOWN",RAWKEY_PORT3_JOY_DOWN,JOYCODE_4_DOWN},
+            {"PAD3 LEFT",RAWKEY_PORT3_JOY_LEFT,JOYCODE_4_LEFT},
+            {"PAD3 RIGHT",RAWKEY_PORT3_JOY_RIGHT,JOYCODE_4_RIGHT},
 
         };
         // then add rawkeys which meanings changes by locale settings
@@ -418,7 +499,7 @@ INT32 osd_get_code_value(os_code oscode)
 {
     // now , always rawkey.
     if(!g_pInputs) return 0;
-    if(oscode<128)
+    if(oscode<(256*4))
     {
         if(g_pInputs->_Keys[oscode])
         {

@@ -5,34 +5,13 @@ cmake_minimum_required (VERSION 3.1)
 set(C_STANDARD 11)
 set(CXX_STANDARD 11)
 project(MameLib LANGUAGES C CXX VERSION 1.0)
-option(MAME_USE_HARDFLOAT "compile using direct 68882 FPU, will not work on economic 060" ON)
-option(MAME_USE_68060 "else 040" ON)
-if(AMIGA)
-	# add your generic options here:
-	add_compile_options( -save-temps )
-	if(MAME_USE_68060)
-		add_compile_options( -m68060 -mcpu=68060 )
-		add_link_options( -m68060 -mcpu=68060 )
-	else()
-		add_compile_options( -m68040 -mcpu=68040 )
-		add_link_options( -m68040 -mcpu=68040 )
-	endif()
-
-	if(MAME_USE_HARDFLOAT)
-		add_compile_options( -mhard-float -ffast-math )
-		add_link_options( -mhard-float -ffast-math)
-	else()
-		add_compile_options( -msoft-float )
-		add_link_options( -msoft-float )
-	endif()
-endif()
 
 include(gamedrivers.cmake)
 
 set(ZLIBPATH "../../../zlib")
-set(EXPATPATH "../../../expat")
+set(EXPATPATH "../../../libexpat")
 add_subdirectory(${ZLIBPATH} zlib)
-add_subdirectory(${EXPATPATH} expat)
+add_subdirectory(${EXPATPATH} libexpat)
 
 set(MAME_CORE_SRC
 # chdman.c is an external tool !
@@ -86,34 +65,34 @@ set(MAME_CORE_SRC
 
 set(MAME_INCLUDE_DIRS "src" "../amiga" "." "./includes" ${EXPATPATH})
 
-add_library( mamecore STATIC ${MAME_CORE_SRC} ${MAME_DRIVERS_SRC} ${MAME_SOUND_SRC}
+add_library( mamecore STATIC ${MAME_CORE_SRC}
 							  )
 set_property(TARGET mamecore PROPERTY C_STANDARD 11)
 set_property(TARGET mamecore PROPERTY CXX_STANDARD 11)
 target_include_directories(mamecore PUBLIC ${MAME_INCLUDE_DIRS} ${ZLIBPATH} )
 set(MAME_INLINE "static inline")
-target_compile_definitions(mamecore PUBLIC INLINE=${MAME_INLINE} ZIP_CACHE=1 CRLF=2 ${CPU_DEFS} )
-if(MAME_USE_HARDFLOAT)
-	target_compile_definitions(mamecore PUBLIC MAME_USE_HARD_FLOAT=1 )
-endif()
+target_compile_definitions(mamecore PRIVATE INLINE=${MAME_INLINE} ZIP_CACHE=1 CRLF=2 ${CPU_DEFS} )
+#if(MAME_USE_HARDFLOAT)
+#	target_compile_definitions(mamecore PUBLIC MAME_USE_HARD_FLOAT=1 )
+#endif()
 # -fpermissive
-#target_compile_options(mamecore PUBLIC -O2 -Wno-narrowing )
+message(WARNING "mamecore compiled with options:")
+target_compile_options(mamecore PRIVATE -O0 ${AMIGA_COMPILER_OPTIONS} )
 
 
 # - - - - - - --  - -same for O2
 
-add_library( mamecoreO2 STATIC ${MAME_CPU_SRC} )
+add_library( mamecoreO2 STATIC  ${MAME_CORE_SRC} ${MAME_DRIVERS_SRC} ${MAME_SOUND_SRC} ${MAME_CPU_SRC})
 set_property(TARGET mamecoreO2 PROPERTY C_STANDARD 11)
 set_property(TARGET mamecoreO2 PROPERTY CXX_STANDARD 11)
 target_include_directories(mamecoreO2 PUBLIC ${MAME_INCLUDE_DIRS} ${ZLIBPATH} )
 set(MAME_INLINE "static inline")
 target_compile_definitions(mamecoreO2 PUBLIC INLINE=${MAME_INLINE} ZIP_CACHE=1 CRLF=2 ${CPU_DEFS} )
-if(MAME_USE_HARDFLOAT)
-	target_compile_definitions(mamecoreO2 PUBLIC MAME_USE_HARD_FLOAT=1 )
-endif()
+#if(MAME_USE_HARDFLOAT)
+#	target_compile_definitions(mamecoreO2 PUBLIC MAME_USE_HARD_FLOAT=1 )
+#endif()
 # -fpermissive -Wno-narrowing
-#target_compile_options(mamecoreO2 PUBLIC -O2  -Wno-narrowing )
-
+ target_compile_options(mamecoreO2 PRIVATE -O2 -fno-tree-vectorize ${AMIGA_COMPILER_OPTIONS} )
 # - - - - - - - - - - same for O3
 
 #add_library( mamecoreO3 STATIC  ${MAME_DRIVERS_SRC} ${MAME_SOUND_SRC} ${MAME_CPU_SRC} )

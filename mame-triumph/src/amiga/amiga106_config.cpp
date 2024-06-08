@@ -162,10 +162,10 @@ int MameConfig::load()
 		goto error;
     printf("MameConfig::load 3\n");
     /* find the config node */
-	confignode = xml_get_sibling(root->child, /*pMainConfig*/"Roms");
+	confignode = xml_get_sibling(root->child, pMainConfig);
 	if (!confignode)
 		goto error;
-
+    printf("MameConfig::load confignode ok\n");
     {
         xml_data_node*node = xml_get_sibling(confignode->child, "Roms");
          printf(" rom node::%08x:\n",(int)node);

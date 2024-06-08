@@ -107,6 +107,7 @@ void Paletted_CGX::updatePaletteRemap(_mame_display *display)
             case 3: case 4: if(_clut32.size()<nbc) _clut32.resize(nbc);
              break;
         }
+        // on first force all dirty to have all done once.
         int nbdirstybf = (nbc+31)>>5;
         for(int i=0;i<nbdirstybf;i++) pdirtrybf[i]=~0;
     }

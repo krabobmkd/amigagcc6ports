@@ -11,30 +11,38 @@ project(AmigaMame LANGUAGES C CXX VERSION 1.0)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 option(MAME_USE_HARDFLOAT "compile using direct 68882 FPU, will not work on economic 060" ON)
-option(MAME_USE_68060 "else 040" ON)
-
-#option(HOOKTEST "do" ON)
+# options can only be bool:
+option(AMIGA_USE_68030 " use 68030" OFF)
+option(AMIGA_USE_68040 " use 68040" ON)
+option(AMIGA_USE_68060 " use 68060" OFF)
 
 if(AMIGA)
+
 #  -fno-rtti -fno-exceptions -fno-strict-aliasing
 	# add your generic options here:
-	add_compile_options( -save-temps )
+	#add_compile_options( -save-temps )
+	list(APPEND AMIGA_COMPILER_OPTIONS -save-temps)
 
-	if(MAME_USE_68060)
-		add_compile_options( -m68060 -mcpu=68060 )
-		add_link_options( -m68060 -mcpu=68060 )
+	if(AMIGA_USE_68030)
+		list(APPEND AMIGA_COMPILER_OPTIONS -m68030)
+	elseif(AMIGA_USE_68040)
+		list(APPEND AMIGA_COMPILER_OPTIONS -m68040)
+	elseif(AMIGA_USE_68060)
+		list(APPEND AMIGA_COMPILER_OPTIONS -m68060)
 	else()
-		add_compile_options( -m68040 -mcpu=68040 )
-		add_link_options( -m68040 -mcpu=68040 )
+		list(APPEND AMIGA_COMPILER_OPTIONS -m68020)
 	endif()
+
 	if(MAME_USE_HARDFLOAT)
-		add_compile_options( -mhard-float -ffast-math )
-		add_link_options( -mhard-float -ffast-math)
+		list(APPEND AMIGA_COMPILER_OPTIONS -mhard-float -ffast-math)
 	else()
-		add_compile_options( -msoft-float )
-		add_link_options( -msoft-float )
+		list(APPEND AMIGA_COMPILER_OPTIONS  -msoft-float)
 	endif()
+
 endif()
+#add_compile_options( -mhard-float -ffast-math )
+#add_link_options( -mhard-float -ffast-math)
+
 
 add_subdirectory(../mame106 MameLib)
 
@@ -86,10 +94,10 @@ set_property(TARGET ${PROGNAME} PROPERTY C_STANDARD 11)
 set_property(TARGET ${PROGNAME} PROPERTY CXX_STANDARD 11)
 target_compile_definitions(${PROGNAME} PUBLIC MAMEVERSION=106 ZIP_CACHE=1 )
 if(MAME_USE_HARDFLOAT)
-	target_compile_definitions(${PROGNAME} PUBLIC MAME_USE_HARD_FLOAT=1 )
+	target_compile_definitions(${PROGNAME} PRIVATE MAME_USE_HARD_FLOAT=1 )
 endif()
-# the static libs that are part of this repo: 
-target_link_libraries(${PROGNAME} PUBLIC mamecore mamecoreO2 z expat)
+# the static libs that are part eof this repo:
+target_link_libraries(${PROGNAME} PUBLIC mamecoreO2 z expat)
 
 target_link_directories(${PROGNAME} PUBLIC "../../lib")
 target_include_directories(${PROGNAME} PUBLIC "../../include" )
@@ -103,9 +111,9 @@ target_include_directories(${PROGNAME} PUBLIC "../mame106")
 target_include_directories(${PROGNAME} PUBLIC "../../../extrasdk/MUI/include")
 target_include_directories(${PROGNAME} PUBLIC "../../../extrasdk/P96/include")
 
-target_compile_options(${PROGNAME} PUBLIC -O3 -Wno-narrowing )
-# test
-target_link_options(${PROGNAME} PUBLIC -O3 -Wno-narrowing -s)
+target_compile_options(${PROGNAME} PRIVATE -O0 -Wno-narrowing ${AMIGA_COMPILER_OPTIONS} )
+
+target_link_options(${PROGNAME} PRIVATE -O0 -s ${AMIGA_COMPILER_OPTIONS})
 
 # add_executable(cgxhooktest cgxhookstest.c cgxhooks.c cgxhooks.h )
 # set_property(TARGET cgxhooktest PROPERTY C_STANDARD 11)

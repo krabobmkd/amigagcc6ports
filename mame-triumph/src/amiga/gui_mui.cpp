@@ -1086,6 +1086,26 @@ ULONG createPanel_Paths()
         Child, HVSpace,
       TAG_DONE);
 }
+ULONG createOptionTabGroup()
+{
+    RE_Options = OMUINO(MUIC_Register,MUIA_Register_Titles,(ULONG)(&RegisterTitles[0]),
+
+                // Tab1: Drivers
+                Child,createPanel_Drivers(),
+                // Tab2: Display
+                Child,createPanel_Display(),
+                //tab 3: Sound
+                Child,createPanel_Sound(),
+               // tab4: controls
+                Child,createPanel_Controls(),
+                //
+                Child,createPanel_Paths() ,
+
+        TAG_DONE);
+    printf("OptionTabGroup:%08x\n",(int)RE_Options);
+    return (ULONG)RE_Options;
+}
+
 int MainGUI(void)
 {
   ULONG rid;
@@ -1105,24 +1125,14 @@ int MainGUI(void)
     {
       if(!MainWin)
       {
-//              // Tab1: Drivers
-//              createPanel_Drivers();
-//              // Tab2: Display
-//              createPanel_Display();
-//              //tab 3: Sound
-//              createPanel_Sound();
-//             // tab4: controls
-//              createPanel_Controls();
-//              //
-//              createPanel_Paths();
-
-
+//static  std::string appName(APPNAME);
   printf("go MUINewObject()\n");
-        MainWin =  MUINewObject(MUIC_Window,
-          MUIA_Window_Title,(ULONG) APPNAME,
-          MUIA_Window_ID   , MAKE_ID('M','A','I','N'),
+      //  MainWin =  MUINewObject(MUIC_Window,
+        struct TagItem mainwintags[] = {
+          {MUIA_Window_Title,(ULONG)APPNAME},
+          {MUIA_Window_ID   , MAKE_ID('M','A','I','N')},
 
-          MUIA_Window_Menustrip, UMUINO(MUIC_Menustrip,
+        {MUIA_Window_Menustrip, UMUINO(MUIC_Menustrip,
             MUIA_Family_Child,UMUINO(MUIC_Menu,MUIA_Menu_Title,(ULONG)GetMessage(MSG_MENU_GAME),
               MUIA_Family_Child, UMUINO(MUIC_Menuitem,
                 MUIA_Menuitem_Title,  (ULONG)GetMessage(MSG_MENU_ABOUT),
@@ -1142,33 +1152,20 @@ int MainGUI(void)
                 MUIA_UserData,      MUIV_Application_ReturnID_Quit,
               TAG_DONE),
             TAG_DONE),
-          TAG_DONE),
+          TAG_DONE)},
 
-          WindowContents, UMUINO(MUIC_Group, // vertical group because no horiz. specified.
+        {WindowContents, UMUINO(MUIC_Group, // vertical group because no horiz. specified.
 
-            Child,
-              // this is the TAB group:
-              RE_Options = OMUINO(MUIC_Register,MUIA_Register_Titles,(RegisterTitles),
-
-              // Tab1: Drivers
-              Child,createPanel_Drivers(),
-              // Tab2: Display
-              Child,createPanel_Display(),
-              //tab 3: Sound
-              Child,createPanel_Sound(),
-             // tab4: controls
-              Child,createPanel_Controls(),
-              //
-              Child,createPanel_Paths() ,
-            TAG_DONE),
+            Child,createOptionTabGroup(),
 
             Child, UMUINO(MUIC_Group,MUIA_Group_Horiz,TRUE,
               Child, BU_Start   = SimpleButton((ULONG)GetMessage(MSG_START)),
               Child, BU_Quit    = SimpleButton((ULONG)GetMessage(MSG_QUIT)),
-            TAG_DONE), // end WindowContent Group
-          TAG_DONE),
-        TAG_DONE);
-
+            TAG_DONE,0), // end WindowContent Group
+          TAG_DONE,0)},
+        TAG_DONE,0};
+        MainWin =  MUI_NewObjectA(MUIC_Window, (struct TagItem *) &mainwintags[0]);// MUINewObject(MUIC_Window,
+        printf("after MUINewObject():%08x\n",(int)MainWin);
 
         if(MainWin)
         {
@@ -1238,7 +1235,6 @@ int MainGUI(void)
 #endif
         }
       }
-  printf("after MUINewObject():%08x\n",(int)MainWin);
       if(MainWin)
       {
         SetOptions(TRUE);
