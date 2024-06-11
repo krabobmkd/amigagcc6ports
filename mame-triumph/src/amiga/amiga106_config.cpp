@@ -54,7 +54,7 @@ void MameConfig::setActiveDriver(int driverIndexInRomFoundList)
     const _game_driver *const*drv = _romsFound[driverIndexInRomFoundList];
     int idriver = ((int)drv-(int)&drivers[0])/sizeof(const _game_driver *);
     _activeDriver = idriver;
-    printf("driverfound:%d\n",_activeDriver);
+ //   printf("driverfound:%d\n",_activeDriver);
 
    // printf("driverfound:%%s\n",drivers[_activeDriver]->description);
 }
@@ -262,7 +262,7 @@ int MameConfig::initDriverIndex()
      _driverIndex.insert(drv->name,NumDrivers);
   }
 }
-int MameConfig::selectAll()
+int MameConfig::allDrivers()
 {
   _romsFound.clear();
   for(int NumDrivers = 0; drivers[NumDrivers]; NumDrivers++)
@@ -344,10 +344,11 @@ int MameConfig::scanDriversRecurse(BPTR lock, FileInfoBlock*fib)
     } // end loop per dir file
 
 }
-static int DriverCompare(struct _game_driver ***drv1, struct _game_driver ***drv2)
+static int DriverCompareNames(struct _game_driver ***drv1, struct _game_driver ***drv2)
 {
   return(stricmp((**drv1)->description, (**drv2)->description));
 }
+
 
 void MameConfig::sortDrivers()
 {
@@ -356,7 +357,7 @@ void MameConfig::sortDrivers()
     qsort(_romsFound.data(), //&SortedDrivers[DRIVER_OFFSET],
         (int)_romsFound.size() ,//NumDrivers,
          sizeof(struct _game_driver **),
-          (int (*)(const void *, const void *)) DriverCompare);
+          (int (*)(const void *, const void *)) DriverCompareNames);
 
 }
 // apply to mame options
@@ -367,7 +368,7 @@ void MameConfig::applyToMameOptions(_global_options &mameOptions)
     options.cheat=1;
     options.gui_host=1;
 
-    options.pause_bright = 0.3f;
+    options.pause_bright = 0.5f;
     options.brightness = 1.0f;
     options.gamma=0.5f;
 
@@ -384,3 +385,4 @@ void MameConfig::applyToMameOptions(_global_options &mameOptions)
 //    else
 //      options.samplerate  = 22000;
 }
+

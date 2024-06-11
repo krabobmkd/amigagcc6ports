@@ -217,7 +217,7 @@ void osd_close_display(void)
 
 void osd_update_video_and_audio(struct _mame_display *display)
 {
-    FrameCounterUpdate++;
+
 
     if(GetStartTime)
     {
@@ -229,9 +229,10 @@ void osd_update_video_and_audio(struct _mame_display *display)
     if(!g_pMameDisplay) return;
 
     // apply eventual hard beam waiting (if too fast) just before draw.
-#ifdef FRAMEDROP
     int igamefps = (int) display->game_refresh_rate;
-    if(UseBrakes>0)
+
+
+   // if(UseBrakes>0)
     {
         INT64 framesThatShouldbeNow = ((osd_cycles() - StartTime)*igamefps)/osd_cycles_per_second();
         while(framesThatShouldbeNow<FrameCounter)
@@ -243,36 +244,36 @@ void osd_update_video_and_audio(struct _mame_display *display)
             framesThatShouldbeNow = ((osd_cycles() - StartTime)*igamefps)/osd_cycles_per_second();
         }
     }
-#endif
+
     g_pMameDisplay->draw(display);
 
     MsgPort *userport = g_pMameDisplay->userPort();
     if(userport) UpdateInputs(userport);
 
     // - - - - -auto fps management, analysis
-#ifdef FRAMEDROP
-    if(FrameCounterUpdate>=igamefps)
-    {
-        FrameCounterUpdate -=igamefps;
-        // performance are already computed by mame.
-        const performance_info *perfs = mame_get_performance_info();
-        if(perfs)
-        {
-            int icurrentfps = (int)perfs->frames_per_second;
 
-            // manage when too fast (uae jit)
-            UseBrakes = (int)( icurrentfps+5 > igamefps);
-            if(!UseBrakes && icurrentfps<igamefps-1)
-            {
-                // most amigas...
-                UseFrameskip = 1;
-            }
-        }
-    }
-#endif
+//    if(FrameCounterUpdate>=igamefps>>2)
+//    {
+//        FrameCounterUpdate -=igamefps>>2;
+//        // performance are already computed by mame.
+//        const performance_info *perfs = mame_get_performance_info();
+//        if(perfs)
+//        {
+//            int icurrentfps = (int)perfs->frames_per_second;
+
+//            // manage when too fast (uae jit)
+////            UseBrakes = (int)( icurrentfps+1 > igamefps);
+////            if(!UseBrakes && icurrentfps<igamefps-1)
+////            {
+////                // most amigas...
+////                UseFrameskip = 1;
+////            }
+//        }
+//    }
+
     // - - - -
-
-
+    FrameCounterUpdate++;
+    FrameCounter++;
 
 }
 
@@ -289,20 +290,7 @@ void osd_update_video_and_audio(struct _mame_display *display)
 */
 int osd_skip_this_frame(void)
 {
-#ifdef FRAMEDROP
-    FrameCounterUpdate++;
-    FrameCounter++;
-    FrameSkipCounter++;
-
-
-    if(!UseFrameskip) return 0;
-
-    return (FrameCounterUpdate & 0x01);
-#else
-
     return 0; //FrameCounterUpdate & 1;
-#endif
-
 }
 
 /*

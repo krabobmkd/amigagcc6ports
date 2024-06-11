@@ -60,24 +60,13 @@ extern "C" {
 
 #include "file.h"
 
-#define MIN_STACK (10*1024)
+#define MIN_STACK (14*1024)
 
 #define ITEM_NEW    0
 #define ITEM_SAVE_ILBM  1
 #define ITEM_ABOUT    3
 #define ITEM_QUIT   5
 #define NUM_ITEMS   6
-
-//extern "C" {
-void     Main(int argc, char **argv);
-extern void ASM RefreshHandler(struct Hook *hook REG(a0));
-extern void ASM MenuHandler(struct Hook *hook REG(a0), APTR null REG(a2), ULONG *itemnum REG(a1));
-extern void ASM IDCMPHandler(struct Hook *hook REG(a0), APTR null REG(a2), ULONG *imclass REG(a1));
-void     SaveILBM(void);
-void     ErrorRequest(LONG msg_id, ...);
-
-//}
-
 
 void     StartGame(void);  /* In amiga/amiga.c. */
 
@@ -87,10 +76,7 @@ struct _game_driver **Drivers;
 #endif
 
 LONG        MenuSelect[NUM_ITEMS];
-UBYTE       Channel[4];
-static LONG SelectNextGame;
 
-UBYTE       ChannelBuffer[8];
 
 extern "C" {
 #ifdef USE_OWN_DOSBASE
@@ -185,35 +171,50 @@ void main_close()
 
 const char *pVersion="$VER: 0.106 a0.1";
 
-#if defined(MAME_USE_HARD_FLOAT)
 
+// - - - - IF COMPILED WITH FLOAT, AND MACHINE HAS NO FPU, EXIT WITH MESSAGE - - - -
+#if defined(MAME_USE_HARD_FLOAT)
 int amiga_hasFPU()
 {UWORD attnflags = SysBase->AttnFlags; return (int)((attnflags & (AFF_68881|AFF_68882|AFF_FPU40))!=0);
 }
 void amiga_cpucheck()
-{
-    int hasFPU = amiga_hasFPU();
-    if(!hasFPU) {
-        printf("This tool was compiled for machines with a FPU.\n");
+{   int hasFPU = amiga_hasFPU();
+    if(!hasFPU) { printf("This tool was compiled for machines with a FPU.\n");
         exit(1);
     }
 }
-
-// make it happen before main() with a global constructor, less intrusive to original code.
-struct beforeMainInit
-{
-    beforeMainInit() {
-      amiga_cpucheck();
-    }
-};
+// make it happen before main() with a global constructor, it's less intrusive.
+struct beforeMainInit{ beforeMainInit() { amiga_cpucheck(); } };
 beforeMainInit _ginit;
-
 #endif
 
+// #define STACK_WATCH 1
 
 int main(int argc, char **argv)
 {
+    {
+    Task *task  = FindTask(NULL);
+    int stacksize = ((int)task->tc_SPReg - (int)task->tc_SPLower);
+#ifdef STACK_WATCH
 
+ // if((task->tc_SPReg - task->tc_SPLower) < (MIN_STACK - 1024))
+
+    int a=2;
+    int *pa = &a;
+    int *pa_far = (int *)(task->tc_SPLower+4) ;
+    int *pa_near = (int *)( (int)pa-64);
+
+    for(int i=0;i<(((int)pa_near-(int)pa_far))/sizeof(int*);i++)
+    {
+        pa_far[i]=0xCAFEBABE;
+    }
+
+#endif
+        if(stacksize<MIN_STACK) {
+            printf("This version of Mame needs 14Kb stack at least, use \"stack 16384\" or icon property.");
+            return 1;
+        }
+    }
 /* krb: looks messy to me, original stack should be restored and alloc freed , in an atexit().
   task  = FindTask(NULL);
   if((task->tc_SPReg - task->tc_SPLower) < (MIN_STACK - 1024))
@@ -244,33 +245,57 @@ int main(int argc, char **argv)
     getMainConfig().init(argc,argv);
     getMainConfig().load();
 
-    AllocGUI();
-
-    // go into interface loop, select first game.
-    if(MainGUI()!=0)
+    int idriver=0; // romToLaunch;
+    if(argc>1)
     {
-        getMainConfig().save(); // for test
-        exit(0);
+        // test if just "mame romname".
+        int itest = getMainConfig().driverIndex().index(argv[1]);
+        if(itest>0) idriver= itest;
+
+        // this manages both args by command line and args by icon tooltips.
+        STRPTR *args = ArgArrayInit(argc,(const char **)argv);
+        STRPTR rom = ArgString((CONST_STRPTR*)args,"ROM","");
+        if(rom && *rom != 0)  idriver = getMainConfig().driverIndex().index(rom);
+        ArgArrayDone();
     }
 
+    //  if game was explicit, no GUI
+    if(idriver>0)
+    {
+        getMainConfig().setActiveDriver(idriver);
+        StartGame();
+        return 0;
+    }
+
+    AllocGUI();
+
+    // go into interface loop
     ULONG quit=FALSE;
 
     // loop per emulation launched
     while(!quit)
     {
-        SelectNextGame = 1;
+        quit = MainGUI(); // select game with GUI.
+        if(quit) break;
 
         StartGame();
-        // here game is closed.
-        osd_stop_audio_stream();
 
-        // relaunch GUI
-        if(SelectNextGame > 0)
-          quit = MainGUI();
-        else if(!SelectNextGame)
-          quit = TRUE;
     } // end loop by emulation launch
+
     getMainConfig().save();
+
+#ifdef STACK_WATCH
+    printf(" **** stack watch\n");
+    int nbt = ((int)pa_near-(int)pa_far)/sizeof(int*);
+    int i;
+    for(i=0;i<nbt;i++)
+    {
+        if(*pa_far!=0xCAFEBABE) break;
+        pa_far++;
+    }
+    int stackrealuse = (int) ((int)task->tc_SPReg - (int)pa_far);
+    printf("stack size:%d   real use:%d \n",stacksize,stackrealuse);
+#endif
 
     // end of main, will automatically reach main_close(), like any exit() call does.
     return(0);

@@ -14,7 +14,7 @@ struct _game_driver;
 struct _global_options;
 
 // driver name list could actually get big, avoid looping it.
-class nameDriverMap {
+class NameDriverMap {
 public:
     void insert(const char *n, int mamedriverindex) {
         using namespace std;
@@ -67,16 +67,19 @@ public:
     ULONG sampleRate() const { return _sampleRate; }
     // - -  update detected rom list - - -
     int scanDrivers();
-    int selectAll();
+    int allDrivers();
     // - - path to main dirs --
     const char *getUserDir() const {return _userDir.c_str(); }
     const char *getRomsDir() const {return _romsDir.c_str(); }
 
     const std::vector<const _game_driver *const*> &romsFound() const { return _romsFound; };
 
+    const NameDriverMap  &driverIndex() const { return _driverIndex; };
+
     // apply to mame options
     void applyToMameOptions(_global_options &mameOptions);
 
+    void listFull();
 protected:
     // - - - prefs unique for app
     std::string _userDir;
@@ -100,7 +103,7 @@ protected:
 
 
     // name to current mame index to fasten dir search
-    nameDriverMap _driverIndex;
+    NameDriverMap _driverIndex;
 
     // - - - - - scanned roms zip or dir for UI.
     //std::vector<MameRomFound> _romsFound; // what to save
