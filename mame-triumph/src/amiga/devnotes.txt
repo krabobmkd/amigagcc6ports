@@ -5,9 +5,12 @@ TODOLIST before tests
  - X switch window/fullscreen
  - X avoir load xml fonctionnel.
  - X Stack watch
+ - X os frameskip when too fast (uae)
+
+ - O coin1 & start1 by default.
 
  frameskip
-	- O os frameskip when too fast (uae)
+
 	- O emu frameskip when too slow
 
  - O tag "beta" before lending to anyone
