@@ -11,6 +11,7 @@ extern "C"
 typedef long BPTR;
 struct FileInfoBlock;
 struct _game_driver;
+struct _global_options;
 
 // driver name list could actually get big, avoid looping it.
 class nameDriverMap {
@@ -52,6 +53,8 @@ public:
     ~MameConfig();
 
     void init(int argc,char **argv);
+
+    void resettodefault();
     void setRomPath(const char *rompath);
     void setUserPath(const char *userpath);
     // set when driver selected,
@@ -71,6 +74,8 @@ public:
 
     const std::vector<const _game_driver *const*> &romsFound() const { return _romsFound; };
 
+    // apply to mame options
+    void applyToMameOptions(_global_options &mameOptions);
 
 protected:
     // - - - prefs unique for app

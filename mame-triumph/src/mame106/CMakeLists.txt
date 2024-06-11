@@ -6,6 +6,15 @@ set(C_STANDARD 11)
 set(CXX_STANDARD 11)
 project(MameLib LANGUAGES C CXX VERSION 1.0)
 
+macro(replace_list_item LIST OLD_VALUE NEW_VALUE)
+    list(FIND ${LIST} ${OLD_VALUE} OLD_VALUE_INDEX)
+    if(OLD_VALUE_INDEX GREATER_EQUAL 0)
+        list(REMOVE_AT ${LIST} ${OLD_VALUE_INDEX})
+        list(INSERT ${LIST} ${OLD_VALUE_INDEX} ${NEW_VALUE})
+    endif()
+endmacro()
+
+
 include(gamedrivers.cmake)
 
 set(ZLIBPATH "../../../zlib")
@@ -65,21 +74,24 @@ set(MAME_CORE_SRC
 
 set(MAME_INCLUDE_DIRS "src" "../amiga" "." "./includes" ${EXPATPATH})
 
-add_library( mamecore STATIC ${MAME_CORE_SRC}
-							  )
-set_property(TARGET mamecore PROPERTY C_STANDARD 11)
-set_property(TARGET mamecore PROPERTY CXX_STANDARD 11)
-target_include_directories(mamecore PUBLIC ${MAME_INCLUDE_DIRS} ${ZLIBPATH} )
-set(MAME_INLINE "static inline")
-target_compile_definitions(mamecore PRIVATE INLINE=${MAME_INLINE} ZIP_CACHE=1 CRLF=2 ${CPU_DEFS} )
-#if(MAME_USE_HARDFLOAT)
-#	target_compile_definitions(mamecore PUBLIC MAME_USE_HARD_FLOAT=1 )
-#endif()
-# -fpermissive
-message(WARNING "mamecore compiled with options:")
-target_compile_options(mamecore PRIVATE -O0 ${AMIGA_COMPILER_OPTIONS} )
+#add_library( mamecore STATIC ${MAME_CORE_SRC} ${MAME_DRIVERS_SRC} ${MAME_SOUND_SRC} ${MAME_CPU_SRC}
+#							  )
+#set_property(TARGET mamecore PROPERTY C_STANDARD 11)
+#set_property(TARGET mamecore PROPERTY CXX_STANDARD 11)
+#target_include_directories(mamecore PUBLIC ${MAME_INCLUDE_DIRS} ${ZLIBPATH} )
+#set(MAME_INLINE "static inline")
+#target_compile_definitions(mamecore PRIVATE INLINE=${MAME_INLINE} ZIP_CACHE=1 CRLF=2 ${CPU_DEFS} )
+##if(MAME_USE_HARDFLOAT)
+##	target_compile_definitions(mamecore PUBLIC MAME_USE_HARD_FLOAT=1 )
+##endif()
+## -fpermissive
+#message(WARNING "mamecore compiled with options:")
+#target_compile_options(mamecore PRIVATE -O0 ${AMIGA_COMPILER_OPTIONS} )
 
 
+replace_list_item(MAME_DRIVERS_SRC "vidhrdw/segaic16.c" "vidhrdw/segaic16_krb.c")
+replace_list_item(MAME_DRIVERS_SRC "vidhrdw/segaorun.c" "vidhrdw/segaorun_krb.c")
+replace_list_item(MAME_CORE_SRC "mame.c" "mame_krb.c")
 # - - - - - - --  - -same for O2
 
 add_library( mamecoreO2 STATIC  ${MAME_CORE_SRC} ${MAME_DRIVERS_SRC} ${MAME_SOUND_SRC} ${MAME_CPU_SRC})
@@ -106,3 +118,6 @@ target_compile_definitions(mamecoreO2 PUBLIC INLINE=${MAME_INLINE} ZIP_CACHE=1 C
 #endif()
 ## -fpermissive  -Wno-narrowing
 #target_compile_options(mamecoreO3 PUBLIC -O3 )
+
+
+

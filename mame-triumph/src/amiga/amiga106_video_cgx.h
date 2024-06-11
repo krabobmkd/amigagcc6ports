@@ -8,7 +8,9 @@ extern "C"
     #include <exec/ports.h>
 }
 #include "amiga106_video.h"
-
+extern "C" {
+    #include "osdepend.h"
+}
 struct _osd_create_params;
 struct _mame_display;
 struct Window;
@@ -23,6 +25,7 @@ public:
     Paletted_CGX(const _osd_create_params *params, int screenPixFmt, int bytesPerPix);
     ~Paletted_CGX();
     void updatePaletteRemap(_mame_display *display);
+    void updatePaletteRemap15b();
     int needRemap() const { return _needFirstRemap; }
 
     std::vector<UBYTE> _clut8;
@@ -42,6 +45,7 @@ public:
     virtual void open() = 0;
     virtual void close()= 0;
     virtual MsgPort *userPort() = 0;
+    virtual RastPort *rastPort() = 0;
     inline ULONG pixelFmt() const { return _PixelFmt; }
     inline ULONG pixelBytes() const { return _PixelBytes; }
 
@@ -50,7 +54,7 @@ protected:
     ULONG _PixelFmt,_PixelBytes;
     int _width,_height;
     int _dx,_dy; // draw delta (for windows borders)
-    virtual RastPort *rastPort() = 0;
+
     virtual BitMap *bitmap() = 0;
 };
 
@@ -62,6 +66,7 @@ public:
     void open() override;
     void close() override;
     MsgPort *userPort() override;
+    RastPort *rastPort() override;
 protected:
     Screen *_pScreen;
     Window *_pScreenWindow;
@@ -69,7 +74,7 @@ protected:
     int _fullscreenWidth; // guessed from modeid.
     int _fullscreenHeight;
     void *_pMouseRaster;
-    RastPort *rastPort() override;
+
     BitMap *bitmap() override;
 
 };
@@ -81,17 +86,18 @@ public:
     void open() override;
     void close() override;
     MsgPort *userPort() override;
+    RastPort *rastPort() override;
 protected:
     Window *_pWbWindow;
     BitMap *_sWbWinSBitmap;
     int _machineWidth,_machineHeight;
-    RastPort *rastPort() override;
+
     BitMap *bitmap() override;
     void drawRastPort_CGX(_mame_display *display,Paletted_CGX *pRemap) override;
 };
 
 
-class Display_CGX : public MameDisplay
+class Display_CGX : public AmigaDisplay
 {
 public:
     Display_CGX();
@@ -101,10 +107,15 @@ public:
     int good() override;
     void draw(_mame_display *pmame_display) override;    
     MsgPort *userPort() override;
+//    RastPort *rastPort() override;
+    int switchFullscreen() override;
+    void WaitFrame() override;
 protected:
     IntuitionDrawable   *_drawable; // screen or window
     Paletted_CGX        *_remap;    // null if true color app.
-
+    int     _window; // last param set
+    _osd_create_params _params;
+    ULONG _forcedModeId;
  //   void drawRastPort(RastPort *pRPort,_mame_display *pmame_display,int dx,int dy);
 };
 /*

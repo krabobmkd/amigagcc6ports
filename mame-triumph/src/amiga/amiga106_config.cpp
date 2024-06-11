@@ -58,7 +58,17 @@ void MameConfig::setActiveDriver(int driverIndexInRomFoundList)
 
    // printf("driverfound:%%s\n",drivers[_activeDriver]->description);
 }
-static const char *pMainConfig="Mame";
+
+// xml ids must be all lowercase
+static const char *pcd_mame="mame";
+
+static const char *pcf_roms="roms";
+static const char *pcf_romsdir="romsdir";
+static const char *pcf_userdir="userdir";
+static const char *pcf_last="last";
+static const char *pcf_display="display";
+static const char *pcf_startwindowed="startwindowed";
+static const char *pcf_doublewindow="doublewindow";
 int MameConfig::save()
 {
     // note: got to save rom short name id, not driver index ! index evolve with compilation.
@@ -78,7 +88,7 @@ int MameConfig::save()
     if(!file)  goto error;
 
     /* create a config node */
-    confignode = xml_add_child(root,pMainConfig, NULL);
+    confignode = xml_add_child(root,pcd_mame, NULL);
     if (!confignode)
         goto error;
     xml_set_attribute_int(confignode, "version", 1);
@@ -87,7 +97,7 @@ int MameConfig::save()
    // systemnode = xml_add_child(confignode, "system", NULL);
 //    if (!systemnode)
 //        goto error;
-    xml_set_attribute(confignode, "name","main" /*(which_type == CONFIG_TYPE_DEFAULT) ? "default" : Machine->gamedrv->name*/);
+ //   xml_set_attribute(confignode, "name","main" /*(which_type == CONFIG_TYPE_DEFAULT) ? "default" : Machine->gamedrv->name*/);
 
     // save known rom list
     if(_romsFound.size()>0)
@@ -102,22 +112,22 @@ int MameConfig::save()
             i++;
         }
         string romslist = ssroms.str();
-        xml_add_child(confignode,"Roms", romslist.c_str());
+        xml_add_child(confignode,pcf_roms, romslist.c_str());
     }
 
-    if(!_romsDir.empty()) xml_add_child(confignode,"RomsDir", _romsDir.c_str());
-    if(!_userDir.empty()) xml_add_child(confignode,"UserDir", _userDir.c_str());
+    if(!_romsDir.empty()) xml_add_child(confignode,pcf_romsdir, _romsDir.c_str());
+    if(!_userDir.empty()) xml_add_child(confignode,pcf_userdir, _userDir.c_str());
 
     if(_activeDriver !=-1)
     {
-        xml_add_child(confignode,"Last", drivers[_activeDriver]->name );
+        xml_add_child(confignode,pcf_last, drivers[_activeDriver]->name );
     }
 
-    display = xml_add_child(confignode,"Display", NULL );
+    display = xml_add_child(confignode,pcf_display, NULL );
     if(display)
     {
-        if(_startWindowed) xml_add_child(confignode,"StartWindowed",NULL );
-        if(_doubleWindow)  xml_add_child(confignode,"DoubleWindow",NULL );
+        if(_startWindowed) xml_add_child(confignode,pcf_startwindowed,NULL );
+        if(_doubleWindow)  xml_add_child(confignode,pcf_doublewindow,NULL );
     }
 
     /* flush the file */
@@ -137,6 +147,15 @@ error:
 
 
 }
+void MameConfig::resettodefault()
+{
+    _userDir="PROGDIR:user";
+    _romsDir="PROGDIR:roms";
+    _romsFound.clear();
+    _activeDriver =-1;
+
+}
+
 int MameConfig::load()
 {
     xml_data_node *root=NULL,*confignode,*node; //, *confignode, *systemnode;
@@ -146,39 +165,35 @@ int MameConfig::load()
     printf("MameConfig::load\n");
     // resolve short name to index after load, like scan does.
 
-    _userDir="PROGDIR:user";
-    _romsDir="PROGDIR:roms";
-    // had to reset first ?
-    _romsFound.clear();
-    _activeDriver =-1;
+    resettodefault();
 
     file = mame_fopen("main", 0, FILETYPE_CONFIG, 0);
     if(!file)  goto error;
 
-    printf("MameConfig::load 2\n");
+
     /* read the file */
 	root = xml_file_read(file, NULL);
 	if (!root)
 		goto error;
-    printf("MameConfig::load 3\n");
-    /* find the config node */
-	confignode = xml_get_sibling(root->child, pMainConfig);
+
+	confignode = xml_get_sibling(root->child, pcd_mame);
 	if (!confignode)
 		goto error;
-    printf("MameConfig::load confignode ok\n");
+
     {
-        xml_data_node*node = xml_get_sibling(confignode->child, "Roms");
-         printf(" rom node::%08x:\n",(int)node);
+        node = xml_get_sibling(confignode->child,pcf_roms);
+
         if(node && node->value)
         {
-            string roms( node->value );
+            string roms( node->value ); // already start/end stripped.
             size_t i=0;
             while(i != string::npos)
             {
                size_t in = roms.find_first_of(" \t\n",i+1);
-                string s = roms.substr(i,in);
+               if(i>0) i++;
+                string s = roms.substr(i,in-i);
                 if(s.size()>0) {
-                    printf("read rom:%s:\n",s.c_str());
+                    //printf("read rom:%s:\n",s.c_str());
                     int idriver = _driverIndex.index(s.c_str());
                     if(idriver>=0) _romsFound.push_back(&drivers[idriver]);
                 }
@@ -189,26 +204,26 @@ int MameConfig::load()
 
         }
     }
-    node = xml_get_sibling(confignode->child, "RomsDir");
+
+    node = xml_get_sibling(confignode->child, pcf_romsdir);
     if(node && node->value) _romsDir = node->value;
 
-    node = xml_get_sibling(confignode->child, "UserDir");
+    node = xml_get_sibling(confignode->child, pcf_userdir);
     if(node && node->value) _userDir = node->value;
 
-    node = xml_get_sibling(confignode->child, "Last");
+    node = xml_get_sibling(confignode->child, pcf_last);
     if(node && node->value) _activeDriver = _driverIndex.index(node->value);
 
+    node = xml_get_sibling(confignode->child, pcf_display);
+    if(node)
+    {
+        xml_data_node *subnode= xml_get_sibling(node->child, pcf_startwindowed);
+        _startWindowed = (int)(subnode!=NULL);
+//        xml_data_node *subnode= xml_get_sibling(node->child, pcf_doublewindow);
+//
 
-//    version = xml_get_attribute_int(confignode, "version", 0);
-//	if (version != CONFIG_VERSION)
-//		goto error;
-    /* loop over all system nodes in the file */
-	//count = 0;
-    // get all system
-/*	for (systemnode = xml_get_sibling(confignode->child, "system"); systemnode; systemnode = xml_get_sibling(systemnode->next, "system"))
-	{
+    }
 
-    }*/
     xml_file_free(root);
 	mame_fclose(file);
 	return 1;
@@ -344,4 +359,28 @@ void MameConfig::sortDrivers()
           (int (*)(const void *, const void *)) DriverCompare);
 
 }
+// apply to mame options
+void MameConfig::applyToMameOptions(_global_options &mameOptions)
+{
+    memset(&mameOptions, 0,sizeof(_global_options));
 
+    options.cheat=1;
+    options.gui_host=1;
+
+    options.pause_bright = 0.3f;
+    options.brightness = 1.0f;
+    options.gamma=0.5f;
+
+    options.samplerate=(audio())?0:sampleRate();
+
+//todo/old...
+    //   options.ror        = (Config[CFG_ROTATION] == CFGR_RIGHT);
+    //   options.rol        = (Config[CFG_ROTATION] == CFGR_RIGHT);
+    //   options.flipx      = Config[CFG_FLIPX];
+    //   options.flipy      = Config[CFG_FLIPY];
+
+//    if(Config[CFG_SOUND] == CFGS_NO)
+//      options.samplerate  = 0;
+//    else
+//      options.samplerate  = 22000;
+}

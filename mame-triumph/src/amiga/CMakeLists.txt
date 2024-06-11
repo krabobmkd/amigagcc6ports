@@ -13,8 +13,8 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 option(MAME_USE_HARDFLOAT "compile using direct 68882 FPU, will not work on economic 060" ON)
 # options can only be bool:
 option(AMIGA_USE_68030 " use 68030" OFF)
-option(AMIGA_USE_68040 " use 68040" ON)
-option(AMIGA_USE_68060 " use 68060" OFF)
+option(AMIGA_USE_68040 " use 68040" OFF)
+option(AMIGA_USE_68060 " use 68060" ON)
 
 if(AMIGA)
 
@@ -36,7 +36,7 @@ if(AMIGA)
 	if(MAME_USE_HARDFLOAT)
 		list(APPEND AMIGA_COMPILER_OPTIONS -mhard-float -ffast-math)
 	else()
-		list(APPEND AMIGA_COMPILER_OPTIONS  -msoft-float)
+		list(APPEND AMIGA_COMPILER_OPTIONS -msoft-float)
 	endif()
 
 endif()
@@ -80,6 +80,7 @@ set(AMIGA_SRC
 	mame_msg.h
 
 	directdraw.s
+	devnotes.txt
 #	c2p.s
 #	gfx.s
 #	../../lib/c2p.s.o ../../lib/gfx.s.o

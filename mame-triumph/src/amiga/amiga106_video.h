@@ -16,16 +16,19 @@ struct RastPort;
 struct BitMap;
 
 /** full virtual */
-class MameDisplay
+class AmigaDisplay
 {
 public:
-    MameDisplay();
-    virtual ~MameDisplay();
+    AmigaDisplay();
+    virtual ~AmigaDisplay();
     virtual void open(const _osd_create_params *params,int window, ULONG forcedModeID=~0) = 0;
     virtual void close()= 0;
     virtual void draw(_mame_display *pmame_display) = 0;
     virtual int good() = 0;
+    virtual int switchFullscreen() = 0;
     virtual MsgPort *userPort() = 0;
+//    virtual RastPort *rastPort() = 0;
+    virtual void WaitFrame() = 0; // either WaitTTOF or Wait beam
 protected:
 };
 
@@ -36,5 +39,7 @@ public:
     int _height;
     std::vector<UWORD> _bm; // use the game palette ?
 };
+
+void SwitchWindowFullscreen();
 
 #endif

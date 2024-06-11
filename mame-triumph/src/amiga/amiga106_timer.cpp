@@ -51,7 +51,7 @@ cycles_t osd_cycles(void)
 /* return the number of cycles per second */
 cycles_t osd_cycles_per_second(void)
 {
-    return 1000LL;
+    return 1000000LL;
 }
 
 /* return the current number of cycles, or some other high-resolution timer.

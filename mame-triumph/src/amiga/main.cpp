@@ -23,8 +23,6 @@ extern "C" {
     #include "unzip.h"
 
 }
-//#define CATCOMP_BLOCK
-//#include "mame_msg.h" -> called by main.h
 
 #define CATCOMP_NUMBERS
 #include "messages.h"

@@ -29,7 +29,7 @@ extern "C" {
     #include <dos/dostags.h>
 }
 
-
+//#define COMPILE_AUDIO_AHI 1
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -246,7 +246,7 @@ int osd_start_audio_stream(int stereo)
 int osd_update_audio_stream(INT16 *buffer)
 {
 #if defined(COMPILE_AUDIO_AHI)
-  //  printf("osd_update_audio_stream %08x\n", (int)pAHIS);
+    //printf("osd_update_audio_stream %08x\n", (int)pAHIS);
     if(!pAHIS) return 0;
   //  printf("osd_update_audio_stream\n");
     // buffer length is pAHIS->m_nextSamples.
@@ -319,6 +319,7 @@ int osd_update_audio_stream(INT16 *buffer)
     pAHIS->m_pSBuff2 = p1;
 
     // must return length of next sample
+
     return pAHIS->m_nextSamples;
 #else
     return 800;

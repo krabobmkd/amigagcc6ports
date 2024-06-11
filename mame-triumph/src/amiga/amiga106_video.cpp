@@ -45,9 +45,9 @@ extern "C" {
 extern struct Library *CyberGfxBase;
 extern struct Library *P96Base;
 
-MameDisplay::MameDisplay() {
+AmigaDisplay::AmigaDisplay() {
 }
-MameDisplay::~MameDisplay(){}
+AmigaDisplay::~AmigaDisplay(){}
 
 // - - - - from driver.h
 /* is the video hardware raser or vector base? */
@@ -93,11 +93,7 @@ MameDisplay::~MameDisplay(){}
 //        WaitTOF();
 //    }
 //}
-MameDisplay *g_pMameDisplay=NULL;
-ULONG       g_nextFrameSkip=0;
-cycles_t    g_lastFame=-1;
-int         g_gameRefreshRate=0;
-
+AmigaDisplay *g_pMameDisplay=NULL;
 
 //struct ledBitmap {
 //    ledBitmap(int nbleds,int ledwidth) {
@@ -140,20 +136,34 @@ int         g_gameRefreshRate=0;
 //};
 
 //ledBitmap _ledBitmap(3,4); // nbleds, ledwidth
+void SwitchWindowFullscreen()
+{
+    if(!g_pMameDisplay) return;
+    g_pMameDisplay->switchFullscreen();
+}
+static ULONG FrameCounterUpdate=0;
+static INT64 FrameCounter=0;
+//
+//static ULONG FastFrameTarget=0;
+//static ULONG FastFrameStep=0; // if 0, slow, if >0 emu is faster than original game.
+//static ULONG FastFrameCounter=0;
+INT64 StartTime = 0;
+ULONG GetStartTime=0;
+
+ULONG UseBrakes = 0,UseFrameskip=0;
 
 int osd_create_display(const _osd_create_params *params, UINT32 *rgb_components)
 {      
     if(g_pMameDisplay) osd_close_display();
     if(!params) return 1; // fail
 
-    g_gameRefreshRate =  0; //better not here. (int)params->fps;
     if((params->video_attributes &VIDEO_TYPE_VECTOR)==0)
     {
         //try RTG  drivers first:
         if(CyberGfxBase)
         {
             g_pMameDisplay = new Display_CGX();
-            g_pMameDisplay->open(params,1);
+            g_pMameDisplay->open(params,0);
         }
 
     } // end if bitmap
@@ -172,7 +182,14 @@ int osd_create_display(const _osd_create_params *params, UINT32 *rgb_components)
 
     AllocInputs(); // input object depends of screen or window.
 
+    FrameCounterUpdate = 0;
+    FrameCounter = 0;
+    StartTime = 0;
+    GetStartTime = 1;
+    UseBrakes = 0;
+    UseFrameskip = 0;
     return 0; // success
+
 }
 void osd_close_display(void)
 {
@@ -181,9 +198,6 @@ void osd_close_display(void)
         delete g_pMameDisplay;
         g_pMameDisplay = NULL;
     }
-    // because we will restart
-    g_nextFrameSkip = 0;
-    g_lastFame = -1;
 }
 
 
@@ -200,61 +214,66 @@ void osd_close_display(void)
   simulated using the keyboard LEDs, or in other ways e.g. by placing graphics
   on the window title bar.
 */
+
 void osd_update_video_and_audio(struct _mame_display *display)
 {
+    FrameCounterUpdate++;
+
+    if(GetStartTime)
+    {
+        StartTime = osd_cycles();
+        GetStartTime = 0;
+        FrameCounter = 0;
+    }
 // printf("osd_update_video_and_audio\n");
     if(!g_pMameDisplay) return;
+
+    // apply eventual hard beam waiting (if too fast) just before draw.
+#ifdef FRAMEDROP
+    int igamefps = (int) display->game_refresh_rate;
+    if(UseBrakes>0)
+    {
+        INT64 framesThatShouldbeNow = ((osd_cycles() - StartTime)*igamefps)/osd_cycles_per_second();
+        while(framesThatShouldbeNow<FrameCounter)
+        {
+            // something known to actually does pass priority to system
+            // and waits between 1/50 hz or less.
+            g_pMameDisplay->WaitFrame();
+
+            framesThatShouldbeNow = ((osd_cycles() - StartTime)*igamefps)/osd_cycles_per_second();
+        }
+    }
+#endif
     g_pMameDisplay->draw(display);
-    //_ledBitmap.update((int)display->led_state);
-
-
 
     MsgPort *userport = g_pMameDisplay->userPort();
     if(userport) UpdateInputs(userport);
 
-
-//        printf("update fps:%f\n",display->game_refresh_rate);
-
-    // - - - - -auto fps management
+    // - - - - -auto fps management, analysis
+#ifdef FRAMEDROP
+    if(FrameCounterUpdate>=igamefps)
     {
-        if(g_gameRefreshRate==0)
+        FrameCounterUpdate -=igamefps;
+        // performance are already computed by mame.
+        const performance_info *perfs = mame_get_performance_info();
+        if(perfs)
         {
+            int icurrentfps = (int)perfs->frames_per_second;
 
-            g_gameRefreshRate = (int)display->game_refresh_rate;
-           // printf("game_refresh_rate:%f i:%d\n",display->game_refresh_rate,g_gameRefreshRate);
+            // manage when too fast (uae jit)
+            UseBrakes = (int)( icurrentfps+5 > igamefps);
+            if(!UseBrakes && icurrentfps<igamefps-1)
+            {
+                // most amigas...
+                UseFrameskip = 1;
+            }
         }
-
-        // test
-        //WaitTOF();
-        //WaitTOF();
-
-
-        cycles_t now = osd_cycles(); // microsec
-
-//        g_nextFrameSkip=0;  // default, show next.
-//        if(g_lastFame != -1) {
-//            cycles_t delta = now-g_lastFame;
-//            if(delta>0)
-//            {
-
-//                // to 50 or 60 fps
-//                delta *= g_gameRefreshRate;
-//                ULONG deltafps = (ULONG)(delta/1000000); // aka *60/1000
-//                static int tc=0;
-//                tc++;
-//                if(tc==60)
-//                {
-//                    tc=0;
-//                    printf("delta:%d gamerefresh:%d\n",(int)delta,g_gameRefreshRate);
-//                    printf("deltafps:%d\n",(int)deltafps);
-//                }
-//                g_nextFrameSkip = deltafps;
-//            }
-//        }
-        g_lastFame = now;
     }
-    g_nextFrameSkip++;
-    if(g_nextFrameSkip==3) g_nextFrameSkip=0;
+#endif
+    // - - - -
+
+
+
 }
 
 
@@ -270,9 +289,20 @@ void osd_update_video_and_audio(struct _mame_display *display)
 */
 int osd_skip_this_frame(void)
 {
-// printf("osd_skip_this_frame\n");
-    return (g_nextFrameSkip==0)?0:1;
-//    return(g_nextFrameSkip); // 0 means display.
+#ifdef FRAMEDROP
+    FrameCounterUpdate++;
+    FrameCounter++;
+    FrameSkipCounter++;
+
+
+    if(!UseFrameskip) return 0;
+
+    return (FrameCounterUpdate & 0x01);
+#else
+
+    return 0; //FrameCounterUpdate & 1;
+#endif
+
 }
 
 /*
@@ -290,7 +320,11 @@ mame_bitmap *osd_override_snapshot(mame_bitmap *bitmap, rectangle *bounds)
   This normally includes information about the frameskip, FPS, and percentage
   of full game speed.
 */
+static char perfo_line[28];
 const char *osd_get_fps_text(const performance_info *performance)
 {
-    return ".";
+    snprintf(perfo_line,27,"speed:%.01f fps:%.03f",performance->game_speed_percent,
+             performance->frames_per_second);
+    perfo_line[27]=0;
+    return perfo_line;
 }

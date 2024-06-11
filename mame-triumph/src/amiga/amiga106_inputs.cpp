@@ -38,6 +38,7 @@ extern "C" {
 }
 
 #include "amiga106_inputs.h"
+#include "amiga106_video.h"
 
 #include <stdio.h>
 #include <string>
@@ -82,7 +83,7 @@ void InitLowLevelLib()
             for(int i=0;i<4;i++)
             {
                 ULONG state = ReadJoyPort(i);
-                printf("port:%i type:%08x\n",i,state & JP_TYPE_MASK);
+                if(itest==2 ) printf("port:%d type:%08x\n",i,state & JP_TYPE_MASK);
             }
             WaitTOF();
         }
@@ -132,6 +133,10 @@ void UpdateInputs(struct MsgPort *pMsgPort)
 {
   struct IntuiMessage *im;
   struct MenuItem   *mitem;
+ int doSwitchFS=0;
+    static UBYTE fcounter =1;
+    fcounter++;
+    if(fcounter==255) fcounter=1; // we just need it to be different from previous frame.
 
  //printf("UpdateInputs: %08x\n",(int)g_pInputs);
     if(!pMsgPort || !g_pInputs) return;
@@ -152,7 +157,6 @@ void UpdateInputs(struct MsgPort *pMsgPort)
 
         ReplyMsg((struct Message *) im);
 
-        //printf("got mess: %d\n",(int)imclass);
 
         switch(imclass)
         {
@@ -164,9 +168,6 @@ void UpdateInputs(struct MsgPort *pMsgPort)
                 #define IKEY_RAWMASK_CD32PADS 0x037f // rawmask has evolved with CD32 pads
                 UWORD finalkeycode = imcode & IKEY_RAWMASK_CD32PADS ; //IKEY_RAWMASK;
 
-                //printf("key:%08x up:%d\n",(int)imcode,(int)((imcode & IECODE_UP_PREFIX)!=0));
-
- //               g_pInputs->Keys[imcode & IKEY_RAWMASK] = (BYTE)((imcode & IECODE_UP_PREFIX)==0);
                 if(imcode & IECODE_UP_PREFIX)
                 {
                    // if many down/up happens in one frame, we must see it has pressed, then up next frame.
@@ -176,21 +177,40 @@ void UpdateInputs(struct MsgPort *pMsgPort)
                         g_pInputs->_NbKeysUpStack++;
                    } else {
                         // shouldnt happen, but does maintain consistency.
-                        g_pInputs->_Keys[finalkeycode] = 0;
+                        g_pInputs->_Keys[finalkeycode] = 0; // down
                    }
                 }
                 else
-                {
-                    g_pInputs->_Keys[finalkeycode] = 1;
-                    printf("key:%04x on\n",(int)finalkeycode);
+                {   UBYTE prev = g_pInputs->_Keys[finalkeycode];
+                    if(prev != 0 && prev == fcounter )
+                    {   // means down->up->down for same key in the same frame,
+                        // which is common is just 8fps and player is blasting a key...
+                        // in that case remove previous delayed down we just put, because
+                        // next up could happen next frame.
+                        for(int i=0;i<g_pInputs->_NbKeysUpStack;i++) // just a few there
+                        {
+                            if(g_pInputs->_NextKeysUpStack[i]==finalkeycode)
+                                g_pInputs->_NextKeysUpStack[i]= 0x80; // a rawkey that can't exist and will not be watched.
+                        }
+
+                    }
+                    g_pInputs->_Keys[finalkeycode] = fcounter;
+                    //printf("key:%04x on\n",(int)finalkeycode);
+                    // F10 -> switch fullscreen, but next, it will destroy the current port wer'e using.
+                    if(finalkeycode == 0x59) { // F10
+                        doSwitchFS =1;
+                    }
                 }
             }
             break;
             case IDCMP_CLOSEWINDOW:
                 mame_schedule_exit();
             break;
+        case IDCMP_MOUSEBUTTONS:
+            break;
             default:
-                printf("receive class:%d\n",imclass);
+            // class 8: IDCMP_MOUSEBUTTONS
+                printf("getmsg() unmanaged: class:%d\n",(int)imclass);
             break;
 
 
@@ -227,6 +247,7 @@ void UpdateInputs(struct MsgPort *pMsgPort)
 //          CallHook(inputs->IDCMPHook, NULL, imclass);
         }
     }
+    if(doSwitchFS) SwitchWindowFullscreen();
 }
 
 /******************************************************************************
@@ -274,6 +295,10 @@ inline unsigned int nameToMameKeyEnum(std::string &s)
         if(c>='a' && c<='z')
         {
             return KEYCODE_A + (unsigned int)(c-'a');
+        }
+        if(c>='A' && c<='Z')
+        {
+            return KEYCODE_A + (unsigned int)(c-'A');
         }
         if(c==',') return KEYCODE_COMMA;
         if(c==':') return KEYCODE_COLON;
@@ -348,7 +373,9 @@ const os_code_info *osd_get_code_list(void)
             {"F7",0x56,KEYCODE_F7},
             {"F8",0x57,KEYCODE_F8},
             {"F9",0x58,KEYCODE_F9},
-            {"F10",0x59,KEYCODE_F10},
+         // used by us to switch screen   {"F10",0x59,KEYCODE_F10},
+            // on pc F11 is used for performance display, let's use that
+            {"HELP",0x5F,/*KEYCODE_HOME*/KEYCODE_F11 }, // ... dunno.
 
             {"~",0x00,KEYCODE_TILDE},
             {"1",0x01,CODE_OTHER_DIGITAL},
@@ -364,7 +391,7 @@ const os_code_info *osd_get_code_list(void)
 
             {"BACKSPACE",0x41,KEYCODE_BACKSPACE},
             {"DEL",0x46,KEYCODE_DEL},
-            {"HELP",0x5F,KEYCODE_HOME}, // ... dunno.
+
 
             {"CTRL",0x63,KEYCODE_LCONTROL},
 
@@ -477,7 +504,6 @@ const os_code_info *osd_get_code_list(void)
             // printf("code with no name:%d\n",keystodo[i]);
             }
         }
-       // exit(1); //test
         // end
         kbi.push_back({NULL,0,0});
     }
@@ -501,10 +527,11 @@ INT32 osd_get_code_value(os_code oscode)
     if(!g_pInputs) return 0;
     if(oscode<(256*4))
     {
-        if(g_pInputs->_Keys[oscode])
-        {
-            printf("ASKED AND GOT KEY:%d\n",(int)oscode);
-        }
+       // printf("ASKED :%04x\n",(int)oscode);
+//        if(g_pInputs->_Keys[oscode])
+//        {
+//            printf("ASKED AND GOT KEY:%d\n",(int)oscode);
+//        }
         return (int)g_pInputs->_Keys[oscode];
     }
     return 0;

@@ -92,6 +92,118 @@ Paletted_CGX::Paletted_CGX(const _osd_create_params *params, int screenPixFmt, i
     }
 }
 Paletted_CGX::~Paletted_CGX(){}
+// almost true color, used by neogeo
+void Paletted_CGX::updatePaletteRemap15b()
+{
+    if(!_needFirstRemap) return;  // done once for all.
+
+    printf(" * **** FIRST 15b REMAP **** _bytesPerPix:%d\n",_bytesPerPix);
+    const int nbremap = 32768;
+    if(_needFirstRemap)
+    {
+        switch(_bytesPerPix){
+            case 1: if(_clut8.size()<nbremap) _clut8.resize(nbremap); break;
+            case 2: if(_clut16.size()<nbremap) _clut16.resize(nbremap); break;
+            case 3: case 4: if(_clut32.size()<nbremap) _clut32.resize(nbremap);
+             break;
+        }
+    }
+    printf(" _clut32 size:%d\n",_clut32.size());
+    USHORT *p16a= _clut16.data();
+
+    if(_pixFmt == PIXFMT_RGB15)
+    {
+        // special case: same format, should be a copy...
+        for(UWORD i=0;i<32768;i++) *p16a++ = i;
+    }else
+    if(_pixFmt == PIXFMT_RGB15PC)
+    {
+        // special case,almost same format
+        for(UWORD i=0;i<32768;i++) *p16a++ = ((i>>8)&0x00ff)|((i<<8)&0xff00);
+    }else
+    {   // other formats 16b
+        if(_bytesPerPix == 2)
+        for(UWORD i=0;i<32768;i++)
+        {
+            UWORD r = i>>10;
+            UWORD g= (i>>5)& 0x1f;
+            UWORD b= i& 0x1f;
+
+            switch(_pixFmt)
+            {
+                case PIXFMT_BGR15:
+                     *p16a++ =(b<<10)|(g<<5)|(r);
+                break;
+                case PIXFMT_BGR15PC:
+                    {
+                        UWORD d=(b<<10)|(g<<5)|(r);
+                        *p16a++ =((d>>8)&0x00ff)|((d<<8)&0xff00);
+                    }
+                break;
+                case PIXFMT_RGB16:
+                     *p16a++ =(r<<11)|(g<<6)|((g<<1)&0x0020)|(b);
+                break;
+                case PIXFMT_BGR16:
+                     *p16a++ =(b<<11)|(g<<6)|((g<<1)&0x0020)|(r);
+                break;
+                case PIXFMT_RGB16PC:
+                    {
+                        UWORD d=(r<<11)|(g<<6)|((g<<1)&0x0020)|(b);
+                        *p16a++ =((d>>8)&0x00ff)|((d<<8)&0xff00);
+                    }
+                break;
+                case PIXFMT_BGR16PC:
+                    {
+                        UWORD d=(b<<11)|(g<<6)|((g<<1)&0x0020)|(r);
+                        *p16a++ =((d>>8)&0x00ff)|((d<<8)&0xff00);
+                    }
+                break;
+                case PIXFMT_LUT8: // no sense, should just use RGB32 os palette, do not select Display_CGX_Paletted
+                            // TODO for aga lut8
+                break;
+            }
+        } else // end loop
+            // 24 and 32 bits
+        if(_bytesPerPix == 3 || _bytesPerPix ==4)
+        {
+            ULONG *p32a= _clut32.data();
+
+            for(ULONG i=0;i<32768;i++)
+            {
+                // extends component 5 to 8 the right way
+                ULONG r = (ULONG)((i>>7)|(i>>12));
+                ULONG g = (ULONG)((i>>2)& 0x00f8)|((i>>7)& 0x0007);
+                ULONG b = (ULONG)((i<<3)& 0x00f8)|((i>>2)& 0x0007);
+
+                switch(_pixFmt)
+                {
+                    case PIXFMT_BGR24: //todo but no drawer
+                        break;
+                    // - - -32b cases
+                    case PIXFMT_RGB24:
+                    case PIXFMT_ARGB32:
+                        *p32a++= (r<<16)|(g<<8)|b;
+                       break;
+                    case PIXFMT_BGRA32:
+                        *p32a++= (b<<24)|(g<<16)|(r<<8);
+                       break;
+                    case PIXFMT_RGBA32:
+                         *p32a++= (r<<24)|(g<<16)|(b<<8);
+                        break;
+                    case PIXFMT_LUT8: // no sense, should just use RGB32 os palette, do not select Display_CGX_Paletted
+                                // TODO for aga lut8
+                    break;
+                } // end switch
+
+            } // end loop all 24 and 32 bits
+        }
+
+    } // end else not 16bspecial
+
+
+
+    _needFirstRemap =0;
+}
 
 void Paletted_CGX::updatePaletteRemap(_mame_display *display)
 {
@@ -230,6 +342,9 @@ void IntuitionDrawable::drawRastPort_CGX(_mame_display *display,Paletted_CGX *pR
     directDrawScreen ddscreen;
 
     int depth,pixfmt,pixbytes,bpr;
+
+    UWORD *pp = (UWORD *)bitmap->base;
+  //  printf("pixels values:%04x %04x %04x\n",(int)*pp,(int)pp[500],(int)pp[64*512+32]);
 
 
     APTR hdl = LockBitMapTags(pBitmap,
@@ -540,9 +655,12 @@ void Intuition_Window::drawRastPort_CGX(_mame_display *display,Paletted_CGX *pRe
 
 
 Display_CGX::Display_CGX()
-: MameDisplay()
+: AmigaDisplay()
 , _drawable(NULL)
 , _remap(NULL)
+, _window(0)
+,_params({0})
+,_forcedModeId(~0)
 {
 
 }
@@ -555,6 +673,9 @@ void Display_CGX::open(const _osd_create_params *params,int window, ULONG forced
 {
    if(!CyberGfxBase) return;
    if(_drawable) return;
+   _window = window;
+   _params = *params;
+   _forcedModeId = forcedModeID;
 
     if(window)
     {
@@ -572,13 +693,33 @@ void Display_CGX::open(const _osd_create_params *params,int window, ULONG forced
         params->colors>0)
     {
         _remap = new Paletted_CGX(params,_drawable->pixelFmt(),_drawable->pixelBytes());
+    } else
+    if((params->video_attributes & VIDEO_RGB_DIRECT)!=0 && params->depth == 15)
+    {
+        _remap = new Paletted_CGX(params,_drawable->pixelFmt(),_drawable->pixelBytes());
+        _remap->updatePaletteRemap15b(); // once for all.
     }
 
 }
+int Display_CGX::switchFullscreen()
+{
+   if(!CyberGfxBase) return -1;
+   close();
+   open(&_params,_window==0?1:0,_forcedModeId);
+}
 void Display_CGX::close()
 {
-    if(!_drawable) return;
-    _drawable->close();
+    if(_drawable)
+    {
+        _drawable->close();
+        delete _drawable;
+        _drawable = NULL;
+    }
+    if(_remap)
+    {
+        delete _remap;
+        _remap = NULL;
+    }
 }
 int Display_CGX::good()
 {
@@ -592,10 +733,8 @@ void Display_CGX::draw(_mame_display *display)
     // - - update palette if exist and is needed.
     if(_remap && ((display->changed_flags & GAME_PALETTE_CHANGED) !=0 || _remap->needRemap()))
     {
-
         _remap->updatePaletteRemap(display);
     }
-
 
     if(CyberGfxBase) _drawable->drawRastPort_CGX(display,_remap);
 }
@@ -604,9 +743,23 @@ MsgPort *Display_CGX::userPort()
     if(!_drawable) return NULL;
     return _drawable->userPort();
 }
+//RastPort *Display_CGX::rastPort()
+//{
+//    if(!_drawable) return NULL;
+//    return _drawable->rastPort();
+//}
+void Display_CGX::WaitFrame()
+{
+//    RastPort *rp = _drawable->rastPort();
+//    if(!CyberGfxBase || !rp || GetCyberMapAttr(rp->BitMap,CYBRMATTR_ISCYBERGFX)==0 )
+//    {
+         WaitTOF();
+         return;
+//    }
+    // would do 60Hz on 60Hz screens...
+ //   WaitBOVP(rp->S);
 
-
-
+}
 
 
 
