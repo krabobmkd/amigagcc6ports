@@ -37,26 +37,28 @@ void unzip_cache_clear();
 
 void StartGame(void)
 {
-  MameConfig &conf = getMainConfig();
-  int idriver = conf.activeDriver();
-  printf(" ***** StartGame:%d\n",idriver);
-  if(idriver<0)
-  {
+    MameConfig &conf = getMainConfig();
+    int idriver = conf.activeDriver();
+    printf(" ***** StartGame:%d\n",idriver);
+    if(idriver<0)
+    {
       //logerror no driver
       return;
-  }
+    }
 
-  conf.applyToMameOptions(options);
+    conf.applyToMameOptions(options);
 
-  /* Clear the zip filename caches. */
+    /* Clear the zip filename caches. */
 
-  osd_set_mastervolume(0);
-  printf("before run_game\n");
+    osd_set_mastervolume(0);
+    printf("before run_game\n");
 
-  run_game(idriver);
-  printf("after run_game\n");
+    run_game(idriver);
+    printf("after run_game\n");
 
-  unzip_cache_clear();
+    unzip_cache_clear();
+    mame_pause(0);// remove pause that could be set while quiting previous game.
+
 
 //todo ?
 //  if(options.playback)

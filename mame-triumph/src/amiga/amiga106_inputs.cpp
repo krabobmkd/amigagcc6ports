@@ -77,16 +77,25 @@ void InitLowLevelLib()
 #define JP_TYPE_UNKNOWN   (04<<28)	   port has unknown device
 #define JP_TYPE_MASK	  (15<<28)	   controller type
 */
+
+
         printf("init lowlevel, need a bit shake.\n");
-        for(int itest=0;itest<3;itest++)
+
+        for(int iport=1;iport<4;iport++)
         {
-            for(int i=0;i<4;i++)
+            for(int itest=0;itest<4;itest++)
             {
-                ULONG state = ReadJoyPort(i);
-                if(itest==2 ) printf("port:%d type:%08x\n",i,state & JP_TYPE_MASK);
+                ULONG state = ReadJoyPort(iport);
+                if((state & JP_TYPE_MASK )!= JP_TYPE_NOTAVAIL)
+                {
+                    SetJoyPortAttrs(iport,SJA_Type,SJA_TYPE_GAMECTLR);
+                    break;
+                }
+                WaitTOF();
+                WaitTOF();
             }
-            WaitTOF();
         }
+
         SystemControl(
         // Starts creating rawkey codes for the
 	    // joystick/game controller on the given unit.
@@ -96,6 +105,19 @@ void InitLowLevelLib()
             SCON_AddCreateKeys,3,
             TAG_END,0
             );
+
+        // SJA_TYPE_GAMECTLR SJA_TYPE_MOUSE SJA_TYPE_JOYSTK SJA_TYPE_AUTOSENSE
+        // according to conf actually
+//        for(int itest=0;itest<2;itest++)
+//        {
+//            WaitTOF();
+//            WaitTOF();
+//            SetJoyPortAttrs(1,SJA_Type,SJA_TYPE_GAMECTLR);
+//            SetJoyPortAttrs(2,SJA_Type,SJA_TYPE_GAMECTLR);
+//            SetJoyPortAttrs(3,SJA_Type,SJA_TYPE_GAMECTLR);
+
+//        }
+
     }
 }
 void CloseLowLevelLib()
@@ -148,6 +170,12 @@ void UpdateInputs(struct MsgPort *pMsgPort)
     }
     g_pInputs->_NbKeysUpStack = 0;
 
+    if(LowLevelBase)
+    {
+        ULONG j2  =ReadJoyPort(2);
+        ULONG j3  =ReadJoyPort(3);
+        printf("j2:%08x  j3:%08x\n",j2,j3);
+    }
     // - - - -
     while((im = (struct IntuiMessage *) GetMsg(pMsgPort)))
     {
@@ -167,6 +195,8 @@ void UpdateInputs(struct MsgPort *pMsgPort)
                 // pack that to fit one byte.
                 #define IKEY_RAWMASK_CD32PADS 0x037f // rawmask has evolved with CD32 pads
                 UWORD finalkeycode = imcode & IKEY_RAWMASK_CD32PADS ; //IKEY_RAWMASK;
+
+                printf("key:%04x\n",finalkeycode);
 
                 if(imcode & IECODE_UP_PREFIX)
                 {
