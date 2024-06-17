@@ -1,12 +1,13 @@
-﻿
-    INCLUDE "exec/types.i"
-    INCLUDE "hardware/custom.i"
-    INCLUDE "hardware/intbits.i"
+    include "exec/types.i"
+    include "hardware/custom.i"
+    include "hardware/intbits.i"
+
+    include "lvo/exec_lib.i"
 
         XDEF    _RBFHandler
+        XDEF    RBFHandler
 
 JSRLIB MACRO
-       XREF _LVO\1
        JSR  _LVO\1(A6)
        ENDM
 
@@ -32,8 +33,9 @@ BUFLEN    EQU    256
 * Note - This simple handler just receives one buffer full of serial
 * input data, signals main, then ignores all subsequent serial data.
 *
-    section code
 
+	section	code,code
+RBFHandler:
 _RBFHandler:                            ;entry to our interrupt handler
 
 	MOVE.W  serdatr(A0),D1          ;get the input word (flags and char)

@@ -91,9 +91,9 @@ set(MAME_INCLUDE_DIRS "src" "../amiga" "." "./includes" ${EXPATPATH})
 
 #replace_list_item(MAME_DRIVERS_SRC "vidhrdw/segaic16.c" "vidhrdw/segaic16_krb.c")
 #replace_list_item(MAME_DRIVERS_SRC "vidhrdw/segaorun.c" "vidhrdw/segaorun_krb.c")
-replace_list_item(MAME_CORE_SRC "usrintrf.c" "usrintrf_krb.c")
-replace_list_item(MAME_CORE_SRC "palette.c" "palette_krb.c")
-replace_list_item(MAME_CORE_SRC "mame.c" "mame_krb.c")
+#replace_list_item(MAME_CORE_SRC "usrintrf.c" "usrintrf_krb.c")
+#replace_list_item(MAME_CORE_SRC "palette.c" "palette_krb.c")
+#replace_list_item(MAME_CORE_SRC "mame.c" "mame_krb.c")
 
 # - - - - - - --  - -same for O2
 

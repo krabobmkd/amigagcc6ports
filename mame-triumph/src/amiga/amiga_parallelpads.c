@@ -9,19 +9,22 @@
 
 #include "amiga_parallelpads.h"
 //
+
+#include <proto/exec.h>
+#include <proto/alib.h>
+#include <proto/misc.h>
+
 #include    <exec/types.h>
 #include    <libraries/dos.h>
-
-#include    <stdlib.h>
-#include    <stdio.h>
-
-#include    <clib/alib_protos.h>
-#include    <clib/exec_protos.h>
-#include    <clib/misc_protos.h>
 
 #include <resources/misc.h>
 
 #include <hardware/custom.h>
+#include <hardware/intbits.h>
+
+
+#include    <stdlib.h>
+#include    <stdio.h>
 
 // apparently from alib:
 extern struct Custom custom;
@@ -52,7 +55,7 @@ struct AParallelPads
     struct Interrupt *_prior_interupt;
     // - - - -
      // must be allocated in MEMF_PUBLIC
-    struct RBFData *_rbfint;
+    struct Interrupt *_rbfint;
     // must be allocated in MEMF_PUBLIC
     struct RBFData *_rbfdata;
 
@@ -67,7 +70,7 @@ static UBYTE *allocname = "Mame"; // or use task name ?
 
 struct AParallelPads *createParallelPads()
 {
-    struct RBFData *rbfint;
+    struct Interrupt *rbfint;
     struct RBFData *rbfdata;
     BOOL priorenable;
     BYTE signr;
@@ -126,13 +129,13 @@ error:
     return NULL;
 }
 
-void closeParallelPads(struct AParallelPads *parpads)
+void closeParallelPads(struct AParallelPads *pparpads)
 {
-    if(!parpads) return;
+    if(!pparpads) return;
 
     if(pparpads->_rbfdata) FreeVec(pparpads->_rbfdata);
     if(pparpads->_rbfint) FreeVec(pparpads->_rbfint);
-    if(pparpads->_signr != -1) FreeSignal(pparpads->signr);
+    if(pparpads->_signr != -1) FreeSignal(pparpads->_signr);
 
     if(pparpads->_parallelBitsOK) FreeMiscResource(MR_PARALLELBITS);
     if(pparpads->_parallelResOK) FreeMiscResource(MR_PARALLELPORT);
