@@ -39,6 +39,7 @@ extern "C" {
 
 #include "amiga106_inputs.h"
 #include "amiga106_video.h"
+#include "amiga_parallelpads.h"
 
 #include <stdio.h>
 #include <string>
@@ -59,6 +60,7 @@ struct MameInputs
 using namespace std;
 
 MameInputs *g_pInputs=NULL;
+AParallelPads *g_pParallelPads=NULL; // createParallelPads();
 
 extern "C" {
     struct Library *LowLevelBase = NULL;
@@ -143,10 +145,22 @@ void AllocInputs()
     g_pInputs = (MameInputs *)calloc(1,sizeof(MameInputs));
    // if(!g_pInputs) return;
 
+    // note: if needed
+    if(!g_pParallelPads)
+    {
+        g_pParallelPads = createParallelPads();
+    }
+
 }
 
 void FreeInputs()
 {
+    if(g_pParallelPads)
+    {
+        closeParallelPads(g_pParallelPads);
+        g_pParallelPads = NULL;
+    }
+
     if(g_pInputs) free(g_pInputs);
     g_pInputs = NULL;
 }

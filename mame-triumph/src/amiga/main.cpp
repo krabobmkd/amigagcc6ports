@@ -58,7 +58,7 @@ extern "C" {
 #include "gui_mui.h"
 #include "gui_gadtools.h"
 
-#include "file.h"
+//#include "file.h"
 
 #define MIN_STACK (14*1024)
 

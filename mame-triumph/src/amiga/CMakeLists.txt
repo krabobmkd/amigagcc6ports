@@ -69,7 +69,8 @@ set(AMIGA_SRC
 #	amiga106_video_aga.h
 #	amiga106_video_aga.cpp
 	amiga_locale.cpp
-
+	amiga_parallelpads.h
+	amiga_parallelpads.c
 
 	audio.h
 
@@ -80,6 +81,7 @@ set(AMIGA_SRC
 	mame_msg.h
 
 	directdraw.s
+	parallelporthandler.s
 	devnotes.txt
 #	c2p.s
 #	gfx.s
