@@ -16,6 +16,8 @@ option(AMIGA_USE_68030 " use 68030" OFF)
 option(AMIGA_USE_68040 " use 68040" OFF)
 option(AMIGA_USE_68060 " use 68060" ON)
 
+option(COMPILE_TESTS " compile extra dev tools/ test units" ON)
+
 if(AMIGA)
 
 #  -fno-rtti -fno-exceptions -fno-strict-aliasing
@@ -120,4 +122,15 @@ target_link_options(${PROGNAME} PRIVATE -O0 -s ${AMIGA_COMPILER_OPTIONS})
 
 # add_executable(cgxhooktest cgxhookstest.c cgxhooks.c cgxhooks.h )
 # set_property(TARGET cgxhooktest PROPERTY C_STANDARD 11)
+
+if(COMPILE_TESTS)
+	add_executable(testparpads
+		testparpads.cpp
+		amiga_parallelpads.h
+		amiga_parallelpads.c
+		parallelporthandler.s
+		)
+	set_property(TARGET testparpads PROPERTY C_STANDARD 11)
+	set_property(TARGET testparpads PROPERTY CXX_STANDARD 11)
+endif()
 

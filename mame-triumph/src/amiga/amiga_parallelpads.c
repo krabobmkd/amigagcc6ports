@@ -5,12 +5,15 @@
      https://wiki.amigaos.net/wiki/Exec_Interrupts
     and from amiga developper CD 2.1 read34.asm
 
+
+https://github.com/niklasekstrom/amiga-par-to-spi-adapter/blob/master/spi-lib/spi.c#L296
 */
 
 #include "amiga_parallelpads.h"
 //
 
 #include <proto/exec.h>
+#define ALIB_HARDWARE_CIA
 #include <proto/alib.h>
 #include <proto/misc.h>
 
@@ -45,9 +48,11 @@ struct RBFData {
 };
 
 
-struct AParallelPads
+struct ParallelPads // : public AParallelPads
 {
-    //APTR _miscResource;
+    // extend the old way:
+    struct AParallelPads _public;
+
     UWORD _parallelResOK;
     UWORD _parallelBitsOK;
     BYTE _signr;
@@ -58,10 +63,7 @@ struct AParallelPads
     struct Interrupt *_rbfint;
     // must be allocated in MEMF_PUBLIC
     struct RBFData *_rbfdata;
-
-
 };
-
 
 
 void closeParallelPads(struct AParallelPads *parpads);
@@ -75,16 +77,27 @@ struct AParallelPads *createParallelPads()
     BOOL priorenable;
     BYTE signr;
 
-    struct AParallelPads *pparpads = AllocVec(sizeof(struct AParallelPads),MEMF_CLEAR);
+    struct ParallelPads *pparpads = AllocVec(sizeof(struct ParallelPads),MEMF_CLEAR);
     if(!pparpads) return NULL;
     pparpads->_signr = -1; // default error state for this.
 
-    pparpads->_parallelResOK = (UWORD)(AllocMiscResource(MR_PARALLELPORT,allocname)==NULL);
-    if(!pparpads->_parallelResOK) goto error;
+    // - - - - acquire parallel port
+    Disable();
+        pparpads->_parallelResOK = (UWORD)(AllocMiscResource(MR_PARALLELPORT,allocname)==NULL);
+        if(!pparpads->_parallelResOK) { Enable(); goto error; }
 
-    pparpads->_parallelBitsOK = (UWORD)(AllocMiscResource(MR_PARALLELBITS,allocname)==NULL);
-    if(!pparpads->_parallelBitsOK) goto error;
+        pparpads->_parallelBitsOK = (UWORD)(AllocMiscResource(MR_PARALLELBITS,allocname)==NULL);
+        if(!pparpads->_parallelBitsOK) { Enable(); goto error; }
 
+        // use hard address using amiga.lib:
+        ciaaddrb = 0; // all lines read
+        ciabddra	= 0xFF; // busy, pout, and sel. to read
+
+        // Well, we made it this far, so we've got exclusive access to
+        // the parallel port, and all the lines we want to use are
+        // set up.
+    Enable();
+    // - - - - -
     pparpads->_signr = signr = AllocSignal(-1);
     if(signr == -1) goto error;
 
@@ -123,14 +136,24 @@ struct AParallelPads *createParallelPads()
 //    priorint = SetIntVector(INTB_RBF, rbfint);
 
     // went OK
-    return pparpads;
+    pparpads->_public._signalBit = (1<<(pparpads->_signr));
+
+    return &pparpads->_public;
 error:
-    closeParallelPads(pparpads);
+    closeParallelPads((struct AParallelPads *)pparpads);
     return NULL;
 }
 
-void closeParallelPads(struct AParallelPads *pparpads)
+void readParallelPads(struct AParallelPads *parpads)
 {
+    if(!parpads) return;
+    parpads->_aprb = ciaaprb;
+    parpads->_bpra = ciabpra;
+}
+
+void closeParallelPads(struct AParallelPads *paparpads)
+{
+    struct ParallelPads *pparpads = (struct ParallelPads *)paparpads;
     if(!pparpads) return;
 
     if(pparpads->_rbfdata) FreeVec(pparpads->_rbfdata);
