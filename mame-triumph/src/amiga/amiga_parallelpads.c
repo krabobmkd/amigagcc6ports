@@ -20,10 +20,33 @@ https://github.com/niklasekstrom/amiga-par-to-spi-adapter/blob/master/spi-lib/sp
 #include    <exec/types.h>
 #include    <libraries/dos.h>
 
+#include <hardware/cia.h>
+#include <resources/cia.h>
 #include <resources/misc.h>
 
 #include <hardware/custom.h>
 #include <hardware/intbits.h>
+
+// for some gcc ?
+// struct Library *miscbase=NULL;
+//#include "cia_protos.h"
+//#include "misc_protos.h"
+
+#include "proto/cia.h"
+
+// now more like https://github.com/niklasekstrom/amiga-par-to-spi-adapter
+
+//static volatile UBYTE *cia_a_prb = (volatile UBYTE *)0xbfe101;
+//static volatile UBYTE *cia_a_ddrb = (volatile UBYTE *)0xbfe301;
+
+//static volatile UBYTE *cia_b_pra = (volatile UBYTE *)0xbfd000;
+//static volatile UBYTE *cia_b_ddra = (volatile UBYTE *)0xbfd200;
+
+struct Library *ciaabase=NULL;
+
+static struct Interrupt flag_interrupt;
+
+// - - - - -
 
 
 #include    <stdlib.h>
@@ -34,17 +57,17 @@ extern struct Custom custom;
 
 // https://wiki.amigaos.net/wiki/Exec_Interrupts
 
-extern void RBFHandler();   /* proto for asm interrupt handler */
-
-#define BUFFERSIZE 256
-
-struct RBFData {
-    struct Task *rd_Task;
-    ULONG rd_Signal;
-    ULONG rd_BufferCount;
-    UBYTE rd_CharBuffer[BUFFERSIZE + 2];
-    UBYTE rd_FlagBuffer[BUFFERSIZE + 2];
-    UBYTE rd_Name[32];
+//extern void RBFHandler();   /* proto for asm interrupt handler */
+//#define BUFFERSIZE 256
+struct ParPadsInteruptData {
+    struct Task *_Task;
+    UBYTE _ciaaprb;
+    UBYTE _ciabpra;
+//    ULONG rd_Signal;
+//    ULONG rd_BufferCount;
+//    UBYTE rd_CharBuffer[BUFFERSIZE + 2];
+//    UBYTE rd_FlagBuffer[BUFFERSIZE + 2];
+//    UBYTE rd_Name[32];
 };
 
 
@@ -55,14 +78,14 @@ struct ParallelPads // : public AParallelPads
 
     UWORD _parallelResOK;
     UWORD _parallelBitsOK;
-    BYTE _signr;
-    BYTE _prior_enable;
-    struct Interrupt *_prior_interupt;
+//    BYTE _signr;
+//    BYTE _prior_enable;
+//    struct Interrupt *_prior_interupt;
     // - - - -
      // must be allocated in MEMF_PUBLIC
     struct Interrupt *_rbfint;
     // must be allocated in MEMF_PUBLIC
-    struct RBFData *_rbfdata;
+    struct ParPadsInteruptData *_ppidata;
 };
 
 
@@ -70,25 +93,91 @@ void closeParallelPads(struct AParallelPads *parpads);
 
 static UBYTE *allocname = "Mame"; // or use task name ?
 
+//D0 - scratch
+//D1 - scratch
+//A0 - scratch
+//A1 - server is_Data pointer (scratch)
+//A5 - jump vector register (scratch)
+//A6 - scratch
+//all other registers must be preserved
+static void interuptfunc( register struct ParPadsInteruptData *ppi __asm("a1") )
+{
+    //Signal(task, SIGF_CARD_CHANGE);
+// 	movea.l	_portptr,a1		; a1 now holds the destination
+//	move.b	_ciaaprb,(a1)		; move byte from port to dest
+//	movea.l	_fireptr,a1		; a1 now holds the destination
+//	move.b	_ciabpra,(a1)		; move byte from port to dest
+    ppi->_ciaaprb = ciaaprb;
+    ppi->_ciabpra = ciabpra;
+}
+
 struct AParallelPads *createParallelPads()
 {
     struct Interrupt *rbfint;
-    struct RBFData *rbfdata;
+    struct ParPadsInteruptData *ppidata;
     BOOL priorenable;
     BYTE signr;
 
     struct ParallelPads *pparpads = AllocVec(sizeof(struct ParallelPads),MEMF_CLEAR);
     if(!pparpads) return NULL;
-    pparpads->_signr = -1; // default error state for this.
+//    pparpads->_signr = -1; // default error state for this.
+
+    // - - -
+//	miscbase = (struct Library *)OpenResource(MISCNAME);
+//	if (!miscbase)
+//	{
+//		success = -1;
+//		goto fail_out1;
+//	}
+
+	ciaabase = (struct Library *)OpenResource(CIAANAME);
+	if (!ciaabase)
+	{
+		//success = -2;
+		goto error;
+	}
+    printf("OpenResource(CIAANAME) ok\n");
 
     // - - - - acquire parallel port
-    Disable();
+    //Disable();
         pparpads->_parallelResOK = (UWORD)(AllocMiscResource(MR_PARALLELPORT,allocname)==NULL);
         if(!pparpads->_parallelResOK) { Enable(); goto error; }
 
         pparpads->_parallelBitsOK = (UWORD)(AllocMiscResource(MR_PARALLELBITS,allocname)==NULL);
         if(!pparpads->_parallelBitsOK) { Enable(); goto error; }
 
+    printf("Parallel acquired ok\n");
+
+    // - - - - - install interupt
+//	flag_interrupt.is_Node.ln_Name = (char *)spi_lib_name;
+//	flag_interrupt.is_Node.ln_Type = NT_INTERRUPT;
+//	is_Data
+//	flag_interrupt.is_Code = &interuptfunc ;
+
+//	Disable();
+//	AddIntServer();
+
+//	if (AddICRVector(ciaabase, CIAICRB_FLG, &flag_interrupt))
+//	{
+//		Enable();
+//		goto error;
+//	}
+
+//	AbleICR(ciaabase, CIAICRF_FLG);
+//	SetICR(ciaabase, CIAICRF_FLG);
+//	Enable();
+
+   printf("interupt installed ok\n");
+
+// from sd adapter:
+//	*cia_b_pra = (*cia_b_pra & ~ACT_MASK) | (REQ_MASK | CLK_MASK);
+//	*cia_b_ddra = (*cia_b_ddra & ~ACT_MASK) | (REQ_MASK | CLK_MASK);
+
+//	*cia_a_prb = 0xff;
+//	*cia_a_ddrb = 0xff;
+
+
+        // from read34.s:
         // use hard address using amiga.lib:
         ciaaddrb = 0; // all lines read
         ciabddra	= 0xFF; // busy, pout, and sel. to read
@@ -96,30 +185,38 @@ struct AParallelPads *createParallelPads()
         // Well, we made it this far, so we've got exclusive access to
         // the parallel port, and all the lines we want to use are
         // set up.
-    Enable();
+    //Enable();
     // - - - - -
-    pparpads->_signr = signr = AllocSignal(-1);
-    if(signr == -1) goto error;
+//    pparpads->_signr = signr = AllocSignal(-1);
+//    if(signr == -1) goto error;
 
     pparpads->_rbfint = rbfint = AllocVec(sizeof(struct Interrupt), MEMF_PUBLIC|MEMF_CLEAR);
     if(!rbfint) goto error;
 
-    pparpads->_rbfdata = rbfdata = AllocVec(sizeof(struct RBFData), MEMF_PUBLIC|MEMF_CLEAR);
-    if(!rbfdata) goto error;
+    pparpads->_ppidata = ppidata = AllocVec(sizeof(struct ParPadsInteruptData), MEMF_PUBLIC|MEMF_CLEAR);
+    if(!ppidata) goto error;
 
-        rbfdata->rd_Task = FindTask(NULL);        /* Init rfbdata structure. */
-        rbfdata->rd_Signal = 1L << signr;
+    ppidata->_Task = FindTask(NULL);
 
-        rbfint->is_Node.ln_Type = NT_INTERRUPT;      /* Init interrupt node. */
-        strcpy(rbfdata->rd_Name, allocname);
-        rbfint->is_Node.ln_Name = rbfdata->rd_Name;
-        rbfint->is_Data = (APTR)rbfdata;
-        rbfint->is_Code = RBFHandler;
+//        rbfdata->rd_Task = FindTask(NULL);        /* Init rfbdata structure. */
+//        rbfdata->rd_Signal = 1L << signr;
 
+//        rbfint->is_Node.ln_Type = NT_INTERRUPT;      /* Init interrupt node. */
+//        strcpy(rbfdata->rd_Name, allocname);
+//        rbfint->is_Node.ln_Name = rbfdata->rd_Name;
+//        rbfint->is_Data = (APTR)rbfdata;
+//        rbfint->is_Code = RBFHandler;
 
-    pparpads->_prior_enable = (BYTE)((custom.intenar & INTF_RBF)!=0) ; /* interrupt */
-    custom.intena = INTF_RBF;                             /* disable it. */
-    pparpads->_prior_interupt = SetIntVector(INTB_RBF, rbfint);
+       // rbfint->is_Node.ln_Name = ppidata->rd_Name;
+        rbfint->is_Node.ln_Name = (char *)"parpads";
+        rbfint->is_Data = (APTR)ppidata;
+        rbfint->is_Code = &interuptfunc;
+
+        AddIntServer(INTB_VERT,rbfint);
+
+//    pparpads->_prior_enable = (BYTE)((custom.intenar & INTF_RBF)!=0) ; /* interrupt */
+//    custom.intena = INTF_RBF;                             /* disable it. */
+//    pparpads->_prior_interupt = SetIntVector(INTB_RBF, rbfint);
 
 
 //    rbfdata->rd_Task = FindTask(NULL);        /* Init rfbdata structure. */
@@ -136,7 +233,7 @@ struct AParallelPads *createParallelPads()
 //    priorint = SetIntVector(INTB_RBF, rbfint);
 
     // went OK
-    pparpads->_public._signalBit = (1<<(pparpads->_signr));
+//    pparpads->_public._signalBit = (1<<(pparpads->_signr));
 
     return &pparpads->_public;
 error:
@@ -156,7 +253,18 @@ void closeParallelPads(struct AParallelPads *paparpads)
     struct ParallelPads *pparpads = (struct ParallelPads *)paparpads;
     if(!pparpads) return;
 
-    if(pparpads->_rbfdata) FreeVec(pparpads->_rbfdata);
+//	AbleICR(ciaabase, CIAICRF_FLG);
+
+//	*cia_b_ddra &= ~(ACT_MASK | REQ_MASK | CLK_MASK);
+//	*cia_a_ddrb = 0;
+
+//	RemICRVector(ciaabase, CIAICRB_FLG, &flag_interrupt);
+
+    if(pparpads->_rbfint)
+    {
+        RemIntServer(INTB_VERT,pparpads->_rbfint);
+    }
+    if(pparpads->_ppidata) FreeVec(pparpads->_ppidata);
     if(pparpads->_rbfint) FreeVec(pparpads->_rbfint);
     if(pparpads->_signr != -1) FreeSignal(pparpads->_signr);
 
