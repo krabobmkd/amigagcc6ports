@@ -9,16 +9,11 @@ extern "C" {
 }
 
 void InitLowLevelLib();
+void ConfigureLowLevelLib();
 void CloseLowLevelLib();
 
 void AllocInputs();
 void FreeInputs();
 void UpdateInputs(struct MsgPort *pMsgPort);
-
-// used by config ports
-#define IPT_NONE     0
-#define IPT_JOYSTICK 1
-#define IPT_JOYPAD   2
-#define IPT_MOUSE    3
 
 #endif

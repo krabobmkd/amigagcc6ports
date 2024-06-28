@@ -83,7 +83,7 @@ set(AMIGA_SRC
 	mame_msg.h
 
 	directdraw.s
-	parallelporthandler.s
+#	parallelporthandler.s
 	devnotes.txt
 #	c2p.s
 #	gfx.s
@@ -128,7 +128,7 @@ if(COMPILE_TESTS)
 		testparpads.cpp
 		amiga_parallelpads.h
 		amiga_parallelpads.c
-		parallelporthandler.s
+#		parallelporthandler.s
 		)
 	set_property(TARGET testparpads PROPERTY C_STANDARD 11)
 	set_property(TARGET testparpads PROPERTY CXX_STANDARD 11)

@@ -30,13 +30,13 @@ int main(int argc, char **argv)
     }
     printf("init ok\n");
     int signal;
-    while( signal = Wait(ppads->_ppidata->_Signal | SIGBREAKF_CTRL_C))
-    {
-        if(signal &SIGBREAKF_CTRL_C) break;
-        printf("aprb: %02x bpra:%02x c:%d\n",(int)ppads->_ppidata->_ciaaprb,(int)ppads->_ppidata->_ciabpra,
-               (int)ppads->_ppidata->_counter
-               );
-    }
+//    while( signal = Wait(ppads->_ppidata->_Signal | SIGBREAKF_CTRL_C))
+//    {
+//        if(signal &SIGBREAKF_CTRL_C) break;
+//        printf("aprb: %02x bpra:%02x c:%d\n",(int)ppads->_ppidata->_ciaaprb_directions,(int)ppads->_ppidata->_ciabpra_fires,
+//               (int)ppads->_ppidata->_counter
+//               );
+//    }
 
     printf("closing\n");
     return 0;

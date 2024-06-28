@@ -80,6 +80,20 @@ public:
     void applyToMameOptions(_global_options &mameOptions);
 
     void listFull();
+
+    //  - - - -amiga ports related confs (ll is for lowlevel library) ---.
+    // playercontrols
+
+    struct Inputs {
+        // user defined use of ports. If NotAvail will use ll "autosense"
+//#define SJA_TYPE_AUTOSENSE 0
+//#define SJA_TYPE_GAMECTLR  1
+//#define SJA_TYPE_MOUSE	   2
+//#define SJA_TYPE_JOYSTK    3
+        int _lowlevelExplicitPortsType[4]; // lowlevel.library is said to manage 4 ports...
+        bool        _useParallelPadsForp3p4;
+    };
+    const Inputs &inputs() const { return _inputsprefs; }
 protected:
     // - - - prefs unique for app
     std::string _userDir;
@@ -94,13 +108,12 @@ protected:
     int     _doubleWindow;
 
     ScreenConf _defaultscreenconf;
-    // video prefs, per video config
+    // TODO video prefs, per video config
     // keys are like: "320x224x16"
     std::unordered_map<std::string,ScreenConf> _screenconf;
 
-    // prefs per game
-    // force player1 joystick as port2 CD32 pad
-
+    //TODO
+    Inputs _inputsprefs;
 
     // name to current mame index to fasten dir search
     NameDriverMap _driverIndex;

@@ -54,7 +54,7 @@ protected:
     ULONG _PixelFmt,_PixelBytes;
     int _width,_height;
     int _dx,_dy; // draw delta (for windows borders)
-
+    int _useScale;
     virtual BitMap *bitmap() = 0;
 };
 
@@ -91,11 +91,19 @@ protected:
     Window *_pWbWindow;
     BitMap *_sWbWinSBitmap;
     int _machineWidth,_machineHeight;
-
+    int _maxzoomfactor;
     BitMap *bitmap() override;
     void drawRastPort_CGX(_mame_display *display,Paletted_CGX *pRemap) override;
 };
-
+class Intuition_ScaleWindow : public Intuition_Window
+{
+public:
+    Intuition_ScaleWindow(const _osd_create_params *params);
+    ~Intuition_ScaleWindow();
+protected:
+    //void synchBmSize();
+    //void drawRastPort_CGX(_mame_display *display,Paletted_CGX *pRemap) override;
+};
 
 class Display_CGX : public AmigaDisplay
 {

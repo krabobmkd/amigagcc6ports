@@ -71,13 +71,29 @@ extern "C" {
                     register directDrawSource *source __asm("a1"),
                     register LONG x1 __asm("d0"),
                     register LONG y1 __asm("d1"),
-                    register USHORT *lut __asm("a2") // actually UWORD* or anywhat.
+                    register UWORD *lut __asm("a2")
                 );
     void directDrawClut32(register directDrawScreen *screen __asm("a0"),
                     register directDrawSource *source __asm("a1"),
                     register LONG x1 __asm("d0"),
                     register LONG y1 __asm("d1"),
-                    register ULONG *lut __asm("a2") // actually UWORD* or anywhat.
+                    register ULONG *lut __asm("a2")
+                );
+    void directDrawScaleClut16(directDrawScreen *screen ,
+                    directDrawSource *source,
+                    LONG x1 ,
+                    LONG y1 ,
+                    LONG w ,
+                    LONG h ,
+                    UWORD *lut
+                );
+    void directDrawScaleClut32(directDrawScreen *screen ,
+                    directDrawSource *source,
+                    LONG x1 ,
+                    LONG y1 ,
+                    LONG w ,
+                    LONG h ,
+                    ULONG *lut
                 );
 }
 
@@ -321,7 +337,7 @@ void Paletted_CGX::updatePaletteRemap(_mame_display *display)
 
 IntuitionDrawable::IntuitionDrawable()
 
-: _PixelFmt(0),_PixelBytes(0),_width(0),_height(0),_dx(0),_dy(0)
+: _PixelFmt(0),_PixelBytes(0),_width(0),_height(0),_dx(0),_dy(0),_useScale(0)
 {
 }
 IntuitionDrawable::~IntuitionDrawable()
@@ -329,7 +345,7 @@ IntuitionDrawable::~IntuitionDrawable()
 }
 
 // would draw LUT screens or truecolor, ...
-
+// _width,_height must be set before call.
 void IntuitionDrawable::drawRastPort_CGX(_mame_display *display,Paletted_CGX *pRemap)
 {
     if(!CyberGfxBase) return;
@@ -345,11 +361,11 @@ void IntuitionDrawable::drawRastPort_CGX(_mame_display *display,Paletted_CGX *pR
 
     UWORD *pp = (UWORD *)bitmap->base;
   //  printf("pixels values:%04x %04x %04x\n",(int)*pp,(int)pp[500],(int)pp[64*512+32]);
-
+    ULONG bmwidth,bmheight;
 
     APTR hdl = LockBitMapTags(pBitmap,
-                              LBMI_WIDTH,(ULONG)&_width,
-                              LBMI_HEIGHT,(ULONG)&_height,
+                              LBMI_WIDTH,(ULONG)&bmwidth,
+                              LBMI_HEIGHT,(ULONG)&bmheight,
                               LBMI_DEPTH,(ULONG)&depth,
                               LBMI_PIXFMT,(ULONG)&pixfmt,
                               LBMI_BYTESPERPIX,(ULONG)&pixfmt,
@@ -361,8 +377,8 @@ void IntuitionDrawable::drawRastPort_CGX(_mame_display *display,Paletted_CGX *pR
     ddscreen._clipX1 = 0;//10;
     ddscreen._clipY1 = 0; //10;
 
-    ddscreen._clipX2 = (WORD)_width; //-10;
-    ddscreen._clipY2 = (WORD)_height; //-10;
+    ddscreen._clipX2 = (WORD)bmwidth; //-10;
+    ddscreen._clipY2 = (WORD)bmheight; //-10;
 
     // +1 because goes 0,319
     int sourcewidth = (display->game_visible_area.max_x - display->game_visible_area.min_x)+1;
@@ -386,14 +402,34 @@ void IntuitionDrawable::drawRastPort_CGX(_mame_display *display,Paletted_CGX *pR
          case PIXFMT_RGB15:case PIXFMT_BGR15:case PIXFMT_RGB15PC:case PIXFMT_BGR15PC:
          case PIXFMT_RGB16:case PIXFMT_BGR16:case PIXFMT_RGB16PC:case PIXFMT_BGR16PC:
          if(pRemap->_clut16.size()>0)
-            directDrawClut16(&ddscreen,&ddsource,cenx+_dx,ceny+_dy,pRemap->_clut16.data());
+         {
+            if((_width>sourcewidth || _height>sourceheight) && _useScale)
+            {
+                directDrawScaleClut16(&ddscreen,&ddsource,0,0,
+                    _width,_height,
+                pRemap->_clut16.data());
+            } else
+            {
+                directDrawClut16(&ddscreen,&ddsource,cenx+_dx,ceny+_dy,pRemap->_clut16.data());
+            }
+         }
             break;
          case PIXFMT_RGB24:case PIXFMT_BGR24:
             //TODO
              break;
          case PIXFMT_ARGB32:case PIXFMT_BGRA32:case PIXFMT_RGBA32:
          if(pRemap->_clut32.size()>0)
-            directDrawClut32(&ddscreen,&ddsource,cenx+_dx,ceny+_dy,pRemap->_clut32.data());
+         {
+            if((_width>sourcewidth || _height>sourceheight) && _useScale)
+            {
+                directDrawScaleClut32(&ddscreen,&ddsource,0,0,
+                    _width,_height,
+                pRemap->_clut32.data());
+            } else
+            {
+                directDrawClut32(&ddscreen,&ddsource,cenx+_dx,ceny+_dy,pRemap->_clut32.data());
+            }
+         }
             break;
         default:
             //LUT8, aga:todo
@@ -405,6 +441,7 @@ void IntuitionDrawable::drawRastPort_CGX(_mame_display *display,Paletted_CGX *pR
     }
 
     UnLockBitMap(hdl);
+ //           printf("_width:%d sourcewidth:%d \n",_width,sourcewidth);
 //    printf("isit?\n");
 //      printf("ddsource x1:%d  y1:%d \n",ddsource._x1,ddsource._y1);
 //    printf("or?\n");
@@ -507,7 +544,8 @@ void Intuition_Screen::open()
 	{
         SetPointer( _pScreenWindow ,(UWORD *) _pMouseRaster, 0,1,0,0);
     }
-
+    _width = _fullscreenWidth;
+    _height = _fullscreenHeight;
 }
 void Intuition_Screen::close()
 {
@@ -539,6 +577,7 @@ Intuition_Window::Intuition_Window(const _osd_create_params *params) : Intuition
     , _pWbWindow(NULL)
     , _sWbWinSBitmap(NULL)
     , _machineWidth(params->width),_machineHeight(params->height)
+    , _maxzoomfactor(1)
 {}
 Intuition_Window::~Intuition_Window()
 {
@@ -561,7 +600,7 @@ void Intuition_Window::open()
 
 // struct BitMap * __stdargs AllocBitMap( ULONG sizex, ULONG sizey, ULONG depth, ULONG flags, CONST struct BitMap *friend_bitmap );
 
-    _sWbWinSBitmap = AllocBitMap(_machineWidth,_machineHeight,
+    _sWbWinSBitmap = AllocBitMap(_machineWidth*_maxzoomfactor,_machineHeight*_maxzoomfactor,
             pWbScreen->RastPort.BitMap->Depth,BMF_CLEAR|BMF_DISPLAYABLE,pWbScreen->RastPort.BitMap);
     if(_sWbWinSBitmap) {
 
@@ -572,8 +611,10 @@ void Intuition_Window::open()
      //   WA_Height, _machineHeight,
         WA_InnerWidth, _machineWidth,
         WA_InnerHeight, _machineHeight,
-    //    WA_MaxWidth,  WIDTH_SUPER,
-    //    WA_MaxHeight, HEIGHT_SUPER,
+        WA_MaxWidth,  _machineWidth*_maxzoomfactor,
+        WA_MaxHeight, _machineWidth*_maxzoomfactor,
+        WA_MinWidth, _machineWidth,
+        WA_MinHeight, _machineHeight,
         WA_IDCMP,/* IDCMP_GADGETUP | IDCMP_GADGETDOWN |*/IDCMP_MOUSEBUTTONS |  IDCMP_RAWKEY /*|
             IDCMP_NEWSIZE*/ /*| IDCMP_INTUITICKS*/ | IDCMP_CLOSEWINDOW,
 
@@ -585,6 +626,7 @@ void Intuition_Window::open()
            // | WFLG_NOCAREREFRESH
              | WFLG_SMART_REFRESH
             //| WFLG_SIMPLE_REFRESH
+             | ((_maxzoomfactor>1)?WFLG_SIZEGADGET:0)
             ,
      //   WA_Gadgets, &(SideGad),
         WA_Title,(ULONG) "Mame 0.106 Krb ", /* take title from version string */
@@ -641,6 +683,8 @@ void Intuition_Window::drawRastPort_CGX(_mame_display *display,Paletted_CGX *pRe
 {
     if(_pWbWindow && _sWbWinSBitmap)
     {
+        _width = (int)(_pWbWindow->GZZWidth);
+        _height = (int)(_pWbWindow->GZZHeight);
         IntuitionDrawable::drawRastPort_CGX(display,pRemap);
 
         BltBitMapRastPort( _sWbWinSBitmap,//CONST struct BitMap *srcBitMap,
@@ -652,8 +696,20 @@ void Intuition_Window::drawRastPort_CGX(_mame_display *display,Paletted_CGX *pRe
                            );
     }
 }
+// ----------------------- scalable
+Intuition_ScaleWindow::Intuition_ScaleWindow(const _osd_create_params *params)
+    :Intuition_Window(params)
+{
+    _maxzoomfactor = 3;
+    _useScale = 1;
+}
+Intuition_ScaleWindow::~Intuition_ScaleWindow() {}
+//void Intuition_ScaleWindow::drawRastPort_CGX(_mame_display *display,Paletted_CGX *pRemap)
+//{
 
+//}
 
+// ----------------------- end scalable
 Display_CGX::Display_CGX()
 : AmigaDisplay()
 , _drawable(NULL)
@@ -679,7 +735,7 @@ void Display_CGX::open(const _osd_create_params *params,int window, ULONG forced
 
     if(window)
     {
-        _drawable = new Intuition_Window(params);
+        _drawable = new /*Intuition_Window*/Intuition_ScaleWindow(params);
     } else
     {
 
@@ -761,11 +817,104 @@ void Display_CGX::WaitFrame()
 
 }
 
+/*
+struct directDrawScreen {
+    void *_base;
+    ULONG _bpr;
+    WORD _clipX1,_clipY1,_clipX2,_clipY2;
+};
+struct directDrawSource {
+    void *_base;
+    ULONG _bpr;
+    WORD _x1,_y1,_x2,_y2; // to be drawn.
+};
+*/
+
+void directDrawScaleClut16(directDrawScreen *screen ,
+                directDrawSource *source,
+                LONG x1 ,
+                LONG y1 ,
+                LONG w ,
+                LONG h ,
+                UWORD *lut
+            )
+{
+    UWORD wsobpr = source->_bpr>>1;
+    UWORD wscbpr = screen->_bpr>>1;
+
+    UWORD *psourcebm = (UWORD *)source->_base;
+    psourcebm += (source->_y1 * wsobpr) + source->_x1;
+
+    UWORD *pscreenbm = (UWORD *)screen->_base;
+    pscreenbm += (y1 * wscbpr) + x1;
+
+    LONG sourceHeight = source->_y2 - source->_y1;
+    if(sourceHeight<=0) return;
+
+    LONG sourceWidth = source->_x2 - source->_x1;
+    if(sourceWidth<=0) return;
+
+    LONG addw = (sourceWidth<<16)/w;
+    LONG addh = (sourceHeight<<16)/h;
+    LONG vh = 0;
+    for(LONG hh=0;hh<h;hh++)
+    {
+        LONG vx = 0;
+        UWORD *psoline = psourcebm + wsobpr*(vh>>16);
+        UWORD *pscline = pscreenbm;
+        for(LONG ww=0;ww<w;ww++)
+        {
+            *pscline++ = lut[psoline[vx>>16]];
+            vx += addw;
+        }
+        vh += addh;
+        pscreenbm += wscbpr;
+    }
+
+}
 
 
 
+void directDrawScaleClut32(directDrawScreen *screen ,
+                directDrawSource *source,
+                LONG x1 ,
+                LONG y1 ,
+                LONG w ,
+                LONG h ,
+                ULONG *lut
+            )
+{
+    UWORD wsobpr = source->_bpr>>1;
+    UWORD wscbpr = screen->_bpr>>2;
 
+    UWORD *psourcebm = (UWORD *)source->_base;
+    psourcebm += (source->_y1 * wsobpr) + source->_x1;
 
+    ULONG *pscreenbm = (ULONG *)screen->_base;
+    pscreenbm += (y1 * wscbpr) + x1;
 
+    LONG sourceHeight = source->_y2 - source->_y1;
+    if(sourceHeight<=0) return;
 
+    LONG sourceWidth = source->_x2 - source->_x1;
+    if(sourceWidth<=0) return;
+
+    LONG addw = (sourceWidth<<16)/w;
+    LONG addh = (sourceHeight<<16)/h;
+    LONG vh = 0;
+    for(LONG hh=0;hh<h;hh++)
+    {
+        LONG vx = 0;
+        UWORD *psoline = psourcebm + wsobpr*(vh>>16);
+        ULONG *pscline = pscreenbm;
+        for(LONG ww=0;ww<w;ww++)
+        {
+            *pscline++ = lut[psoline[vx>>16]];
+            vx += addw;
+        }
+        vh += addh;
+        pscreenbm += wscbpr;
+    }
+
+}
 

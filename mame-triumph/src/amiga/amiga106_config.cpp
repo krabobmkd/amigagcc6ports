@@ -38,7 +38,11 @@ MameConfig::MameConfig()
     , _activeDriver(-1)
     , _audio(1)
     , _sampleRate(16000)
+    , _inputsprefs()
 {
+    for(int i=0;i<4;i++)_inputsprefs._lowlevelExplicitPortsType[i] = 0;
+
+    _inputsprefs._useParallelPadsForp3p4 = true;
     initDriverIndex();
 }
 MameConfig::~MameConfig()

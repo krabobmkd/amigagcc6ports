@@ -1,6 +1,9 @@
 #ifndef AMIGA_PARALLELPADS_H
 #define AMIGA_PARALLELPADS_H
+/**
+        Things to read p
 
+*/
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -9,24 +12,14 @@ extern "C" {
 
 struct Task;
 struct Interrupt;
-//struct AParallelPads
-//{
-//    ULONG _signalBit; // to know when things happens...
-//    // par. raw read values
-////    UBYTE _aprb;
-////    UBYTE _bpra;
-////    UWORD _dummy;
-//    // note: struct is actually extended with private members.
-//};
 
-
-//extern void RBFHandler();   /* proto for asm interrupt handler */
-//#define BUFFERSIZE 256
 struct ParPadsInteruptData {
+    UWORD   _last_cia;
+    UWORD   _last_checked;
+    UWORD   _last_checked_changes;
+    UWORD _d;
+    // to signal out
     struct Task *_Task;
-    UBYTE _ciaaprb;
-    UBYTE _ciabpra;
-    ULONG _counter;
     ULONG _Signal;
 
 };
@@ -51,7 +44,8 @@ struct ParallelPads // : public AParallelPads
 
 
 struct ParallelPads *createParallelPads();
-void readParallelPads(struct ParallelPads *parpads);
+void checkParallelPads();
+//void readParallelPads(struct ParallelPads *parpads);
 void closeParallelPads(struct ParallelPads *parpads);
 
 #ifdef __cplusplus

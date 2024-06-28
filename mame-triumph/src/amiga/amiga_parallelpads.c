@@ -80,14 +80,20 @@ static void interuptfunc( register struct ParPadsInteruptData *ppi __asm("a1") )
 //	move.b	_ciaaprb,(a1)		; move byte from port to dest
 //	movea.l	_fireptr,a1		; a1 now holds the destination
 //	move.b	_ciabpra,(a1)		; move byte from port to dest
-    UBYTE aprb = ciaaprb;
-    UBYTE bpra = ciabpra;
-    if(aprb != ppi->_ciaaprb || bpra !=  ppi->_ciabpra)
+//    UBYTE aprb = ~ciaaprb;
+//    UBYTE bpra = ~ciabpra;
+    UWORD ciavalues = ~(( ((UWORD)ciaaprb)<<8)| (UWORD)ciabpra);
+    if(ciavalues != ppi->_last_cia )
     {
-        ppi->_ciaaprb = ciaaprb;
-        ppi->_ciabpra = ciabpra;
-        ppi->_counter++;
-        Signal( ppi->_Task, ppi->_Signal );
+        // here if anything changed.
+
+        // got to know if anything changed between checkings
+        ppi->_last_checked_changes |= (ciavalues^ppi->_last_cia); //
+        ppi->_last_checked |= ciavalues;
+
+        ppi->_last_cia = ciavalues;
+//        ppi->_counter++;
+//       if( ppi->_Signal) Signal( ppi->_Task, ppi->_Signal );
     }
 }
 

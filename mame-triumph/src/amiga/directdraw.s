@@ -301,6 +301,19 @@ directDrawClut32:
 	rts
 
 
+
+_directScaleDrawClut16:
+directScaleDrawClut16:
+	;a0 dsc_
+	;a1 dso_
+	;a2 lut .w
+	;d0 xstart
+	;d1 ystart
+ 	movem.l	d2-d7/a2-a6,-(sp)
+
+.endfunc
+	movem.l	(sp)+,d2-d7/a2-a6
+	rts
 ;	XDEF asmval
 ;	XDEF _asmval
 

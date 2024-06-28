@@ -22,7 +22,7 @@ TODOLIST before tests
  link drivers issues...
   - O remove S-TV , too much non working drivers.
 
- - O do save/load state
+ - X do save/load state
  - O do save screenshot
  - O nicer mame menu
 
