@@ -2,35 +2,42 @@
 extern "C"
 {
     #include <proto/exec.h>
+    #include <proto/graphics.h>
     #include <dos/dos.h>
 }
-
-#include "amiga_parallelpads.h"
+#include <stdlib.h>
 #include <stdio.h>
 
+#include "amiga_parallelpads.h"
 
-AParallelPads *g_pParPads=NULL;
+ParallelPads *g_pParPads=NULL;
+
+void close()
+{
+    if(g_pParPads) closeParallelPads(g_pParPads);
+}
 
 int main(int argc, char **argv)
 {
+    atexit(&close);
     g_pParPads = createParallelPads();
+    ParallelPads *ppads = g_pParPads;
 
     if(!g_pParPads)
     {
         printf("init failed\n");
         return 1;
     }
-       printf("init ok\n");
+    printf("init ok\n");
     int signal;
-    while( signal = Wait(g_pParPads->_signalBit | SIGBREAKF_CTRL_C))
+    while( signal = Wait(ppads->_ppidata->_Signal | SIGBREAKF_CTRL_C))
     {
         if(signal &SIGBREAKF_CTRL_C) break;
-        readParallelPads(g_pParPads);
-        printf("aprb: %02x bpra:%02x\n",(int)g_pParPads->_aprb,(int)g_pParPads->_bpra);
+        printf("aprb: %02x bpra:%02x c:%d\n",(int)ppads->_ppidata->_ciaaprb,(int)ppads->_ppidata->_ciabpra,
+               (int)ppads->_ppidata->_counter
+               );
     }
 
     printf("closing\n");
-    closeParallelPads(g_pParPads);
-    printf("out ok\n");
     return 0;
 }

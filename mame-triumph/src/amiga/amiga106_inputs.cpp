@@ -60,7 +60,7 @@ struct MameInputs
 using namespace std;
 
 MameInputs *g_pInputs=NULL;
-AParallelPads *g_pParallelPads=NULL; // createParallelPads();
+ParallelPads *g_pParallelPads=NULL; // createParallelPads();
 
 extern "C" {
     struct Library *LowLevelBase = NULL;
@@ -184,12 +184,12 @@ void UpdateInputs(struct MsgPort *pMsgPort)
     }
     g_pInputs->_NbKeysUpStack = 0;
 
-    if(LowLevelBase)
-    {
-        ULONG j2  =ReadJoyPort(2);
-        ULONG j3  =ReadJoyPort(3);
-        printf("j2:%08x  j3:%08x\n",j2,j3);
-    }
+//    if(LowLevelBase)
+//    {
+//        ULONG j2  =ReadJoyPort(2);
+//        ULONG j3  =ReadJoyPort(3);
+//        printf("j2:%08x  j3:%08x\n",j2,j3);
+//    }
     // - - - -
     while((im = (struct IntuiMessage *) GetMsg(pMsgPort)))
     {
@@ -210,7 +210,7 @@ void UpdateInputs(struct MsgPort *pMsgPort)
                 #define IKEY_RAWMASK_CD32PADS 0x037f // rawmask has evolved with CD32 pads
                 UWORD finalkeycode = imcode & IKEY_RAWMASK_CD32PADS ; //IKEY_RAWMASK;
 
-                printf("key:%04x\n",finalkeycode);
+               // printf("key:%04x\n",finalkeycode);
 
                 if(imcode & IECODE_UP_PREFIX)
                 {
