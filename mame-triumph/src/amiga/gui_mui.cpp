@@ -62,7 +62,12 @@ typedef ULONG (*RE_HOOKFUNC)();
 #define SMT_DISPLAYID 0
 #define SMT_DEPTH     1
 
-#define DRIVER_OFFSET 2
+#define CFGS_ALL 0
+#define CFGS_FOUND 1
+
+//#define DRIVER_OFFSET 2
+
+static std::vector<std::string> boldnames;
 
 #define TEXT_ABOUT \
 "\33c\n\33b\33uMAME - Multiple Arcade Machine Emulator\33n\n\n" \
@@ -314,11 +319,11 @@ static int GetDriverIndex(void)
 
   if(list_index == MUIV_List_Active_Off)
   {
-    index = -DRIVER_OFFSET - 1;
+    index = - 1;
   }
-  else if(list_index < DRIVER_OFFSET)
+  else if(list_index < 0)
   {
-    index = list_index - DRIVER_OFFSET;
+    index = list_index;
   }
   else
   {
@@ -339,7 +344,7 @@ static struct _game_driver *GetDriver(void)
 
   get(LI_Driver, MUIA_List_Active, &list_index);
 
-  if((list_index == MUIV_List_Active_Off) || (list_index < DRIVER_OFFSET))
+  if((list_index == MUIV_List_Active_Off) || (list_index < 0))
     return(NULL);
 
   DoMethod((Object*)LI_Driver, MUIM_List_GetEntry, list_index, &entry);
@@ -354,18 +359,45 @@ static struct _game_driver *GetDriver(void)
 
 static void ShowFound(void)
 {
+    boldnames.clear();
     MameConfig &config = getMainConfig();
     const std::vector<const _game_driver *const*> &roms = config.romsFound();
-    /*
-        MUIM_List_Insert can insert everything in a blow.
-    */
+    //MUIM_List_Insert can insert everything in a blow.
         DoMethod((Object *)LI_Driver, MUIM_List_Insert,
          (ULONG)roms.data(),(int)roms.size(),  MUIV_List_Insert_Bottom);
+    // ensure cycle is in correct state
+    int cyclestate=0;
+    get(CY_Show, MUIA_Cycle_Active, &cyclestate);
+    if(cyclestate != 1)
+    {
+        set(CY_Show, MUIA_Cycle_Active,1);
+    }
 
 }
+static void ShowAll(void)
+{
+    MameConfig &config = getMainConfig();
+    std::vector<const _game_driver *const*> roms;
+    config.buildAllRomsVector(roms);
+
+    boldnames.clear();
+    //MUIM_List_Insert can insert everything in a blow.
+        DoMethod((Object *)LI_Driver, MUIM_List_Insert,
+         (ULONG)roms.data(),(int)roms.size(),  MUIV_List_Insert_Bottom);
+    // ensure cycle is in correct state
+    int cyclestate=0;
+    get(CY_Show, MUIA_Cycle_Active, &cyclestate);
+    if(cyclestate != 0)
+    {
+        set(CY_Show, MUIA_Cycle_Active,0);
+    }
+}
+
 
 static ULONG ASM DriverDisplay(struct Hook *hook REG(a0), char **array REG(a2), struct _game_driver **drv_indirect REG(a1))
 {
+
+    MameConfig &config = getMainConfig();
   struct _game_driver *drv;
 
 #ifdef MESS
@@ -443,8 +475,21 @@ static ULONG ASM DriverDisplay(struct Hook *hook REG(a0), char **array REG(a2), 
     memset(&machine,0,sizeof(machine));
     drv->drv(&machine);
 
+ if(config.isDriverFound(drv_indirect))
+ {
+     // if found: to bold
+    boldnames.push_back("");
+    std::string &b=boldnames.back();
+    b = "\033b";
+    b += drv->description;
+    *array++ = (char *)b.c_str();
+ } else
+ {
+     *array++ = (char *) drv->description;
+ }
 
-  *array++ = (char *) drv->description;
+
+
   *array++ = (char *) drv->name;
 
   if(machine.video_attributes & VIDEO_TYPE_VECTOR)
@@ -575,7 +620,7 @@ static ULONG ASM DriverDispatcher(struct IClass *cclass REG(a0), Object * obj RE
             else
             {
               data->CharIndex = 0;
-              i = DRIVER_OFFSET;
+              i = 0;
             }
 
             data->Seconds = imsg->Seconds;
@@ -1231,7 +1276,9 @@ int MainGUI(void)
 #ifdef MESS
           DoMethod(LI_Driver, MUIM_List_Insert, SortedDrivers, NumDrivers + DRIVER_OFFSET, MUIV_List_Insert_Bottom);
 #else
-          ShowNotify(NULL, NULL,(ULONG*) /*&Config[CFG_SHOW]*/&dummy);
+        // list is in previous state.
+          int listShowState = config.driverListstate();
+          ShowNotify(NULL, NULL,(ULONG*) &listShowState);
 #endif
         }
       }
@@ -1250,24 +1297,24 @@ int MainGUI(void)
           switch(rid)
           {
             case RID_Start:
+          {
+
               // game rom selected to start !
               get(LI_Driver, MUIA_List_Active, &v);
 
 
-              printf("GUI start:%d \n",v);
+              printf("GUI start:%d \n",(int)v);
 
               if(v != MUIV_List_Active_Off)
               {
-                GetOptions(TRUE);
-
-                //if(Config[CFG_DRIVER] >= 0)
-                if(v>=0)
-                {
-                  config.setActiveDriver(v);
+                  int driverptr=0;
+                  DoMethod(LI_Driver, MUIM_List_GetEntry, v, &driverptr);
+                // GetOptions(TRUE);
+                  if(driverptr) config.setActiveDriver(GetEntryDriverIndex(driverptr));
                   loop = FALSE;
-                }
-              }
 
+              }
+            } // end case
               break;
 #ifndef MESS
             case RID_Scan:
@@ -1622,23 +1669,24 @@ static ULONG ASM ScreenModeStop(struct Hook *hook REG(a0), APTR popasl REG(a2), 
 #ifndef MESS
 static ULONG ASM ShowNotify(struct Hook *hook REG(a0), APTR obj REG(a2), ULONG *par REG(a1))
 {
+  MameConfig &config = getMainConfig();
   DoMethod(LI_Driver, MUIM_List_Clear);
 
-    set(BU_Scan, MUIA_Disabled, FALSE);
-    ShowFound();
-
-//  switch(*par)
-//  {
-//    case CFGS_ALL:
+  config.setDriverListState(*par);
+  switch(*par)
+  {
+    case CFGS_ALL:
 //      set(BU_Scan, MUIA_Disabled, TRUE);
 //      DoMethod(LI_Driver, MUIM_List_Insert, SortedDrivers, NumDrivers + DRIVER_OFFSET, MUIV_List_Insert_Bottom);
-//      break;
 
-//    case CFGS_FOUND:
+      ShowAll();
+      break;
+
+    case CFGS_FOUND:
 //      set(BU_Scan, MUIA_Disabled, FALSE);
-//      ShowFound();
-//      break;
-//  }
+      ShowFound();
+      break;
+  }
 
   return(0);
 }
@@ -1707,7 +1755,7 @@ static ULONG ASM DriverNotify(struct Hook *hook REG(a0), APTR obj REG(a2), ULONG
     MameConfig &config = getMainConfig();
   GetOptions(FALSE);
 
-  if(*par < DRIVER_OFFSET)
+  if(*par < 0)
   {
     set(CM_UseDefaults, MUIA_Disabled, TRUE);
     set(CM_Allow16Bit,  MUIA_Disabled, FALSE);

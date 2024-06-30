@@ -1,11 +1,16 @@
 
+
 TODOLIST before tests
+
+ SHOW ALL/FOUND selection
 
  - X corriger touche OK
  - X switch window/fullscreen
  - X avoir load xml fonctionnel.
  - X Stack watch
  - X os frameskip when too fast (uae)
+
+ - O default pads OK.
 
  - O coin1 & start1 by default.
 

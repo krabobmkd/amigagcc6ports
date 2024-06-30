@@ -32,10 +32,12 @@ MameConfig &getMainConfig()
 }
 
 MameConfig::MameConfig()
-    : _userDir("PROGDIR:user")
+    : _NumDrivers(0)
+    , _userDir("PROGDIR:user")
     , _romsDir("PROGDIR:roms")
     , _startWindowed(0) // else fullscreen.
     , _activeDriver(-1)
+    , _listShowState(0)
     , _audio(1)
     , _sampleRate(16000)
     , _inputsprefs()
@@ -48,21 +50,21 @@ MameConfig::MameConfig()
 MameConfig::~MameConfig()
 {}
 
-void MameConfig::setActiveDriver(int driverIndexInRomFoundList)
+void MameConfig::setActiveDriver(int indexInDriverList)
 {
-    if(driverIndexInRomFoundList<0 || driverIndexInRomFoundList>=(int)_romsFound.size())
+    if(indexInDriverList<0 || indexInDriverList>=_NumDrivers)
     {
         _activeDriver = -1;
         return;
     }
-    const _game_driver *const*drv = _romsFound[driverIndexInRomFoundList];
-    int idriver = ((int)drv-(int)&drivers[0])/sizeof(const _game_driver *);
-    _activeDriver = idriver;
- //   printf("driverfound:%d\n",_activeDriver);
 
-   // printf("driverfound:%%s\n",drivers[_activeDriver]->description);
+    _activeDriver = indexInDriverList;
+
 }
-
+void MameConfig::setDriverListState(int listState)
+{
+    _listShowState = listState;
+}
 // xml ids must be all lowercase
 static const char *pcd_mame="mame";
 
@@ -70,6 +72,7 @@ static const char *pcf_roms="roms";
 static const char *pcf_romsdir="romsdir";
 static const char *pcf_userdir="userdir";
 static const char *pcf_last="last";
+static const char *pcf_list="list";
 static const char *pcf_display="display";
 static const char *pcf_startwindowed="startwindowed";
 static const char *pcf_doublewindow="doublewindow";
@@ -126,6 +129,11 @@ int MameConfig::save()
     {
         xml_add_child(confignode,pcf_last, drivers[_activeDriver]->name );
     }
+    if(_listShowState !=-1)
+    {
+        xml_data_node *pn = xml_add_child(confignode,pcf_list,NULL);
+        if(pn) xml_set_attribute_int(pn,"show",_listShowState);
+    }
 
     display = xml_add_child(confignode,pcf_display, NULL );
     if(display)
@@ -156,6 +164,7 @@ void MameConfig::resettodefault()
     _userDir="PROGDIR:user";
     _romsDir="PROGDIR:roms";
     _romsFound.clear();
+    _romsFoundReverse.clear();
     _activeDriver =-1;
 
 }
@@ -203,10 +212,8 @@ int MameConfig::load()
                 }
                i = in;
             }
-
-
-
         }
+        initRomsFoundReverse();
     }
 
     node = xml_get_sibling(confignode->child, pcf_romsdir);
@@ -217,6 +224,11 @@ int MameConfig::load()
 
     node = xml_get_sibling(confignode->child, pcf_last);
     if(node && node->value) _activeDriver = _driverIndex.index(node->value);
+
+    node = xml_get_sibling(confignode->child, pcf_list);
+
+    _listShowState = 0;
+    if(node) _listShowState = xml_get_attribute_int(node,"show",0);
 
     node = xml_get_sibling(confignode->child, pcf_display);
     if(node)
@@ -259,23 +271,25 @@ void MameConfig::setUserPath(const char *userpath)
 int MameConfig::initDriverIndex()
 {
     // to be done once.
-  for(int NumDrivers = 0; drivers[NumDrivers]; NumDrivers++)
+  int NumDrivers;
+  for(NumDrivers = 0; drivers[NumDrivers]; NumDrivers++)
   {
     const game_driver *drv  =drivers[NumDrivers];
     if(drv->flags & (/*GAME_NOT_WORKING|*/NOT_A_DRIVER)) continue;
      _driverIndex.insert(drv->name,NumDrivers);
   }
+  _NumDrivers =NumDrivers;
 }
-int MameConfig::allDrivers()
-{
-  _romsFound.clear();
-  for(int NumDrivers = 0; drivers[NumDrivers]; NumDrivers++)
-  {
-    if(drivers[NumDrivers]->flags & (/*GAME_NOT_WORKING|*/NOT_A_DRIVER)) continue;
-    _romsFound.push_back(&drivers[NumDrivers]);
-  }
-  sortDrivers();
-}
+//int MameConfig::allDrivers()
+//{
+//  _romsFound.clear();
+//  for(int NumDrivers = 0; drivers[NumDrivers]; NumDrivers++)
+//  {
+//    if(drivers[NumDrivers]->flags & (/*GAME_NOT_WORKING|*/NOT_A_DRIVER)) continue;
+//    _romsFound.push_back(&drivers[NumDrivers]);
+//  }
+//  sortDrivers();
+//}
 int MameConfig::scanDrivers()
 {
   printf(" *** ScanDrivers: _romsDir:%s\n", _romsDir.c_str());
@@ -298,7 +312,7 @@ int MameConfig::scanDrivers()
 
     sortDrivers();
     printf(" *** ScanDrivers end\n");
-
+    initRomsFoundReverse();
     return (int)_romsFound.size();
 }
 int MameConfig::scanDriversRecurse(BPTR lock, FileInfoBlock*fib)
@@ -364,6 +378,35 @@ void MameConfig::sortDrivers()
           (int (*)(const void *, const void *)) DriverCompareNames);
 
 }
+void MameConfig::initRomsFoundReverse()
+{
+    int nbSlots = (_NumDrivers>>3)+1;
+    _romsFoundReverse.reserve(nbSlots);
+    _romsFoundReverse.resize(nbSlots,0);
+    for(const _game_driver *const*drv : _romsFound)
+    {
+        int idriver = ((int)drv-(int)&drivers[0])/sizeof(const _game_driver *);
+        _romsFoundReverse[idriver>>3] |= (1<<(idriver & 7));
+    }
+}
+int MameConfig::isDriverFound(const _game_driver *const*drv)
+{
+    int idriver = ((int)drv-(int)&drivers[0])/sizeof(const _game_driver *);
+    if(idriver<=0 || idriver >=_NumDrivers) return 0;
+    return (int)((_romsFoundReverse[idriver>>3] & (1<<(idriver & 7))) !=0);
+}
+
+
+void MameConfig::buildAllRomsVector(std::vector<const _game_driver *const*> &v)
+{
+    v.reserve(_NumDrivers);
+    v.resize(_NumDrivers);
+    for(int NumDrivers = 0; drivers[NumDrivers]; NumDrivers++)
+    {
+        v[NumDrivers] = &drivers[NumDrivers];
+    }
+}
+
 // apply to mame options
 void MameConfig::applyToMameOptions(_global_options &mameOptions)
 {
@@ -377,6 +420,9 @@ void MameConfig::applyToMameOptions(_global_options &mameOptions)
     options.gamma=0.5f;
 
     options.samplerate=(audio())?0:sampleRate();
+    options.use_samples = 0;
+
+     printf("MameConfig::applyToMameOptions applied samplerate:%d\n",options.samplerate);
 
 //todo/old...
     //   options.ror        = (Config[CFG_ROTATION] == CFGR_RIGHT);

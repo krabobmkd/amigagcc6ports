@@ -56,8 +56,7 @@ set(AMIGA_SRC
 
 	amiga106.cpp
 
-	amiga106_inputs.h
-	amiga106_inputs.cpp
+
 	amiga106_audiostream.cpp
 	amiga106_filesystem.cpp
 	amiga106_timer.cpp
@@ -66,13 +65,11 @@ set(AMIGA_SRC
 	amiga106_video.h
 	amiga106_video.cpp
 #	amiga106_video_p96.cpp
-	amiga106_video_cgx.h
-	amiga106_video_cgx.cpp
+
 #	amiga106_video_aga.h
 #	amiga106_video_aga.cpp
 	amiga_locale.cpp
-	amiga_parallelpads.h
-	amiga_parallelpads.c
+
 
 	audio.h
 
@@ -92,6 +89,27 @@ set(AMIGA_SRC
 #	cgxhooks.h
 #	cgxhooks_re.s
 	)
+# - - -have some Amiga code using O2
+	add_library(Mame106AmigaO2 STATIC
+		amiga106_video_cgx.h
+		amiga106_video_cgx.cpp
+
+		amiga106_inputs.h
+		amiga106_inputs.cpp
+
+		amiga_parallelpads.h
+		amiga_parallelpads.c
+	)
+	set_property(TARGET Mame106AmigaO2 PROPERTY C_STANDARD 11)
+	set_property(TARGET Mame106AmigaO2 PROPERTY CXX_STANDARD 11)
+	if(MAME_USE_HARDFLOAT)
+		target_compile_definitions(Mame106AmigaO2 PRIVATE MAME_USE_HARD_FLOAT=1 )
+	endif()
+	target_link_directories(Mame106AmigaO2 PUBLIC "../../lib")
+	target_include_directories(Mame106AmigaO2 PUBLIC "../../include" )
+	target_include_directories(Mame106AmigaO2 PUBLIC "../mame106")
+	target_compile_options(Mame106AmigaO2 PRIVATE -O2 ${AMIGA_COMPILER_OPTIONS} )
+# - - - -
 
 set(PROGNAME Mame106)
 add_executable(${PROGNAME} ${AMIGA_SRC} )
@@ -102,7 +120,7 @@ if(MAME_USE_HARDFLOAT)
 	target_compile_definitions(${PROGNAME} PRIVATE MAME_USE_HARD_FLOAT=1 )
 endif()
 # the static libs that are part eof this repo:
-target_link_libraries(${PROGNAME} PUBLIC mamecoreO2 z expat)
+target_link_libraries(${PROGNAME} PUBLIC Mame106AmigaO2 mamecoreO2 z expat)
 
 target_link_directories(${PROGNAME} PUBLIC "../../lib")
 target_include_directories(${PROGNAME} PUBLIC "../../include" )

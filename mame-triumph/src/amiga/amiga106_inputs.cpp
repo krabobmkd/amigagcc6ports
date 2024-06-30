@@ -120,39 +120,48 @@ void ConfigureLowLevelLib()
     // for correct autosense,
     for(int itest=0;itest<2;itest++)
     {
-        for(int iport=1;iport<4;iport++) ReadJoyPort(iport);
+        for(int iport=0;iport<4;iport++) ReadJoyPort(iport);
+        WaitTOF();
         WaitTOF();
     }
 
-    for(int iport=1;iport<4;iport++) // actually 2
+    for(int iport=0;iport<4;iport++) // actually 2
     {
         int explicitConfType = inputConfig._lowlevelExplicitPortsType[iport];
         ULONG state=explicitConfType;
         if(explicitConfType != SJA_TYPE_AUTOSENSE)
         {
+           // printf("iport:%d explicit\n",iport);
             // explicit configuration, hopes it matches what's plugged.
             SetJoyPortAttrs(iport,SJA_Type,explicitConfType);
         } else
         {   // autosense
             state = ReadJoyPort(iport)>>28;
+            printf("iport:%d autosense:%d\n",iport,(int)state);
         }
-        if( iport<2)
-        {
-            if (state == SJA_TYPE_GAMECTLR ||
-                state == SJA_TYPE_JOYSTK )
-            {
-                SystemControl(
-                    SCON_AddCreateKeys,iport,
-                    TAG_END,0);
-            } else {
-                SystemControl(
-                    SCON_RemCreateKeys,iport,
-                    TAG_END,0);
-            }
-        }
+//        if( iport<2)
+//        {
+//            if (state == SJA_TYPE_GAMECTLR ||
+//                state == SJA_TYPE_JOYSTK )
+//            {
+//            printf("iport:%d SCON_AddCreateKeys:\n",iport);
+
+//            } else {
+//                printf("iport:%d SCON_RemCreateKeys:\n",iport);
+//                SystemControl(
+//                    SCON_RemCreateKeys,iport,
+//                    TAG_END,0);
+//            }
+//        }
         llPortsTypes[iport] = state;
 
     }
+    SystemControl(
+        SCON_AddCreateKeys,0,
+        SCON_AddCreateKeys,1,
+//        SCON_AddCreateKeys,2,
+//        SCON_AddCreateKeys,3,
+        TAG_END,0);
 
 }
 void CloseLowLevelLib()
@@ -163,8 +172,8 @@ void CloseLowLevelLib()
         // stops rawkey codes for the joystick/game
         SCON_RemCreateKeys,0,
         SCON_RemCreateKeys,1,
-        SCON_RemCreateKeys,2,
-        SCON_RemCreateKeys,3,
+//        SCON_RemCreateKeys,2,
+//        SCON_RemCreateKeys,3,
         TAG_END,0
         );
     if(LowLevelBase) CloseLibrary(LowLevelBase);
@@ -193,6 +202,11 @@ void AllocInputs()
 
 void FreeInputs()
 {
+    if(LowLevelBase)
+    {   // back to mouse ?
+        SetJoyPortAttrs(0,SJA_Type,SJA_TYPE_MOUSE);
+    }
+
     if(g_pParallelPads)
     {
         closeParallelPads(g_pParallelPads);
@@ -329,22 +343,40 @@ void UpdateInputs(struct MsgPort *pMsgPort)
 //          CallHook(inputs->IDCMPHook, NULL, imclass);
         }
     }
+    // apply change from parallel pads to player 3 & 4
     if(g_pParallelPads && g_pParallelPads->_ppidata->_last_checked_changes )
     {
         UWORD changed = g_pParallelPads->_ppidata->_last_checked_changes;
         UWORD state = g_pParallelPads->_ppidata->_last_checked;
         static const UWORD rk[]={
-            RAWKEY_PORT2_JOY_UP,RAWKEY_PORT2_JOY_DOWN,RAWKEY_PORT2_JOY_LEFT,RAWKEY_PORT2_JOY_RIGHT,
-            RAWKEY_PORT3_JOY_UP,RAWKEY_PORT3_JOY_DOWN,RAWKEY_PORT3_JOY_LEFT,RAWKEY_PORT3_JOY_RIGHT,
-            0,RAWKEY_PORT3_BUTTON_RED,0,RAWKEY_PORT2_BUTTON_RED
+            // it's the order of the bits in parralel registers.
+            RAWKEY_PORT3_JOY_RIGHT,RAWKEY_PORT3_JOY_LEFT,
+            RAWKEY_PORT3_JOY_DOWN,RAWKEY_PORT3_JOY_UP,
+            RAWKEY_PORT2_JOY_RIGHT,RAWKEY_PORT2_JOY_LEFT,
+            RAWKEY_PORT2_JOY_DOWN,RAWKEY_PORT2_JOY_UP,
+
+//            RAWKEY_PORT2_JOY_UP,RAWKEY_PORT2_JOY_DOWN,RAWKEY_PORT2_JOY_LEFT,RAWKEY_PORT2_JOY_RIGHT,
+//            RAWKEY_PORT3_JOY_UP,RAWKEY_PORT3_JOY_DOWN,RAWKEY_PORT3_JOY_LEFT,RAWKEY_PORT3_JOY_RIGHT,
+//            0,RAWKEY_PORT3_BUTTON_RED,0,RAWKEY_PORT2_BUTTON_RED
         };
         UWORD testbit=0x8000;
-        for(int i=0;i<12;i++) {
-            if((changed & testbit) && rk[i]!=0)
+        for(int i=0;i<8;i++) {
+           // if((changed & testbit) )
             {
                   g_pInputs->_Keys[rk[i]] = (BYTE)((testbit & state)!=0); // down
             }
             testbit>>=1;
+        }
+        // then 2 fires
+        testbit = 0x0004;
+      //  if((changed & testbit) )
+        {
+              g_pInputs->_Keys[RAWKEY_PORT2_BUTTON_RED] = (BYTE)((testbit & state)!=0); // down
+        }
+        testbit = 0x0001;
+      //  if((changed & testbit) )
+        {
+              g_pInputs->_Keys[RAWKEY_PORT3_BUTTON_RED] = (BYTE)((testbit & state)!=0); // down
         }
 
         g_pParallelPads->_ppidata->_last_checked = 0;
@@ -462,16 +494,16 @@ void RawKeyMap::init()
         {"HELP",0x5F,/*KEYCODE_HOME*/KEYCODE_F11 }, // ... dunno.
 
         {"~",0x00,KEYCODE_TILDE},
-        {"1",0x01,CODE_OTHER_DIGITAL},
-        {"2",0x02,CODE_OTHER_DIGITAL},
-        {"3",0x03,CODE_OTHER_DIGITAL},
-        {"4",0x04,CODE_OTHER_DIGITAL},
-        {"5",0x05,CODE_OTHER_DIGITAL},
-        {"6",0x06,CODE_OTHER_DIGITAL},
-        {"7",0x07,CODE_OTHER_DIGITAL},
-        {"8",0x08,CODE_OTHER_DIGITAL},
-        {"9",0x09,CODE_OTHER_DIGITAL},
-        {"0",0x0A,CODE_OTHER_DIGITAL},
+        {"1",0x01,KEYCODE_1},
+        {"2",0x02,KEYCODE_2},
+        {"3",0x03,KEYCODE_3},
+        {"4",0x04,KEYCODE_4},
+        {"5",0x05,KEYCODE_5},
+        {"6",0x06,KEYCODE_6},
+        {"7",0x07,KEYCODE_7},
+        {"8",0x08,KEYCODE_8},
+        {"9",0x09,KEYCODE_9},
+        {"0",0x0A,KEYCODE_0},
 
         {"BACKSPACE",0x41,KEYCODE_BACKSPACE},
         {"DEL",0x46,KEYCODE_DEL},

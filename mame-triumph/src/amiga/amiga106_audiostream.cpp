@@ -168,10 +168,10 @@ int osd_start_audio_stream(int stereo)
     }
     int freq = Machine->sample_rate;
     int ifps = (int) Machine->drv->frames_per_second;
-    if(freq ==0 || ifps == 0.0f) return 0;
+    if(freq ==0 || ifps == 0) return 0;
 
+    unsigned int updateLength = ((freq / ifps)+1) & 0xfffffffe;
 
-    unsigned int updateLength = freq / ifps;
     printf("osd_start_audio_stream: msfreq: %d ifps:%d uplength:%d stereo:%d\n",
            freq,ifps,updateLength,stereo);
 
@@ -200,6 +200,7 @@ int osd_start_audio_stream(int stereo)
     if (deviceResult) {
 		pAHIS->m_Error = eAHIS_DeviceError;
 		AHI_Close(pAHIS);
+        printf(" AHI OpenDevice fail\n");
 		return 0;
 	}
 	pAHIS->m_AHIio2 = (struct AHIRequest *)CreateExtIO(pAHIS->m_AHImp ,sizeof(struct AHIRequest)); /*AllocSysObjectTags(ASOT_IOREQUEST,
@@ -209,6 +210,7 @@ int osd_start_audio_stream(int stereo)
     if(!pAHIS->m_AHIio2) {
 		pAHIS->m_Error = eAHIS_DeviceError;
 		AHI_Close(pAHIS);
+        printf(" AHI CreateExtIO fail\n");
 		return 0;
     }
     CopyMem(pAHIS->m_AHIio, pAHIS->m_AHIio2, sizeof(struct AHIRequest));
@@ -217,6 +219,7 @@ int osd_start_audio_stream(int stereo)
     pAHIS->m_pSBuff2 = (SHORT *) AllocVec(buffLength, MEMF_PUBLIC|MEMF_CLEAR);
 	if (!pAHIS->m_pSBuff1 || !pAHIS->m_pSBuff2 ) {
 		pAHIS->m_Error = (int) eAHIS_NotEnoughMemory;
+        printf(" AHI buffer alloc fail\n");
 		AHI_Close(pAHIS);
 		return 0;
 	}
@@ -246,8 +249,9 @@ int osd_start_audio_stream(int stereo)
 int osd_update_audio_stream(INT16 *buffer)
 {
 #if defined(COMPILE_AUDIO_AHI)
-    //printf("osd_update_audio_stream %08x\n", (int)pAHIS);
     if(!pAHIS) return 0;
+
+    printf("osd_update_audio_stream %08x\n", (int)pAHIS);
   //  printf("osd_update_audio_stream\n");
     // buffer length is pAHIS->m_nextSamples.
 

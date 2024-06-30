@@ -58,28 +58,34 @@ public:
     void setRomPath(const char *rompath);
     void setUserPath(const char *userpath);
     // set when driver selected,
-    void setActiveDriver(int driverIndexInRomFoundList);
+    void setActiveDriver(int indexInDriverList);
+    void setDriverListState(int listState);
+
     int save();
     int load();
 
     int activeDriver() const { return _activeDriver; }
+    int driverListstate() const {return _listShowState; }
     ULONG audio() const { return _audio; }
     ULONG sampleRate() const { return _sampleRate; }
     // - -  update detected rom list - - -
     int scanDrivers();
-    int allDrivers();
+    //int allDrivers();
     // - - path to main dirs --
     const char *getUserDir() const {return _userDir.c_str(); }
     const char *getRomsDir() const {return _romsDir.c_str(); }
 
     const std::vector<const _game_driver *const*> &romsFound() const { return _romsFound; };
+    // do not keep that table...
+    void buildAllRomsVector(std::vector<const _game_driver *const*> &v);
 
     const NameDriverMap  &driverIndex() const { return _driverIndex; };
 
+    // to display in bold when found.
+    int isDriverFound(const _game_driver *const*drv);
+
     // apply to mame options
     void applyToMameOptions(_global_options &mameOptions);
-
-    void listFull();
 
     //  - - - -amiga ports related confs (ll is for lowlevel library) ---.
     // playercontrols
@@ -95,13 +101,17 @@ public:
     };
     const Inputs &inputs() const { return _inputsprefs; }
 protected:
+    int _NumDrivers; // in current linker mame driver list. Can be huge.
     // - - - prefs unique for app
     std::string _userDir;
     std::string _romsDir; // finally just use one, but a tested one.
 
     int   _startWindowed; // else fullscreen.
-    //std::string _lastActiveDriver;
-    int         _activeDriver;
+
+
+    int     _activeDriver;
+    int     _listShowState;
+
     int         _audio;
     ULONG       _sampleRate;
 
@@ -121,12 +131,14 @@ protected:
     // - - - - - scanned roms zip or dir for UI.
     //std::vector<MameRomFound> _romsFound; // what to save
     // mui like a ptr to ptr list, to insert in one blow.
-    // this is meant to be sorted a way or another
+    // this is meant to be sorted a way or another    
     std::vector<const _game_driver *const*> _romsFound;
+    std::vector<UBYTE> _romsFoundReverse;
     int initDriverIndex();
     int scanDriversRecurse(BPTR lock, FileInfoBlock*fib);
 
     void sortDrivers();
+    void initRomsFoundReverse();
 };
 
 // access to singleton

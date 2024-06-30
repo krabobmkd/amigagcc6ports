@@ -443,19 +443,23 @@ int createCmake(map<string,TMachine> machinetargets,
         if(upname == "NEOGEO" ) onShouldBeDefault = true;
         if(upname == "CAPCOM" ) onShouldBeDefault = true;
         if(upname == "TAITO" ) onShouldBeDefault = true;
+        // just for rtype, rtypeleo -> THEY DONT WORK !!
+//        if(upname == "IREM" ) onShouldBeDefault = true;
 //        if(upname == "DATAEAST" ) onShouldBeDefault = true;
-        // just for buggy boy :)
+        // just for buggy boy :) ->DOESNT WORK On 0.106 :(
 //        if(upname == "TATSUMI" ) onShouldBeDefault = true; // tested ok
+
 //        // just for double dragon1/2/3
-//        if(upname == "TECHNOS" ) onShouldBeDefault = true; // tested ok
+        if(upname == "TECHNOS" ) onShouldBeDefault = true; // tested ok
 //        // just for gals panic.
-//        if(upname == "KANEKO" ) onShouldBeDefault = true; // tested ok
+        if(upname == "KANEKO" ) onShouldBeDefault = true; // tested ok
 //        // just for paddle mania :)
 //        if(upname == "ALPHA" ) onShouldBeDefault = true; // tested ok
 //        // just for silkworm and rygar :)  tekhan=tecmo
-//        if(upname == "TEHKAN" ) onShouldBeDefault = true; // tested ok
+        if(upname == "TEHKAN" ) onShouldBeDefault = true; // tested ok
 //        // just for  snow bros and slap fight :)
-//        if(upname == "TOAPLAN" ) onShouldBeDefault = true;
+        if(upname == "TOAPLAN" ) onShouldBeDefault = true;
+        // konami is huge, need ninja turtles.
         if(upname == "MINIKONAMI" ) onShouldBeDefault = true;
 
         ofs << "option(OPT_"<< upname<< " \"\" "<<(onShouldBeDefault?"ON":"OFF")<< ")\n";
@@ -1010,6 +1014,9 @@ void completeDefinitionsByHand(
 
     // thekan/tecmo (silkworm,...)
     machinetargets["tehkan"]._sound_defs["YM2608"]=1;
+
+    // irem
+    machinetargets["irem"]._cpu_defs["M6803"]=1;
 
     // try patch just a package
     /*todo, good idea
