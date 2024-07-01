@@ -2903,6 +2903,51 @@ const game_driver * const drivers[] =
 	DRIVER( zero ) /* 1980 "Jeutel" "Zero" */
 	DRIVER( zwackery ) /* 1984 "Bally Midway" "Zwackery" */
 #endif
+#ifdef LINK_MIDWAYTUNIT
+	DRIVER( hiimpac3 ) /* 1990 "Williams" "High Impact Football (rev LA3 12/27/90)" */
+	DRIVER( hiimpacp ) /* 1990 "Williams" "High Impact Football (prototype */
+	DRIVER( hiimpact ) /* 1990 "Williams" "High Impact Football (rev LA4 02/04/91)" */
+	DRIVER( jdreddp ) /* 1993 "Midway" "Judge Dredd (rev LA1 */
+	DRIVER( mk ) /* 1992 "Midway" "Mortal Kombat (rev 5.0 T-Unit 03/19/93)" */
+	DRIVER( mk2 ) /* 1993 "Midway" "Mortal Kombat II (rev L3.1)" */
+	DRIVER( mk2chal ) /* 1993 "hack" "Mortal Kombat II Challenger (hack)" */
+	DRIVER( mk2r14 ) /* 1993 "Midway" "Mortal Kombat II (rev L1.4)" */
+	DRIVER( mk2r21 ) /* 1993 "Midway" "Mortal Kombat II (rev L2.1)" */
+	DRIVER( mk2r32 ) /* 1993 "Midway" "Mortal Kombat II (rev L3.2 (European))" */
+	DRIVER( mk2r42 ) /* 1993 "hack" "Mortal Kombat II (rev L4.2 */
+	DRIVER( mk2r91 ) /* 1993 "hack" "Mortal Kombat II (rev L9.1 */
+	DRIVER( mkla1 ) /* 1992 "Midway" "Mortal Kombat (rev 1.0 08/09/92)" */
+	DRIVER( mkla2 ) /* 1992 "Midway" "Mortal Kombat (rev 2.0 08/18/92)" */
+	DRIVER( mkla3 ) /* 1992 "Midway" "Mortal Kombat (rev 3.0 08/31/92)" */
+	DRIVER( mkla4 ) /* 1992 "Midway" "Mortal Kombat (rev 4.0 09/28/92)" */
+	DRIVER( mkprot9 ) /* 1992 "Midway" "Mortal Kombat (prototype */
+	DRIVER( mkr4 ) /* 1992 "Midway" "Mortal Kombat (rev 4.0 T-Unit 02/11/93)" */
+	DRIVER( mkyawdim ) /* 1992 "Midway" "Mortal Kombat (Yawdim bootleg)" */
+	DRIVER( narc ) /* 1988 "Williams" "Narc (rev 7.00)" */
+	DRIVER( narc3 ) /* 1988 "Williams" "Narc (rev 3.20)" */
+	DRIVER( nbajam ) /* 1993 "Midway" "NBA Jam (rev 3.01 04/07/93)" */
+	DRIVER( nbajamr2 ) /* 1993 "Midway" "NBA Jam (rev 2.00 02/10/93)" */
+	DRIVER( nbajamt1 ) /* 1994 "Midway" "NBA Jam TE (rev 1.0 01/17/94)" */
+	DRIVER( nbajamt2 ) /* 1994 "Midway" "NBA Jam TE (rev 2.0 01/28/94)" */
+	DRIVER( nbajamt3 ) /* 1994 "Midway" "NBA Jam TE (rev 3.0 03/04/94)" */
+	DRIVER( nbajamte ) /* 1994 "Midway" "NBA Jam TE (rev 4.0 03/23/94)" */
+	DRIVER( shimpacp ) /* 1991 "Midway" "Super High Impact (prototype */
+	DRIVER( shimpact ) /* 1991 "Midway" "Super High Impact (rev LA1 09/30/91)" */
+	DRIVER( smashtv ) /* 1990 "Williams" "Smash T.V. (rev 8.00)" */
+	DRIVER( smashtv4 ) /* 1990 "Williams" "Smash T.V. (rev 4.00)" */
+	DRIVER( smashtv5 ) /* 1990 "Williams" "Smash T.V. (rev 5.00)" */
+	DRIVER( smashtv6 ) /* 1990 "Williams" "Smash T.V. (rev 6.00)" */
+	DRIVER( strkforc ) /* 1991 "Midway" "Strike Force (rev 1 02/25/91)" */
+	DRIVER( term2 ) /* 1991 "Midway" "Terminator 2 - Judgment Day (rev LA3 03/27/92)" */
+	DRIVER( term2la1 ) /* 1991 "Midway" "Terminator 2 - Judgment Day (rev LA1 11/01/91)" */
+	DRIVER( term2la2 ) /* 1991 "Midway" "Terminator 2 - Judgment Day (rev LA2 12/09/91)" */
+	DRIVER( totcarn ) /* 1992 "Midway" "Total Carnage (rev LA1 03/10/92)" */
+	DRIVER( totcarnp ) /* 1992 "Midway" "Total Carnage (prototype */
+	DRIVER( trog ) /* 1990 "Midway" "Trog (rev LA4 03/11/91)" */
+	DRIVER( trog3 ) /* 1990 "Midway" "Trog (rev LA3 02/14/91)" */
+	DRIVER( trogp ) /* 1990 "Midway" "Trog (prototype */
+	DRIVER( trogpa6 ) /* 1990 "Midway" "Trog (rev PA6-PAC 09/09/90)" */
+#endif
 #ifdef LINK_MINIKONAMI
 	DRIVER( blswhstl ) /* 1991 "Konami" "Bells & Whistles (Version L)" */
 	DRIVER( detatwin ) /* 1991 "Konami" "Detana!! Twin Bee (Japan ver. J)" */

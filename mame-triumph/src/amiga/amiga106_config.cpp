@@ -1,7 +1,7 @@
 #include "amiga106_config.h"
 
 #include <sstream>
-
+#include <algorithm>
 #include <proto/exec.h>
 #include <proto/dos.h>
 
@@ -267,29 +267,43 @@ void MameConfig::setUserPath(const char *userpath)
 }
 
 // extern const game_driver * const drivers[];
+void MameConfig::getDriverScreenModestring(const _game_driver *drv, std::string &screenid)
+{
+    struct _machine_config machine;
+    drv->drv(&machine);
+    int width = (machine.default_visible_area.max_x - machine.default_visible_area.min_x)+1;
+    int height = (machine.default_visible_area.max_y - machine.default_visible_area.min_y)+1;
+    if(machine.video_attributes & ORIENTATION_SWAP_XY) {
+        std::swap(width,height);
+    }
+
+  std::stringstream ss;
+  ss <<width<<"x"<<height<<" ";
+  if(machine.video_attributes &VIDEO_RGB_DIRECT) ss<<"15b";
+  else if(machine.total_colors<=256) ss<<"8b";
+  else  ss<<"16b";
+
+    screenid = ss.str();
+}
 
 int MameConfig::initDriverIndex()
 {
     // to be done once.
   int NumDrivers;
+
   for(NumDrivers = 0; drivers[NumDrivers]; NumDrivers++)
   {
     const game_driver *drv  =drivers[NumDrivers];
     if(drv->flags & (/*GAME_NOT_WORKING|*/NOT_A_DRIVER)) continue;
      _driverIndex.insert(drv->name,NumDrivers);
+     // also get its screen id:
+    std::string screenmodeId;
+    getDriverScreenModestring(drv,screenmodeId);
+
   }
   _NumDrivers =NumDrivers;
 }
-//int MameConfig::allDrivers()
-//{
-//  _romsFound.clear();
-//  for(int NumDrivers = 0; drivers[NumDrivers]; NumDrivers++)
-//  {
-//    if(drivers[NumDrivers]->flags & (/*GAME_NOT_WORKING|*/NOT_A_DRIVER)) continue;
-//    _romsFound.push_back(&drivers[NumDrivers]);
-//  }
-//  sortDrivers();
-//}
+
 int MameConfig::scanDrivers()
 {
   printf(" *** ScanDrivers: _romsDir:%s\n", _romsDir.c_str());
@@ -310,7 +324,7 @@ int MameConfig::scanDrivers()
 
     FreeDosObject(DOS_FIB,fib);
 
-    sortDrivers();
+    sortDrivers(_romsFound);
     printf(" *** ScanDrivers end\n");
     initRomsFoundReverse();
     return (int)_romsFound.size();
@@ -368,12 +382,12 @@ static int DriverCompareNames(struct _game_driver ***drv1, struct _game_driver *
 }
 
 
-void MameConfig::sortDrivers()
+void MameConfig::sortDrivers( std::vector<const _game_driver *const*> &roms)
 {
-    if(_romsFound.size()==0) return;
+    if(roms.size()==0) return;
 
-    qsort(_romsFound.data(), //&SortedDrivers[DRIVER_OFFSET],
-        (int)_romsFound.size() ,//NumDrivers,
+    qsort(roms.data(), //&SortedDrivers[DRIVER_OFFSET],
+        (int)roms.size() ,//NumDrivers,
          sizeof(struct _game_driver **),
           (int (*)(const void *, const void *)) DriverCompareNames);
 
@@ -405,6 +419,7 @@ void MameConfig::buildAllRomsVector(std::vector<const _game_driver *const*> &v)
     {
         v[NumDrivers] = &drivers[NumDrivers];
     }
+    sortDrivers(v);
 }
 
 // apply to mame options

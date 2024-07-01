@@ -333,6 +333,113 @@ int patchMiniMachines(
 
         //MCPU_KONAMI
     }
+    {
+        TMachine  &src=machinetargets["midway"];
+        string mname=string("midwaytunit");
+        TMachine  &m=machinetargets[mname];
+        m._name = mname;
+        //
+         m._gamedrivers["mk"] = src._gamedrivers["mk"];
+         m._gamedrivers["mkr4"] = src._gamedrivers["mkr4"];
+
+         m._gamedrivers["mk2"] = src._gamedrivers["mk2"];
+         m._gamedrivers["mk2r32"] = src._gamedrivers["mk2r32"];
+         m._gamedrivers["mk2r21"] = src._gamedrivers["mk2r21"];
+         m._gamedrivers["mk2r14"] = src._gamedrivers["mk2r14"];
+         m._gamedrivers["mk2r42"] = src._gamedrivers["mk2r42"];
+         m._gamedrivers["mk2r91"] = src._gamedrivers["mk2r91"];
+         m._gamedrivers["mk2chal"] = src._gamedrivers["mk2chal"];
+
+
+         m._gamedrivers["jdreddp"] = src._gamedrivers["jdreddp"];
+
+         m._gamedrivers["nbajam"] = src._gamedrivers["nbajam"];
+         m._gamedrivers["nbajamr2"] = src._gamedrivers["nbajamr2"];
+         m._gamedrivers["nbajamte"] = src._gamedrivers["nbajamte"];
+         m._gamedrivers["nbajamt1"] = src._gamedrivers["nbajamt1"];
+         m._gamedrivers["nbajamt2"] = src._gamedrivers["nbajamt2"];
+         m._gamedrivers["nbajamt3"] = src._gamedrivers["nbajamt3"];
+// yunit OMG all those games are horrible
+         m._gamedrivers["narc"] = src._gamedrivers["narc"];
+         m._gamedrivers["narc3"] = src._gamedrivers["narc3"];
+
+         m._gamedrivers["trog"] = src._gamedrivers["trog"];
+         m._gamedrivers["trog3"] = src._gamedrivers["trog3"];
+         m._gamedrivers["trogpa6"] = src._gamedrivers["trogpa6"];
+         m._gamedrivers["trogp"] = src._gamedrivers["trogp"];
+         m._gamedrivers["strkforc"] = src._gamedrivers["strkforc"];
+
+         m._gamedrivers["smashtv"] = src._gamedrivers["smashtv"];
+         m._gamedrivers["smashtv6"] = src._gamedrivers["smashtv6"];
+         m._gamedrivers["smashtv5"] = src._gamedrivers["smashtv5"];
+         m._gamedrivers["smashtv4"] = src._gamedrivers["smashtv4"];
+         m._gamedrivers["hiimpact"] = src._gamedrivers["hiimpact"];
+         m._gamedrivers["hiimpac3"] = src._gamedrivers["hiimpac3"];
+         m._gamedrivers["hiimpacp"] = src._gamedrivers["hiimpacp"];
+         m._gamedrivers["shimpact"] = src._gamedrivers["shimpact"];
+         m._gamedrivers["shimpacp"] = src._gamedrivers["shimpacp"];
+         m._gamedrivers["term2"] = src._gamedrivers["term2"];
+         m._gamedrivers["term2la2"] = src._gamedrivers["term2la2"];
+         m._gamedrivers["term2la1"] = src._gamedrivers["term2la1"];
+         m._gamedrivers["mkprot9"] = src._gamedrivers["mkprot9"];
+         m._gamedrivers["mkla1"] = src._gamedrivers["mkla1"];
+         m._gamedrivers["mkla2"] = src._gamedrivers["mkla2"];
+         m._gamedrivers["mkla3"] = src._gamedrivers["mkla3"];
+         m._gamedrivers["mkla4"] = src._gamedrivers["mkla4"];
+         m._gamedrivers["mkyawdim"] = src._gamedrivers["mkyawdim"];
+         m._gamedrivers["totcarn"] = src._gamedrivers["totcarn"];
+         m._gamedrivers["totcarnp"] = src._gamedrivers["totcarnp"];
+
+
+         m._sources = {
+             "drivers/midtunit.c","machine/midtunit.c","vidhrdw/midtunit.c",
+             "drivers/midyunit.c","machine/midyunit.c","vidhrdw/midyunit.c",
+             "machine/midwayic.c",
+             //"drivers/williams.c","machine/williams.c",
+             "sndhrdw/williams.c",
+             "sndhrdw/dcs.c",
+             "sndhrdw/cage.c" // needed by midwayic.c
+         };
+        m._cpu_defs["M6800"]=1;
+        m._cpu_defs["M6808"]=1;
+        m._cpu_defs["M6809"]=1;
+        m._cpu_defs["TMS34010"]=1;
+        m._cpu_defs["ADSP2100"]=1;
+        m._cpu_defs["ADSP2101"]=1;
+        m._cpu_defs["ADSP2104"]=1;
+        m._cpu_defs["ADSP2105"]=1;
+        m._cpu_defs["ADSP2115"]=1;
+        m._cpu_defs["ADSP2181"]=1;
+
+        m._sound_defs["HC55516"]=1;
+        m._sound_defs["DMADAC"]=1;
+        // DMADAC
+//
+        /*
+
+GAME( 1992, mk,       0,       tunit_adpcm, mk,       mktunit,  ROT0, "Midway",   "Mortal Kombat (rev 5.0 T-Unit 03/19/93)", 0 )
+GAME( 1992, mkr4,     mk,      tunit_adpcm, mk,       mktunit,  ROT0, "Midway",   "Mortal Kombat (rev 4.0 T-Unit 02/11/93)", 0 )
+
+GAME( 1993, mk2,      0,       tunit_dcs,   mk2,      mk2,      ROT0, "Midway",   "Mortal Kombat II (rev L3.1)", 0 )
+GAME( 1993, mk2r32,   mk2,     tunit_dcs,   mk2,      mk2,      ROT0, "Midway",   "Mortal Kombat II (rev L3.2 (European))", 0 )
+GAME( 1993, mk2r21,   mk2,     tunit_dcs,   mk2,      mk2,      ROT0, "Midway",   "Mortal Kombat II (rev L2.1)", 0 )
+GAME( 1993, mk2r14,   mk2,     tunit_dcs,   mk2,      mk2,      ROT0, "Midway",   "Mortal Kombat II (rev L1.4)", 0 )
+GAME( 1993, mk2r42,   mk2,     tunit_dcs,   mk2,      mk2,      ROT0, "hack",     "Mortal Kombat II (rev L4.2, hack)", 0 )
+GAME( 1993, mk2r91,   mk2,     tunit_dcs,   mk2,      mk2,      ROT0, "hack",     "Mortal Kombat II (rev L9.1, hack)", 0 )
+GAME( 1993, mk2chal,  mk2,     tunit_dcs,   mk2,      mk2,      ROT0, "hack",     "Mortal Kombat II Challenger (hack)", 0 )
+
+GAME( 1993, jdreddp,  0,       tunit_adpcm, jdreddp,  jdreddp,  ROT0, "Midway",   "Judge Dredd (rev LA1, prototype)", 0 )
+
+GAME( 1993, nbajam,   0,       tunit_adpcm, nbajam,   nbajam,   ROT0, "Midway",   "NBA Jam (rev 3.01 04/07/93)", 0 )
+GAME( 1993, nbajamr2, nbajam,  tunit_adpcm, nbajam,   nbajam,   ROT0, "Midway",   "NBA Jam (rev 2.00 02/10/93)", 0 )
+GAME( 1994, nbajamte, nbajam,  tunit_adpcm, nbajamte, nbajamte, ROT0, "Midway",   "NBA Jam TE (rev 4.0 03/23/94)", 0 )
+GAME( 1994, nbajamt1, nbajam,  tunit_adpcm, nbajamte, nbajamte, ROT0, "Midway",   "NBA Jam TE (rev 1.0 01/17/94)", 0 )
+GAME( 1994, nbajamt2, nbajam,  tunit_adpcm, nbajamte, nbajamte, ROT0, "Midway",   "NBA Jam TE (rev 2.0 01/28/94)", 0 )
+GAME( 1994, nbajamt3, nbajam,  tunit_adpcm, nbajamte, nbajamte, ROT0, "Midway",   "NBA Jam TE (rev 3.0 03/04/94)", 0 )
+
+*/
+    }
+
     return 0;
 }
 
@@ -459,8 +566,11 @@ int createCmake(map<string,TMachine> machinetargets,
         if(upname == "TEHKAN" ) onShouldBeDefault = true; // tested ok
 //        // just for  snow bros and slap fight :)
         if(upname == "TOAPLAN" ) onShouldBeDefault = true;
-        // konami is huge, need ninja turtles.
+        // konami is huge, need ninja turtles and simpsons.
         if(upname == "MINIKONAMI" ) onShouldBeDefault = true;
+
+        // some midway machines, mk mk2 nbajam
+        if(upname == "MIDWAYTUNIT" ) onShouldBeDefault = true;
 
         ofs << "option(OPT_"<< upname<< " \"\" "<<(onShouldBeDefault?"ON":"OFF")<< ")\n";
     }

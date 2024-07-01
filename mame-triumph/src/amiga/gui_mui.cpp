@@ -67,8 +67,6 @@ typedef ULONG (*RE_HOOKFUNC)();
 
 //#define DRIVER_OFFSET 2
 
-static std::vector<std::string> boldnames;
-
 #define TEXT_ABOUT \
 "\33c\n\33b\33uMAME - Multiple Arcade Machine Emulator\33n\n\n" \
 "0."REVISION" ("REVDATE")\n\n" \
@@ -254,20 +252,29 @@ static struct Hook UseDefaultsNotifyHook;
 #endif
 
 #ifndef MESS
-static char *DriverString;
+// list column names
+static char *String_Driver=(char *)"Driver";
+static char *String_Archive=(char *)"Archive";
+static char *String_Parent=(char *)"Parent";
+static char *String_Screen=(char *)"Screen";
+static char *String_Players=(char *)"Players";
+static char *String_Comment=(char *)"Comment";
+/*
+
 static char *DirectoryString;
 static char *TypeString;
 static char *WidthString;
 static char *HeightString;
 static char *ColorsString;
-static char *CommentString;
+
+*/
 static char *NotWorkingString;
 static char *WrongColorsString;
 static char *ImperfectColorsString;
-static char *BitmapString;
-static char *VectorString;
-static char *BitmapGameDefaultsString;
-static char *VectorGameDefaultsString;
+//static char *BitmapString;
+//static char *VectorString;
+//static char *BitmapGameDefaultsString;
+//static char *VectorGameDefaultsString;
 #endif
 
 static void CreateApp(void);
@@ -359,7 +366,6 @@ static struct _game_driver *GetDriver(void)
 
 static void ShowFound(void)
 {
-    boldnames.clear();
     MameConfig &config = getMainConfig();
     const std::vector<const _game_driver *const*> &roms = config.romsFound();
     //MUIM_List_Insert can insert everything in a blow.
@@ -380,7 +386,6 @@ static void ShowAll(void)
     std::vector<const _game_driver *const*> roms;
     config.buildAllRomsVector(roms);
 
-    boldnames.clear();
     //MUIM_List_Insert can insert everything in a blow.
         DoMethod((Object *)LI_Driver, MUIM_List_Insert,
          (ULONG)roms.data(),(int)roms.size(),  MUIV_List_Insert_Bottom);
@@ -398,153 +403,79 @@ static ULONG ASM DriverDisplay(struct Hook *hook REG(a0), char **array REG(a2), 
 {
 
     MameConfig &config = getMainConfig();
-  struct _game_driver *drv;
+    struct _game_driver *drv;
 
-#ifdef MESS
-  *array++ = (char *) drv->description;
-#else
-  static char driver[64];
-  static char directory[64];
-  static char type[64];
-  static char width[64];
-  static char height[64];
-  static char colors[64];
+    struct ColumnsString {
+          char *_driver,*_screen,*_archive,*_parent,*_comment;
+    };
+    ColumnsString *pColumns = (ColumnsString *)array;
+
+  static char driver[56];
+  static char screen[32];
+  static char archive[16];
+  static char parent[16];
+ // static char players[16];
   static char comment[128];
 
   if(!drv_indirect)
   {
-    snprintf(driver,63,   "\033b\033u%s", DriverString);
-    driver[63]=0;
-    snprintf(directory,63,  "\033b\033u%s", DirectoryString);
-        directory[63]=0;
-    snprintf(type,63,   "\033b\033u%s", TypeString);
-    type[63]=0;
-    snprintf(width,63,    "\033b\033u%s", WidthString);
-    width[63]=0;
-    snprintf(height,63,   "\033b\033u%s", HeightString);
-    height[63]=0;
-    snprintf(colors,63,   "\033b\033u%s", ColorsString);
-    colors[63]=0;
-    snprintf(comment,127,  "\033b\033u%s", CommentString);
+    snprintf(driver,55,   "\033b\033u%s", String_Driver);
+    driver[55]=0;
+    snprintf(screen,31,   "\033b\033u%s", String_Screen);
+    screen[31]=0;
+    snprintf(archive,15,  "\033b\033u%s", String_Archive);
+    archive[15]=0;
+    snprintf(parent,15,  "\033b\033u%s", String_Parent);
+    parent[15]=0;
+//    snprintf(players,15,    "\033b\033u%s", String_Players);
+//    players[15]=0;
+    snprintf(comment,127,  "\033b\033u%s", String_Comment);
     comment[127]=0;
 
-    *array++  = driver;
-    *array++  = directory;
-    *array++  = type;
-    *array++  = width;
-    *array++  = height;
-    *array++  = colors;
-    *array++  = comment;
-
-    return(0);
-  }
-
-  if(drv_indirect == (struct _game_driver **) 1)
-  {
-    snprintf(driver,63, "\0338%s", BitmapGameDefaultsString);
-    driver[63]=0;
-    *array++  = driver;
-    *array++  = "";
-    *array++  = "";
-    *array++  = "";
-    *array++  = "";
-    *array++  = "";
-    *array++  = "";
-
-    return(0);
-  }
-
-  if(drv_indirect == (struct _game_driver **) 2)
-  {
-    snprintf(driver,63, "\0338%s", VectorGameDefaultsString);
-     driver[63]=0;
-    *array++  = driver;
-    *array++  = "";
-    *array++  = "";
-    *array++  = "";
-    *array++  = "";
-    *array++  = "";
-    *array++  = "";
-
+    pColumns->_driver = driver;
+    pColumns->_screen = screen;
+    pColumns->_archive = archive;
+    pColumns->_parent = parent;
+   // pColumns->_players = players;
+    pColumns->_comment = comment;
     return(0);
   }
 
   drv = *drv_indirect;
 
-    machine_config machine;
-    memset(&machine,0,sizeof(machine));
-    drv->drv(&machine);
-
  if(config.isDriverFound(drv_indirect))
  {
      // if found: to bold
-    boldnames.push_back("");
-    std::string &b=boldnames.back();
-    b = "\033b";
-    b += drv->description;
-    *array++ = (char *)b.c_str();
+    snprintf(driver,55,"\033b%s", drv->description);
+    driver[55]=0;
+    pColumns->_driver = driver;
  } else
- {
-     *array++ = (char *) drv->description;
+ {  // just to cut too long names
+     snprintf(driver,54,"%s", drv->description);
+     driver[54]=0;
+     pColumns->_driver = driver;
  }
 
+ static std::string str_screen;
+ config.getDriverScreenModestring(drv,str_screen);
+ pColumns->_screen = (char*) str_screen.c_str();
 
+   pColumns->_archive = (char *) drv->name;
+   if(!drv->parent || (drv->parent[0]=='0' &&drv->parent[1]==0 ))
+    pColumns->_parent = (char*)"";
+   else
+    pColumns->_parent = (char*)drv->parent;
 
-  *array++ = (char *) drv->name;
-
-  if(machine.video_attributes & VIDEO_TYPE_VECTOR)
-  {
-    *array++  = VectorString;
-    *array++  = "";
-    *array++  = "";
-  }
-  else
-  {
-  /*
-
-	UINT32 flags;	 orientation and other flags; see defines below
- values for the flags field
-
-#define ORIENTATION_MASK        	0x0007
-#define	ORIENTATION_FLIP_X			0x0001	 mirror everything in the X direction
-#define	ORIENTATION_FLIP_Y			0x0002	 mirror everything in the Y direction
-#define ORIENTATION_SWAP_XY			0x0004	 mirror along the top-left/bottom-right diagonal
-
-  */
-    // krb note: there was flags changes between 0.35 and 0.37
-
-    *array++  = BitmapString;
-    if(drv->flags & ORIENTATION_SWAP_XY)
-      snprintf(width,63, "%d", machine.screen_height);
-    else
-      snprintf(width,63, "%d", machine.screen_width);
-    *array++  = width;
-    if(drv->flags & ORIENTATION_SWAP_XY)
-      snprintf(height,63, "%d", machine.screen_width);
-    else
-      snprintf(height,63, "%d", machine.screen_height);
-    *array++  = height;
-  }
-// GAME_REQUIRES_16BIT
-//0.35  if(drv->drv->video_attributes & VIDEO_SUPPORTS_16BIT)
-  if(/*machine.flags & GAME_REQUIRES_16BIT ||*/
-   machine.total_colors > 256
-    )
-    sprintf(colors, "16Bit");
-  else
-    sprintf(colors, "%d", machine.total_colors);
-
-  *array++ = colors;
 
   if(drv->flags & GAME_NOT_WORKING)
-    *array++ = NotWorkingString;
+   pColumns->_comment = NotWorkingString;
   else if(drv->flags & GAME_WRONG_COLORS)
-    *array++ = WrongColorsString;
+   pColumns->_comment = WrongColorsString;
   else if(drv->flags & GAME_IMPERFECT_COLORS)
-    *array++ = ImperfectColorsString;
+   pColumns->_comment = ImperfectColorsString;
   else
-    *array++ = "";
-#endif
+   pColumns->_comment =(char*) "";
+
   return(0);
 }
 
@@ -729,20 +660,20 @@ void AllocGUI(void)
     ShowNotifyHook.h_Entry        = (RE_HOOKFUNC) ShowNotify;
     UseDefaultsNotifyHook.h_Entry = (RE_HOOKFUNC) UseDefaultsNotify;
 
-    DriverString             = GetMessage(MSG_DRIVER);
-    DirectoryString          = GetMessage(MSG_DIRECTORY);
-    TypeString               = GetMessage(MSG_TYPE);
-    WidthString              = GetMessage(MSG_WIDTH);
-    HeightString             = GetMessage(MSG_HEIGHT);
-    ColorsString             = GetMessage(MSG_COLORS);
-    CommentString            = GetMessage(MSG_COMMENT);
+//    DriverString             = GetMessage(MSG_DRIVER);
+//    DirectoryString          = GetMessage(MSG_DIRECTORY);
+//    TypeString               = GetMessage(MSG_TYPE);
+//    WidthString              = GetMessage(MSG_WIDTH);
+//    HeightString             = GetMessage(MSG_HEIGHT);
+//    ColorsString             = GetMessage(MSG_COLORS);
+//    CommentString            = GetMessage(MSG_COMMENT);
     NotWorkingString         = GetMessage(MSG_NOT_WORKING);
     WrongColorsString        = GetMessage(MSG_WRONG_COLORS);
     ImperfectColorsString    = GetMessage(MSG_IMPERFECT_COLORS);
-    BitmapString             = GetMessage(MSG_BITMAP);
-    VectorString             = GetMessage(MSG_VECTOR);
-    BitmapGameDefaultsString = GetMessage(MSG_BITMAP_GAME_DEFAULTS);
-    VectorGameDefaultsString = GetMessage(MSG_VECTOR_GAME_DEFAULTS);
+//    BitmapString             = GetMessage(MSG_BITMAP);
+//    VectorString             = GetMessage(MSG_VECTOR);
+//    BitmapGameDefaultsString = GetMessage(MSG_BITMAP_GAME_DEFAULTS);
+//    VectorGameDefaultsString = GetMessage(MSG_VECTOR_GAME_DEFAULTS);
 #endif
 
     DriverClass = MUI_CreateCustomClass(NULL, MUIC_Listview, NULL, sizeof(struct DriverData),(APTR) DriverDispatcher);
@@ -862,7 +793,7 @@ ULONG createPanel_Drivers()
           MUIA_Listview_Input,    TRUE,
             MUIA_Listview_List, (ULONG)( LI_Driver = MUINewObject(MUIC_List,
               MUIA_List_Title,    TRUE,
-              MUIA_List_Format,   "BAR,BAR,BAR,BAR,BAR,BAR,",
+              MUIA_List_Format,   "BAR,BAR,BAR,BAR,",
               MUIA_List_DisplayHook,(ULONG)  &DriverDisplayHook,
             InputListFrame,
           TAG_DONE)),

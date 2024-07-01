@@ -100,6 +100,8 @@ public:
         bool        _useParallelPadsForp3p4;
     };
     const Inputs &inputs() const { return _inputsprefs; }
+
+    static void getDriverScreenModestring(const _game_driver *drv, std::string &screenid);
 protected:
     int _NumDrivers; // in current linker mame driver list. Can be huge.
     // - - - prefs unique for app
@@ -120,13 +122,14 @@ protected:
     ScreenConf _defaultscreenconf;
     // TODO video prefs, per video config
     // keys are like: "320x224x16"
-    std::unordered_map<std::string,ScreenConf> _screenconf;
+    std::unordered_map<std::string,ScreenConf> _screenconfs;
 
     //TODO
     Inputs _inputsprefs;
 
     // name to current mame index to fasten dir search
     NameDriverMap _driverIndex;
+
 
     // - - - - - scanned roms zip or dir for UI.
     //std::vector<MameRomFound> _romsFound; // what to save
@@ -137,7 +140,7 @@ protected:
     int initDriverIndex();
     int scanDriversRecurse(BPTR lock, FileInfoBlock*fib);
 
-    void sortDrivers();
+    void sortDrivers( std::vector<const _game_driver *const*> &romsFound);
     void initRomsFoundReverse();
 };
 
